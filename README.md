@@ -116,6 +116,16 @@ Runs TypeScript compiler in no-emit mode to check for type errors.
 ## Features
 
 This truck queue management system is designed to:
+- **Warehouse Floor Plan Designer**: Drag-and-drop interface for creating warehouse layouts
+  - Create square and rectangle storage units
+  - Drag to reposition units with grid snapping
+  - Stack units on top of each other
+  - Click units to manage inventory items
+- **Inventory Management**: Track items in each storage unit
+  - Add items with quantity and unit (kg, ton, pcs, box)
+  - Remove items from storage
+  - View all items in a storage unit
+- **Persistence**: Save and load warehouse layouts
 - Manage truck arrivals and departures
 - Track queue positions and waiting times
 - Provide real-time updates
