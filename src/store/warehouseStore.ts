@@ -18,8 +18,8 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
   layout: {
     id: '1',
     name: 'Main Warehouse',
-    width: 800,
-    height: 600,
+    width: window.innerWidth,
+    height: window.innerHeight,
     gridSize: 20,
     storageUnits: [],
   },

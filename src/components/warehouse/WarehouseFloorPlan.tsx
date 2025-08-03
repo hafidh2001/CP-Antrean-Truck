@@ -1,15 +1,40 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { DndContext, DragEndEvent, useSensor, useSensors, PointerSensor } from '@dnd-kit/core';
 import { useWarehouseStore } from '@/store/warehouseStore';
 import { DraggableStorageUnit } from './DraggableStorageUnit';
 import { StorageUnitDialog } from './StorageUnitDialog';
-import { Button } from '@/components/ui/button';
-import { Square, RectangleHorizontal } from 'lucide-react';
 import { StorageUnit } from '@/types/warehouse';
 
+interface DrawingRect {
+  startX: number;
+  startY: number;
+  endX: number;
+  endY: number;
+}
+
 export function WarehouseFloorPlan() {
-  const { layout, addStorageUnit, moveStorageUnit, selectUnit, selectedUnit, checkOverlap, stackUnits } = useWarehouseStore();
+  const { layout, addStorageUnit, moveStorageUnit, selectUnit, selectedUnit, checkOverlap, stackUnits, removeStorageUnit, setLayout } = useWarehouseStore();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [drawingRect, setDrawingRect] = useState<DrawingRect | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  
+  // Load saved layout on mount
+  useEffect(() => {
+    const savedLayout = localStorage.getItem('warehouseLayout');
+    if (savedLayout) {
+      try {
+        const parsed = JSON.parse(savedLayout);
+        setLayout({
+          ...parsed,
+          width: window.innerWidth,
+          height: window.innerHeight,
+        });
+      } catch (error) {
+        console.error('Failed to load saved layout:', error);
+      }
+    }
+  }, [setLayout]);
   
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -45,20 +70,59 @@ export function WarehouseFloorPlan() {
     }
   };
 
-  const addNewStorageUnit = (type: 'square' | 'rectangle') => {
-    const size = type === 'square' ? 80 : { width: 120, height: 80 };
-    const newUnit: StorageUnit = {
-      id: Date.now().toString(),
-      name: `Storage ${layout.storageUnits.length + 1}`,
-      x: snapToGrid(Math.random() * (layout.width - 100)),
-      y: snapToGrid(Math.random() * (layout.height - 100)),
-      width: type === 'square' ? size : (size as any).width,
-      height: type === 'square' ? size : (size as any).height,
-      items: [],
-      stackLevel: 0,
-      color: type === 'square' ? 'bg-blue-100 border-blue-300' : 'bg-green-100 border-green-300',
-    };
-    addStorageUnit(newUnit);
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target !== containerRef.current) return;
+    
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = snapToGrid(e.clientX - rect.left);
+    const y = snapToGrid(e.clientY - rect.top);
+    
+    setIsDrawing(true);
+    setDrawingRect({
+      startX: x,
+      startY: y,
+      endX: x,
+      endY: y,
+    });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDrawing || !drawingRect) return;
+    
+    const rect = containerRef.current!.getBoundingClientRect();
+    const x = snapToGrid(e.clientX - rect.left);
+    const y = snapToGrid(e.clientY - rect.top);
+    
+    setDrawingRect({
+      ...drawingRect,
+      endX: x,
+      endY: y,
+    });
+  };
+
+  const handleMouseUp = () => {
+    if (!isDrawing || !drawingRect) return;
+    
+    const width = Math.abs(drawingRect.endX - drawingRect.startX);
+    const height = Math.abs(drawingRect.endY - drawingRect.startY);
+    
+    if (width >= layout.gridSize && height >= layout.gridSize) {
+      const newUnit: StorageUnit = {
+        id: Date.now().toString(),
+        name: `Storage ${layout.storageUnits.length + 1}`,
+        x: Math.min(drawingRect.startX, drawingRect.endX),
+        y: Math.min(drawingRect.startY, drawingRect.endY),
+        width,
+        height,
+        items: [],
+        stackLevel: 0,
+        color: 'bg-blue-100 border-blue-300',
+      };
+      addStorageUnit(newUnit);
+    }
+    
+    setIsDrawing(false);
+    setDrawingRect(null);
   };
 
   const handleUnitClick = (unit: StorageUnit) => {
@@ -66,31 +130,54 @@ export function WarehouseFloorPlan() {
     setDialogOpen(true);
   };
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Delete' && selectedUnit && !dialogOpen) {
+        if (window.confirm(`Delete ${selectedUnit.name}?`)) {
+          removeStorageUnit(selectedUnit.id);
+          selectUnit(null);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedUnit, dialogOpen, removeStorageUnit, selectUnit]);
+
+  const getDrawingRectStyle = () => {
+    if (!drawingRect) return {};
+    
+    const x = Math.min(drawingRect.startX, drawingRect.endX);
+    const y = Math.min(drawingRect.startY, drawingRect.endY);
+    const width = Math.abs(drawingRect.endX - drawingRect.startX);
+    const height = Math.abs(drawingRect.endY - drawingRect.startY);
+    
+    return {
+      left: x,
+      top: y,
+      width,
+      height,
+    };
+  };
+
   return (
-    <div className="p-4">
-      <div className="mb-4 flex gap-2">
-        <Button onClick={() => addNewStorageUnit('square')} variant="outline">
-          <Square className="h-4 w-4 mr-2" />
-          Add Square Storage
-        </Button>
-        <Button onClick={() => addNewStorageUnit('rectangle')} variant="outline">
-          <RectangleHorizontal className="h-4 w-4 mr-2" />
-          Add Rectangle Storage
-        </Button>
-      </div>
-      
+    <div className="relative w-full h-full">
       <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
         <div 
-          className="relative border-2 border-gray-300 rounded-lg overflow-hidden"
+          ref={containerRef}
+          className="relative w-full h-full border-2 border-gray-300 overflow-hidden cursor-crosshair"
           style={{
-            width: layout.width,
-            height: layout.height,
             backgroundImage: `
               linear-gradient(to right, #f0f0f0 1px, transparent 1px),
               linear-gradient(to bottom, #f0f0f0 1px, transparent 1px)
             `,
             backgroundSize: `${layout.gridSize}px ${layout.gridSize}px`,
           }}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
         >
           {layout.storageUnits.map((unit: StorageUnit) => (
             <DraggableStorageUnit
@@ -99,6 +186,13 @@ export function WarehouseFloorPlan() {
               onClick={() => handleUnitClick(unit)}
             />
           ))}
+          
+          {isDrawing && drawingRect && (
+            <div
+              className="absolute border-2 border-blue-500 bg-blue-200 opacity-30 pointer-events-none"
+              style={getDrawingRectStyle()}
+            />
+          )}
         </div>
       </DndContext>
       

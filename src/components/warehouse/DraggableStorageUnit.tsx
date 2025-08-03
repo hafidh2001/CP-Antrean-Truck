@@ -3,6 +3,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { Package } from 'lucide-react';
 import { StorageUnit } from '@/types/warehouse';
 import { cn } from '@/lib/utils';
+import { useWarehouseStore } from '@/store/warehouseStore';
 
 interface DraggableStorageUnitProps {
   unit: StorageUnit;
@@ -10,6 +11,9 @@ interface DraggableStorageUnitProps {
 }
 
 export function DraggableStorageUnit({ unit, onClick }: DraggableStorageUnitProps) {
+  const { selectedUnit } = useWarehouseStore();
+  const isSelected = selectedUnit?.id === unit.id;
+  
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: unit.id,
     data: unit,
@@ -32,6 +36,7 @@ export function DraggableStorageUnit({ unit, onClick }: DraggableStorageUnitProp
         "absolute border-2 rounded-md cursor-move flex flex-col items-center justify-center transition-all",
         "hover:shadow-lg hover:border-primary",
         isDragging ? "opacity-50 z-50" : "opacity-100",
+        isSelected ? "ring-2 ring-primary ring-offset-2" : "",
         unit.color || "bg-blue-100 border-blue-300"
       )}
       {...listeners}
