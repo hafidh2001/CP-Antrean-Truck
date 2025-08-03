@@ -8,9 +8,12 @@ interface MultiWarehouseStore {
   selectedUnit: StorageUnit | null;
   
   loadWarehouses: () => void;
+  addWarehouse: (name: string, description: string) => void;
+  deleteWarehouse: (id: string) => void;
   setCurrentWarehouse: (id: string) => void;
   updateWarehouseLayout: (warehouseId: string, updates: Partial<Warehouse['layout']>) => void;
   saveWarehouseToStorage: (warehouseId: string) => void;
+  saveAllWarehouses: () => void;
   
   // Storage unit operations
   addStorageUnit: (unit: StorageUnit) => void;
@@ -35,6 +38,47 @@ export const useMultiWarehouseStore = create<MultiWarehouseStore>((set, get) => 
     } else {
       set({ warehouses: warehouseData.warehouses as Warehouse[] });
     }
+  },
+
+  addWarehouse: (name, description) => {
+    const newWarehouse: Warehouse = {
+      id: `warehouse-${Date.now()}`,
+      name,
+      description,
+      layout: {
+        id: `layout-${Date.now()}`,
+        name: `Layout ${name}`,
+        width: window.innerWidth,
+        height: window.innerHeight,
+        gridSize: 20,
+        storageUnits: []
+      },
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    set((state) => {
+      const updatedWarehouses = [...state.warehouses, newWarehouse];
+      // Save to localStorage immediately
+      localStorage.setItem('allWarehouses', JSON.stringify(updatedWarehouses));
+      return { warehouses: updatedWarehouses };
+    });
+  },
+
+  deleteWarehouse: (id) => {
+    set((state) => {
+      const updatedWarehouses = state.warehouses.filter(w => w.id !== id);
+      // Save to localStorage immediately
+      localStorage.setItem('allWarehouses', JSON.stringify(updatedWarehouses));
+      
+      // If the deleted warehouse was the current one, clear it
+      const newCurrentWarehouse = state.currentWarehouse?.id === id ? null : state.currentWarehouse;
+      
+      return { 
+        warehouses: updatedWarehouses,
+        currentWarehouse: newCurrentWarehouse
+      };
+    });
   },
 
   setCurrentWarehouse: (id) => {
@@ -82,6 +126,11 @@ export const useMultiWarehouseStore = create<MultiWarehouseStore>((set, get) => 
       localStorage.setItem('allWarehouses', JSON.stringify(updatedWarehouses));
       set({ warehouses: updatedWarehouses });
     }
+  },
+
+  saveAllWarehouses: () => {
+    const state = get();
+    localStorage.setItem('allWarehouses', JSON.stringify(state.warehouses));
   },
 
   // Storage unit operations
