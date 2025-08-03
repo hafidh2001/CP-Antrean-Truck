@@ -9,6 +9,7 @@ export function WarehouseHelper() {
           <p><strong>Click & Drag</strong> on empty space to create storage unit</p>
           <p><strong>Drag</strong> storage units to move them</p>
           <p><strong>Click</strong> on unit to manage inventory</p>
+          <p><strong>Double-click</strong> on unit to rename quickly</p>
           <p><strong>Delete key</strong> to remove selected unit</p>
         </div>
       </div>

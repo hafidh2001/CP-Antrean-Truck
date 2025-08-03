@@ -1,10 +1,27 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Warehouse, Plus } from 'lucide-react';
 import warehouseData from '@/data/mockWarehouses.json';
 import { Warehouse as WarehouseType } from '@/types/warehouse';
 
 export function HomePage() {
-  const warehouses = warehouseData.warehouses as WarehouseType[];
+  const [warehouses, setWarehouses] = useState<WarehouseType[]>([]);
+
+  useEffect(() => {
+    // Load from localStorage if exists, otherwise use mock data
+    const savedData = localStorage.getItem('allWarehouses');
+    if (savedData) {
+      try {
+        const parsed = JSON.parse(savedData);
+        setWarehouses(parsed);
+      } catch (error) {
+        console.error('Failed to parse saved warehouses:', error);
+        setWarehouses(warehouseData.warehouses as WarehouseType[]);
+      }
+    } else {
+      setWarehouses(warehouseData.warehouses as WarehouseType[]);
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">

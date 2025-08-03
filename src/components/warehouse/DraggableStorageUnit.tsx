@@ -9,9 +9,10 @@ import { useMultiWarehouseStore } from '@/store/multiWarehouseStore';
 interface DraggableStorageUnitProps {
   unit: StorageUnit;
   onClick: () => void;
+  onDoubleClick?: () => void;
 }
 
-export function DraggableStorageUnit({ unit, onClick }: DraggableStorageUnitProps) {
+export function DraggableStorageUnit({ unit, onClick, onDoubleClick }: DraggableStorageUnitProps) {
   // Try multi-warehouse store first, fallback to single warehouse store
   const multiStore = useMultiWarehouseStore();
   const singleStore = useWarehouseStore();
@@ -37,6 +38,7 @@ export function DraggableStorageUnit({ unit, onClick }: DraggableStorageUnitProp
       ref={setNodeRef}
       style={style}
       onClick={onClick}
+      onDoubleClick={onDoubleClick}
       className={cn(
         "absolute border-2 rounded-md cursor-move flex flex-col items-center justify-center transition-all",
         "hover:shadow-lg hover:border-primary",

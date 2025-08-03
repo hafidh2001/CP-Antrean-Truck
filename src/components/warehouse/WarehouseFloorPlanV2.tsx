@@ -21,7 +21,8 @@ export function WarehouseFloorPlanV2() {
     selectedUnit, 
     checkOverlap, 
     stackUnits, 
-    removeStorageUnit 
+    removeStorageUnit,
+    updateStorageUnit
   } = useMultiWarehouseStore();
   
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -129,6 +130,14 @@ export function WarehouseFloorPlanV2() {
     setDialogOpen(true);
   };
 
+  const handleUnitDoubleClick = (unit: StorageUnit) => {
+    // Quick rename on double click
+    const newName = window.prompt('Enter new name for storage unit:', unit.name);
+    if (newName && newName.trim() && newName !== unit.name) {
+      updateStorageUnit(unit.id, { name: newName.trim() });
+    }
+  };
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -183,6 +192,7 @@ export function WarehouseFloorPlanV2() {
               key={unit.id}
               unit={unit}
               onClick={() => handleUnitClick(unit)}
+              onDoubleClick={() => handleUnitDoubleClick(unit)}
             />
           ))}
           

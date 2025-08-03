@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { StorageUnit, Item } from '@/types/warehouse';
-import { Plus, Trash2, Package } from 'lucide-react';
+import { Plus, Trash2, Package, Pencil } from 'lucide-react';
 import { useMultiWarehouseStore } from '@/store/multiWarehouseStore';
 
 interface StorageUnitDialogProps {
@@ -14,6 +14,15 @@ interface StorageUnitDialogProps {
 export function StorageUnitDialogV2({ unit, open, onOpenChange }: StorageUnitDialogProps) {
   const { updateStorageUnit, removeStorageUnit } = useMultiWarehouseStore();
   const [newItem, setNewItem] = useState({ name: '', quantity: 0, unit: 'kg' });
+  const [unitName, setUnitName] = useState(unit?.name || '');
+  const [isEditingName, setIsEditingName] = useState(false);
+
+  // Update local state when unit changes
+  useEffect(() => {
+    if (unit) {
+      setUnitName(unit.name);
+    }
+  }, [unit]);
 
   if (!unit) return null;
 
@@ -41,13 +50,53 @@ export function StorageUnitDialogV2({ unit, open, onOpenChange }: StorageUnitDia
     onOpenChange(false);
   };
 
+  const handleSaveName = () => {
+    if (unitName.trim() && unitName !== unit.name) {
+      updateStorageUnit(unit.id, { name: unitName.trim() });
+    }
+    setIsEditingName(false);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Package className="h-5 w-5" />
-            {unit.name}
+            {isEditingName ? (
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={unitName}
+                  onChange={(e) => setUnitName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSaveName();
+                    if (e.key === 'Escape') {
+                      setUnitName(unit.name);
+                      setIsEditingName(false);
+                    }
+                  }}
+                  className="px-2 py-1 border rounded text-sm"
+                  autoFocus
+                />
+                <Button size="sm" onClick={handleSaveName}>Save</Button>
+                <Button size="sm" variant="ghost" onClick={() => {
+                  setUnitName(unit.name);
+                  setIsEditingName(false);
+                }}>Cancel</Button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span>{unit.name}</span>
+                <button
+                  onClick={() => setIsEditingName(true)}
+                  title="Click to edit name"
+                  className="hover:text-primary"
+                >
+                  <Pencil className="h-4 w-4" />
+                </button>
+              </div>
+            )}
           </DialogTitle>
         </DialogHeader>
         
