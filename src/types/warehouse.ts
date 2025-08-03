@@ -25,3 +25,16 @@ export interface WarehouseLayout {
   gridSize: number;
   storageUnits: StorageUnit[];
 }
+
+export interface Warehouse {
+  id: string;
+  name: string;
+  description?: string;
+  layout: WarehouseLayout;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WarehouseData {
+  warehouses: Warehouse[];
+}

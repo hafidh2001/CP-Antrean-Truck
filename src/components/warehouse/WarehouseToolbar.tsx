@@ -1,12 +1,26 @@
 import { Button } from '@/components/ui/button';
 import { useWarehouseStore } from '@/store/warehouseStore';
+import { useMultiWarehouseStore } from '@/store/multiWarehouseStore';
 import { Save, Trash2 } from 'lucide-react';
 
 export function WarehouseToolbar() {
-  const { layout, setLayout } = useWarehouseStore();
+  // Check if we're using multi-warehouse mode
+  const multiStore = useMultiWarehouseStore();
+  const singleStore = useWarehouseStore();
+  
+  const isMultiWarehouse = multiStore.currentWarehouse !== null;
+  const layout = isMultiWarehouse ? multiStore.currentWarehouse?.layout : singleStore.layout;
+  const setLayout = isMultiWarehouse 
+    ? (updates: any) => multiStore.updateWarehouseLayout(multiStore.currentWarehouse!.id, updates)
+    : singleStore.setLayout;
 
   const handleSave = () => {
-    localStorage.setItem('warehouseLayout', JSON.stringify(layout));
+    if (isMultiWarehouse) {
+      multiStore.saveWarehouseToStorage(multiStore.currentWarehouse!.id);
+    } else {
+      localStorage.setItem('warehouseLayout', JSON.stringify(layout));
+    }
+    
     // Show success feedback
     const toast = document.createElement('div');
     toast.className = 'fixed top-20 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50';
@@ -17,10 +31,16 @@ export function WarehouseToolbar() {
 
   const handleClear = () => {
     if (confirm('Are you sure you want to clear all storage units?')) {
-      setLayout({
-        ...layout,
-        storageUnits: [],
-      });
+      if (isMultiWarehouse && layout) {
+        multiStore.updateWarehouseLayout(multiStore.currentWarehouse!.id, {
+          storageUnits: [],
+        });
+      } else if (layout) {
+        setLayout({
+          ...layout,
+          storageUnits: [],
+        });
+      }
     }
   };
 

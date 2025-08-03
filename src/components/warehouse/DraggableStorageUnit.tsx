@@ -4,6 +4,7 @@ import { Package } from 'lucide-react';
 import { StorageUnit } from '@/types/warehouse';
 import { cn } from '@/lib/utils';
 import { useWarehouseStore } from '@/store/warehouseStore';
+import { useMultiWarehouseStore } from '@/store/multiWarehouseStore';
 
 interface DraggableStorageUnitProps {
   unit: StorageUnit;
@@ -11,7 +12,11 @@ interface DraggableStorageUnitProps {
 }
 
 export function DraggableStorageUnit({ unit, onClick }: DraggableStorageUnitProps) {
-  const { selectedUnit } = useWarehouseStore();
+  // Try multi-warehouse store first, fallback to single warehouse store
+  const multiStore = useMultiWarehouseStore();
+  const singleStore = useWarehouseStore();
+  
+  const selectedUnit = multiStore.selectedUnit || singleStore.selectedUnit;
   const isSelected = selectedUnit?.id === unit.id;
   
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({

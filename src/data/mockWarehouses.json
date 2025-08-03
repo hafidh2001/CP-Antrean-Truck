@@ -1,0 +1,143 @@
+{
+  "warehouses": [
+    {
+      "id": "warehouse-a",
+      "name": "Gudang A",
+      "description": "Gudang utama untuk barang elektronik",
+      "layout": {
+        "id": "layout-a",
+        "name": "Layout Gudang A",
+        "width": 1200,
+        "height": 800,
+        "gridSize": 20,
+        "storageUnits": [
+          {
+            "id": "unit-1",
+            "name": "Storage 1",
+            "x": 100,
+            "y": 100,
+            "width": 120,
+            "height": 80,
+            "items": [
+              {
+                "id": "item-1",
+                "name": "Laptop",
+                "quantity": 50,
+                "unit": "pcs"
+              }
+            ],
+            "stackLevel": 0,
+            "color": "bg-blue-100 border-blue-300"
+          }
+        ]
+      },
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "warehouse-b",
+      "name": "Gudang B",
+      "description": "Gudang untuk spare parts",
+      "layout": {
+        "id": "layout-b",
+        "name": "Layout Gudang B",
+        "width": 1200,
+        "height": 800,
+        "gridSize": 20,
+        "storageUnits": []
+      },
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "warehouse-c",
+      "name": "Gudang C",
+      "description": "Cold storage untuk makanan",
+      "layout": {
+        "id": "layout-c",
+        "name": "Layout Gudang C",
+        "width": 1200,
+        "height": 800,
+        "gridSize": 20,
+        "storageUnits": []
+      },
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "warehouse-d",
+      "name": "Gudang D",
+      "description": "Gudang bahan baku",
+      "layout": {
+        "id": "layout-d",
+        "name": "Layout Gudang D",
+        "width": 1200,
+        "height": 800,
+        "gridSize": 20,
+        "storageUnits": []
+      },
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "warehouse-e",
+      "name": "Gudang E",
+      "description": "Gudang produk jadi",
+      "layout": {
+        "id": "layout-e",
+        "name": "Layout Gudang E",
+        "width": 1200,
+        "height": 800,
+        "gridSize": 20,
+        "storageUnits": []
+      },
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "warehouse-f",
+      "name": "Gudang F",
+      "description": "Gudang peralatan",
+      "layout": {
+        "id": "layout-f",
+        "name": "Layout Gudang F",
+        "width": 1200,
+        "height": 800,
+        "gridSize": 20,
+        "storageUnits": []
+      },
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "warehouse-g",
+      "name": "Gudang G",
+      "description": "Gudang tekstil",
+      "layout": {
+        "id": "layout-g",
+        "name": "Layout Gudang G",
+        "width": 1200,
+        "height": 800,
+        "gridSize": 20,
+        "storageUnits": []
+      },
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "warehouse-h",
+      "name": "Gudang H",
+      "description": "Gudang farmasi",
+      "layout": {
+        "id": "layout-h",
+        "name": "Layout Gudang H",
+        "width": 1200,
+        "height": 800,
+        "gridSize": 20,
+        "storageUnits": []
+      },
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-01T00:00:00Z"
+    }
+  ]
+}
