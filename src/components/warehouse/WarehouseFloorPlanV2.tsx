@@ -188,9 +188,12 @@ export function WarehouseFloorPlanV2() {
   };
 
   const handleUnitClick = (unit: StorageUnit) => {
+    const wasAlreadySelected = selectedUnit?.id === unit.id;
     selectUnit(unit);
     selectTextElement(null);
-    if (toolMode === 'select') {
+    
+    // Open dialog if clicking on already selected unit, or if in select mode
+    if (wasAlreadySelected || toolMode === 'select') {
       setDialogOpen(true);
     }
   };
@@ -204,9 +207,12 @@ export function WarehouseFloorPlanV2() {
   };
 
   const handleTextClick = (element: TextElement) => {
+    const wasAlreadySelected = selectedTextElement?.id === element.id;
     selectTextElement(element);
     selectUnit(null);
-    if (toolMode === 'select') {
+    
+    // Open dialog if clicking on already selected element, or if in select mode
+    if (wasAlreadySelected || toolMode === 'select') {
       setTextDialogOpen(true);
     }
   };
