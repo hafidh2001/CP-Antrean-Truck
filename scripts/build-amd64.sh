@@ -11,13 +11,11 @@ echo "Building Docker image for AMD64 architecture..."
 docker buildx build \
   --platform linux/amd64 \
   -t ${IMAGE_NAME}:${TAG} \
-  -t ${IMAGE_NAME}:latest-amd64 \
   --load \
   .
 
 if [ $? -eq 0 ]; then
   echo "✅ Successfully built ${IMAGE_NAME}:${TAG}"
-  docker images | grep ${IMAGE_NAME}
 else
   echo "❌ Failed to build Docker image"
   exit 1
