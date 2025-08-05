@@ -59,6 +59,15 @@ export function WarehouseFloorPlanV2() {
     return Math.round(value / layout.gridSize) * layout.gridSize;
   };
 
+  const handleDragStart = () => {
+    // When dragging starts, ensure we're in a mode that shows selection
+    if (toolMode !== 'select') {
+      // Optionally switch to select mode when dragging
+      // This is a UX decision - uncomment if you want auto-switch
+      // useMultiWarehouseStore.getState().setToolMode('select');
+    }
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, delta } = event;
     const activeData = active.data.current as any;
@@ -179,9 +188,9 @@ export function WarehouseFloorPlanV2() {
   };
 
   const handleUnitClick = (unit: StorageUnit) => {
+    selectUnit(unit);
+    selectTextElement(null);
     if (toolMode === 'select') {
-      selectUnit(unit);
-      selectTextElement(null);
       setDialogOpen(true);
     }
   };
@@ -195,9 +204,9 @@ export function WarehouseFloorPlanV2() {
   };
 
   const handleTextClick = (element: TextElement) => {
+    selectTextElement(element);
+    selectUnit(null);
     if (toolMode === 'select') {
-      selectTextElement(element);
-      selectUnit(null);
       setTextDialogOpen(true);
     }
   };
@@ -264,7 +273,7 @@ export function WarehouseFloorPlanV2() {
 
   return (
     <div className="relative w-full h-full">
-      <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+      <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
         <div 
           ref={containerRef}
           className={cn(
@@ -291,7 +300,7 @@ export function WarehouseFloorPlanV2() {
               unit={unit}
               onClick={() => handleUnitClick(unit)}
               onDoubleClick={() => handleUnitDoubleClick(unit)}
-              isDraggable={toolMode === 'select'}
+              isDraggable={true}
             />
           ))}
           
@@ -302,7 +311,7 @@ export function WarehouseFloorPlanV2() {
               isSelected={selectedTextElement?.id === element.id}
               onClick={() => handleTextClick(element)}
               onDoubleClick={() => handleTextDoubleClick(element)}
-              isDraggable={toolMode === 'select'}
+              isDraggable={true}
             />
           ))}
           

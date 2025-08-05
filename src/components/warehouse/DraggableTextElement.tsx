@@ -42,7 +42,7 @@ export function DraggableTextElement({ element, isSelected, onClick, onDoubleCli
       onDoubleClick={onDoubleClick}
       className={cn(
         "absolute select-none",
-        isDraggable ? "cursor-move" : "cursor-pointer",
+        "cursor-move", // Always show move cursor since dragging is always enabled
         isDragging ? "opacity-50 z-50" : "",
         "hover:opacity-80 transition-opacity"
       )}

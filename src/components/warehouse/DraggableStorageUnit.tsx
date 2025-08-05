@@ -42,7 +42,7 @@ export function DraggableStorageUnit({ unit, onClick, onDoubleClick, isDraggable
       onDoubleClick={onDoubleClick}
       className={cn(
         "absolute border rounded flex items-center justify-center transition-all",
-        isDraggable ? "cursor-move" : "cursor-pointer",
+        "cursor-move", // Always show move cursor since dragging is always enabled
         "hover:border-gray-400",
         isDragging ? "opacity-50 z-50" : "opacity-100",
         isSelected ? "ring-2 ring-primary ring-offset-2" : "",
