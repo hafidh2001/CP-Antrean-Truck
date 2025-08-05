@@ -167,7 +167,6 @@ export function WarehouseFloorPlanV2() {
         y: Math.min(drawingRect.startY, drawingRect.endY),
         width,
         height,
-        items: [],
         stackLevel: 0,
         color: 'bg-blue-100 border-blue-300',
       };

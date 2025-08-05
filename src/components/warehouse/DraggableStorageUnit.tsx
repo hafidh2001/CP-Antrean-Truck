@@ -2,7 +2,6 @@ import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { StorageUnit } from '@/types/warehouse';
 import { cn } from '@/lib/utils';
-import { useWarehouseStore } from '@/store/warehouseStore';
 import { useMultiWarehouseStore } from '@/store/multiWarehouseStore';
 
 interface DraggableStorageUnitProps {
@@ -13,11 +12,7 @@ interface DraggableStorageUnitProps {
 }
 
 export function DraggableStorageUnit({ unit, onClick, onDoubleClick, isDraggable = true }: DraggableStorageUnitProps) {
-  // Try multi-warehouse store first, fallback to single warehouse store
-  const multiStore = useMultiWarehouseStore();
-  const singleStore = useWarehouseStore();
-  
-  const selectedUnit = multiStore.selectedUnit || singleStore.selectedUnit;
+  const { selectedUnit } = useMultiWarehouseStore();
   const isSelected = selectedUnit?.id === unit.id;
   
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({

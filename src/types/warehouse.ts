@@ -1,10 +1,3 @@
-export interface Item {
-  id: string;
-  name: string;
-  quantity: number;
-  unit: string;
-}
-
 export interface StorageUnit {
   id: string;
   name: string;
@@ -12,7 +5,6 @@ export interface StorageUnit {
   y: number;
   width: number;
   height: number;
-  items: Item[];
   stackLevel: number;
   color?: string;
   rotation?: number; // 0, 90, 180, 270
@@ -47,8 +39,4 @@ export interface Warehouse {
   layout: WarehouseLayout;
   createdAt: string;
   updatedAt: string;
-}
-
-export interface WarehouseData {
-  warehouses: Warehouse[];
 }
