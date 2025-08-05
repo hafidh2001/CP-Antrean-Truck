@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { StorageUnit, Item } from '@/types/warehouse';
-import { Plus, Trash2, Package, Pencil } from 'lucide-react';
+import { StorageUnit } from '@/types/warehouse';
+import { Package, Pencil, RotateCw, Palette } from 'lucide-react';
 import { useMultiWarehouseStore } from '@/store/multiWarehouseStore';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 interface StorageUnitDialogProps {
   unit: StorageUnit | null;
@@ -13,36 +15,31 @@ interface StorageUnitDialogProps {
 
 export function StorageUnitDialogV2({ unit, open, onOpenChange }: StorageUnitDialogProps) {
   const { updateStorageUnit, removeStorageUnit } = useMultiWarehouseStore();
-  const [newItem, setNewItem] = useState({ name: '', quantity: 0, unit: 'kg' });
   const [unitName, setUnitName] = useState(unit?.name || '');
   const [isEditingName, setIsEditingName] = useState(false);
+  const [rotation, setRotation] = useState(unit?.rotation || 0);
+  const [unitType, setUnitType] = useState(unit?.type || 'warehouse');
 
   // Update local state when unit changes
   useEffect(() => {
     if (unit) {
       setUnitName(unit.name);
+      setRotation(unit.rotation || 0);
+      setUnitType(unit.type || 'warehouse');
     }
   }, [unit]);
 
   if (!unit) return null;
 
-  const handleAddItem = () => {
-    if (newItem.name && newItem.quantity > 0) {
-      const item: Item = {
-        id: Date.now().toString(),
-        ...newItem,
-      };
-      updateStorageUnit(unit.id, {
-        items: [...unit.items, item],
-      });
-      setNewItem({ name: '', quantity: 0, unit: 'kg' });
-    }
+  const handleRotate = () => {
+    const newRotation = (rotation + 90) % 360;
+    setRotation(newRotation);
+    updateStorageUnit(unit.id, { rotation: newRotation });
   };
 
-  const handleRemoveItem = (itemId: string) => {
-    updateStorageUnit(unit.id, {
-      items: unit.items.filter((item) => item.id !== itemId),
-    });
+  const handleTypeChange = (newType: 'warehouse' | 'rack') => {
+    setUnitType(newType);
+    updateStorageUnit(unit.id, { type: newType });
   };
 
   const handleDelete = () => {
@@ -102,63 +99,44 @@ export function StorageUnitDialogV2({ unit, open, onOpenChange }: StorageUnitDia
         
         <div className="space-y-4">
           <div className="text-sm text-muted-foreground">
-            Position: ({unit.x}, {unit.y}) | Size: {unit.width}x{unit.height} | Stack Level: {unit.stackLevel}
+            Position: ({unit.x}, {unit.y}) | Size: {unit.width}x{unit.height}
           </div>
 
-          <div className="space-y-2">
-            <h4 className="font-semibold">Items in Storage:</h4>
-            {unit.items.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No items in this storage unit</p>
-            ) : (
-              <ul className="space-y-2">
-                {unit.items.map((item) => (
-                  <li key={item.id} className="flex items-center justify-between bg-secondary p-2 rounded">
-                    <span className="text-sm">
-                      {item.name} - {item.quantity} {item.unit}
-                    </span>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleRemoveItem(item.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+          <div className="space-y-4">
+            <div>
+              <Label className="text-sm font-medium">Text Rotation</Label>
+              <div className="flex items-center gap-2 mt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRotate}
+                  className="flex items-center gap-2"
+                >
+                  <RotateCw className="h-4 w-4" />
+                  {rotation}°
+                </Button>
+                <span className="text-sm text-muted-foreground">Click to rotate text</span>
+              </div>
+            </div>
 
-          <div className="space-y-2">
-            <h4 className="font-semibold">Add New Item:</h4>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="Item name"
-                value={newItem.name}
-                onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
-                className="flex-1 px-3 py-2 border rounded-md"
-              />
-              <input
-                type="number"
-                placeholder="Qty"
-                value={newItem.quantity || ''}
-                onChange={(e) => setNewItem({ ...newItem, quantity: Number(e.target.value) })}
-                className="w-20 px-3 py-2 border rounded-md"
-              />
-              <select
-                value={newItem.unit}
-                onChange={(e) => setNewItem({ ...newItem, unit: e.target.value })}
-                className="px-3 py-2 border rounded-md"
-              >
-                <option value="kg">kg</option>
-                <option value="ton">ton</option>
-                <option value="pcs">pcs</option>
-                <option value="box">box</option>
-              </select>
-              <Button onClick={handleAddItem}>
-                <Plus className="h-4 w-4" />
-              </Button>
+            <div>
+              <Label className="text-sm font-medium">Storage Type</Label>
+              <RadioGroup value={unitType} onValueChange={handleTypeChange} className="mt-2">
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="warehouse" id="warehouse" />
+                  <Label htmlFor="warehouse" className="flex items-center gap-2 cursor-pointer">
+                    <Palette className="h-4 w-4 text-blue-500" />
+                    Warehouse (Blue)
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="rack" id="rack" />
+                  <Label htmlFor="rack" className="flex items-center gap-2 cursor-pointer">
+                    <Palette className="h-4 w-4 text-yellow-500" />
+                    Rack (Yellow)
+                  </Label>
+                </div>
+              </RadioGroup>
             </div>
           </div>
 

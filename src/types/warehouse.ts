@@ -15,6 +15,19 @@ export interface StorageUnit {
   items: Item[];
   stackLevel: number;
   color?: string;
+  rotation?: number; // 0, 90, 180, 270
+  type?: 'warehouse' | 'rack'; // Based on color
+}
+
+export interface TextElement {
+  id: string;
+  text: string;
+  x: number;
+  y: number;
+  fontSize: number;
+  fontFamily: string;
+  rotation: number; // 0, 90, 180, 270
+  color?: string;
 }
 
 export interface WarehouseLayout {
@@ -24,6 +37,7 @@ export interface WarehouseLayout {
   height: number;
   gridSize: number;
   storageUnits: StorageUnit[];
+  textElements?: TextElement[];
 }
 
 export interface Warehouse {

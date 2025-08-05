@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { useWarehouseStore } from '@/store/warehouseStore';
 import { useMultiWarehouseStore } from '@/store/multiWarehouseStore';
-import { Save, Trash2 } from 'lucide-react';
+import { Save, Trash2, Type, Square, MousePointer } from 'lucide-react';
 
 export function WarehouseToolbar() {
   // Check if we're using multi-warehouse mode
@@ -13,6 +13,8 @@ export function WarehouseToolbar() {
   const setLayout = isMultiWarehouse 
     ? (updates: any) => multiStore.updateWarehouseLayout(multiStore.currentWarehouse!.id, updates)
     : singleStore.setLayout;
+  
+  const { toolMode, setToolMode } = multiStore;
 
   const handleSave = () => {
     if (isMultiWarehouse) {
@@ -30,10 +32,11 @@ export function WarehouseToolbar() {
   };
 
   const handleClear = () => {
-    if (confirm('Are you sure you want to clear all storage units?')) {
+    if (confirm('Are you sure you want to clear all storage units and text elements?')) {
       if (isMultiWarehouse && layout) {
         multiStore.updateWarehouseLayout(multiStore.currentWarehouse!.id, {
           storageUnits: [],
+          textElements: [],
         });
       } else if (layout) {
         setLayout({
@@ -44,8 +47,38 @@ export function WarehouseToolbar() {
     }
   };
 
+
   return (
     <div className="absolute top-4 right-4 z-10 flex gap-2">
+      <div className="flex gap-1 bg-background border rounded-md p-1 mr-2">
+        <Button 
+          onClick={() => setToolMode('select')} 
+          size="sm" 
+          variant={toolMode === 'select' ? 'default' : 'ghost'}
+          className="h-8 w-8 p-0"
+          title="Select tool (V)"
+        >
+          <MousePointer className="h-4 w-4" />
+        </Button>
+        <Button 
+          onClick={() => setToolMode('rectangle')} 
+          size="sm" 
+          variant={toolMode === 'rectangle' ? 'default' : 'ghost'}
+          className="h-8 w-8 p-0"
+          title="Rectangle tool (R)"
+        >
+          <Square className="h-4 w-4" />
+        </Button>
+        <Button 
+          onClick={() => setToolMode('text')} 
+          size="sm" 
+          variant={toolMode === 'text' ? 'default' : 'ghost'}
+          className="h-8 w-8 p-0"
+          title="Text tool (T)"
+        >
+          <Type className="h-4 w-4" />
+        </Button>
+      </div>
       <Button onClick={handleSave} size="sm">
         <Save className="h-4 w-4 mr-2" />
         Save

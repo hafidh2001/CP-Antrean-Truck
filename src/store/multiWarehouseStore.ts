@@ -1,13 +1,18 @@
 import { create } from 'zustand';
-import { Warehouse, StorageUnit } from '@/types/warehouse';
+import { Warehouse, StorageUnit, TextElement } from '@/types/warehouse';
 import warehouseData from '@/data/mockWarehouses.json';
+
+type ToolMode = 'select' | 'rectangle' | 'text';
 
 interface MultiWarehouseStore {
   warehouses: Warehouse[];
   currentWarehouse: Warehouse | null;
   selectedUnit: StorageUnit | null;
+  selectedTextElement: TextElement | null;
+  toolMode: ToolMode;
   
   loadWarehouses: () => void;
+  setToolMode: (mode: ToolMode) => void;
   addWarehouse: (name: string, description: string) => void;
   deleteWarehouse: (id: string) => void;
   setCurrentWarehouse: (id: string) => void;
@@ -23,12 +28,21 @@ interface MultiWarehouseStore {
   moveStorageUnit: (id: string, x: number, y: number) => void;
   checkOverlap: (unit: StorageUnit, newX: number, newY: number) => StorageUnit | null;
   stackUnits: (draggedId: string, targetId: string) => void;
+  
+  // Text element operations
+  addTextElement: (element: TextElement) => void;
+  updateTextElement: (id: string, updates: Partial<TextElement>) => void;
+  removeTextElement: (id: string) => void;
+  selectTextElement: (element: TextElement | null) => void;
+  moveTextElement: (id: string, x: number, y: number) => void;
 }
 
 export const useMultiWarehouseStore = create<MultiWarehouseStore>((set, get) => ({
   warehouses: [],
   currentWarehouse: null,
   selectedUnit: null,
+  selectedTextElement: null,
+  toolMode: 'select',
 
   loadWarehouses: () => {
     // Load from localStorage if exists, otherwise use mock data
@@ -39,6 +53,8 @@ export const useMultiWarehouseStore = create<MultiWarehouseStore>((set, get) => 
       set({ warehouses: warehouseData.warehouses as Warehouse[] });
     }
   },
+
+  setToolMode: (mode) => set({ toolMode: mode }),
 
   addWarehouse: (name, description) => {
     const newWarehouse: Warehouse = {
@@ -51,7 +67,8 @@ export const useMultiWarehouseStore = create<MultiWarehouseStore>((set, get) => 
         width: window.innerWidth,
         height: window.innerHeight,
         gridSize: 20,
-        storageUnits: []
+        storageUnits: [],
+        textElements: []
       },
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -250,6 +267,85 @@ export const useMultiWarehouseStore = create<MultiWarehouseStore>((set, get) => 
           }
           return unit;
         }),
+      };
+      
+      const updatedWarehouse = {
+        ...state.currentWarehouse,
+        layout: updatedLayout,
+        updatedAt: new Date().toISOString(),
+      };
+      
+      return { currentWarehouse: updatedWarehouse };
+    }),
+
+  // Text element operations
+  addTextElement: (element) =>
+    set((state) => {
+      if (!state.currentWarehouse) return state;
+      
+      const updatedLayout = {
+        ...state.currentWarehouse.layout,
+        textElements: [...(state.currentWarehouse.layout.textElements || []), element],
+      };
+      
+      const updatedWarehouse = {
+        ...state.currentWarehouse,
+        layout: updatedLayout,
+        updatedAt: new Date().toISOString(),
+      };
+      
+      return { currentWarehouse: updatedWarehouse };
+    }),
+
+  updateTextElement: (id, updates) =>
+    set((state) => {
+      if (!state.currentWarehouse) return state;
+      
+      const updatedLayout = {
+        ...state.currentWarehouse.layout,
+        textElements: (state.currentWarehouse.layout.textElements || []).map((element) =>
+          element.id === id ? { ...element, ...updates } : element
+        ),
+      };
+      
+      const updatedWarehouse = {
+        ...state.currentWarehouse,
+        layout: updatedLayout,
+        updatedAt: new Date().toISOString(),
+      };
+      
+      return { currentWarehouse: updatedWarehouse };
+    }),
+
+  removeTextElement: (id) =>
+    set((state) => {
+      if (!state.currentWarehouse) return state;
+      
+      const updatedLayout = {
+        ...state.currentWarehouse.layout,
+        textElements: (state.currentWarehouse.layout.textElements || []).filter((element) => element.id !== id),
+      };
+      
+      const updatedWarehouse = {
+        ...state.currentWarehouse,
+        layout: updatedLayout,
+        updatedAt: new Date().toISOString(),
+      };
+      
+      return { currentWarehouse: updatedWarehouse };
+    }),
+
+  selectTextElement: (element) => set({ selectedTextElement: element }),
+
+  moveTextElement: (id, x, y) =>
+    set((state) => {
+      if (!state.currentWarehouse) return state;
+      
+      const updatedLayout = {
+        ...state.currentWarehouse.layout,
+        textElements: (state.currentWarehouse.layout.textElements || []).map((element) =>
+          element.id === id ? { ...element, x, y } : element
+        ),
       };
       
       const updatedWarehouse = {

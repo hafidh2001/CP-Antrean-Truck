@@ -1,6 +1,5 @@
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
-import { Package } from 'lucide-react';
 import { StorageUnit } from '@/types/warehouse';
 import { cn } from '@/lib/utils';
 import { useWarehouseStore } from '@/store/warehouseStore';
@@ -10,9 +9,10 @@ interface DraggableStorageUnitProps {
   unit: StorageUnit;
   onClick: () => void;
   onDoubleClick?: () => void;
+  isDraggable?: boolean;
 }
 
-export function DraggableStorageUnit({ unit, onClick, onDoubleClick }: DraggableStorageUnitProps) {
+export function DraggableStorageUnit({ unit, onClick, onDoubleClick, isDraggable = true }: DraggableStorageUnitProps) {
   // Try multi-warehouse store first, fallback to single warehouse store
   const multiStore = useMultiWarehouseStore();
   const singleStore = useWarehouseStore();
@@ -23,6 +23,7 @@ export function DraggableStorageUnit({ unit, onClick, onDoubleClick }: Draggable
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: unit.id,
     data: unit,
+    disabled: !isDraggable,
   });
 
   const style = {
@@ -33,6 +34,11 @@ export function DraggableStorageUnit({ unit, onClick, onDoubleClick }: Draggable
     height: unit.height,
   };
 
+  // Determine background color based on type or color property
+  const backgroundColor = unit.type === 'rack' ? 'bg-yellow-100 border-yellow-300' : 
+                         unit.type === 'warehouse' ? 'bg-blue-100 border-blue-300' :
+                         unit.color || 'bg-blue-100 border-blue-300';
+
   return (
     <div
       ref={setNodeRef}
@@ -40,20 +46,25 @@ export function DraggableStorageUnit({ unit, onClick, onDoubleClick }: Draggable
       onClick={onClick}
       onDoubleClick={onDoubleClick}
       className={cn(
-        "absolute border-2 rounded-md cursor-move flex flex-col items-center justify-center transition-all",
-        "hover:shadow-lg hover:border-primary",
+        "absolute border rounded flex items-center justify-center transition-all",
+        isDraggable ? "cursor-move" : "cursor-pointer",
+        "hover:border-gray-400",
         isDragging ? "opacity-50 z-50" : "opacity-100",
         isSelected ? "ring-2 ring-primary ring-offset-2" : "",
-        unit.color || "bg-blue-100 border-blue-300"
+        backgroundColor
       )}
       {...listeners}
       {...attributes}
     >
-      <Package className="h-6 w-6 text-gray-600 mb-1" />
-      <span className="text-xs font-medium text-center px-1">{unit.name}</span>
-      {unit.items.length > 0 && (
-        <span className="text-xs text-gray-500">({unit.items.length} items)</span>
-      )}
+      <span 
+        className="text-sm font-medium text-center px-2 py-1 select-none"
+        style={{
+          transform: unit.rotation ? `rotate(${unit.rotation}deg)` : undefined,
+          transformOrigin: 'center',
+        }}
+      >
+        {unit.name}
+      </span>
       {unit.stackLevel > 0 && (
         <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs">
           {unit.stackLevel}
