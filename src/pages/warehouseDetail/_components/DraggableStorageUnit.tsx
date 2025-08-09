@@ -1,11 +1,12 @@
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
-import { StorageUnit } from '@/types/warehouse';
+import { IStorageUnit } from '@/types/warehouseDetail';
+import { StorageTypeEnum } from '@/types';
 import { cn } from '@/lib/utils';
 import { useMultiWarehouseStore } from '@/store/multiWarehouseStore';
 
 interface DraggableStorageUnitProps {
-  unit: StorageUnit;
+  unit: IStorageUnit;
   onClick: () => void;
   onDoubleClick?: () => void;
   isDraggable?: boolean;
@@ -29,10 +30,9 @@ export const DraggableStorageUnit = ({ unit, onClick, onDoubleClick, isDraggable
     height: unit.height,
   };
 
-  // Determine background color based on type or color property
-  const backgroundColor = unit.type === 'rack' ? 'bg-yellow-100 border-yellow-300' : 
-                         unit.type === 'warehouse' ? 'bg-blue-100 border-blue-300' :
-                         unit.color || 'bg-blue-100 border-blue-300';
+  // Determine background color based on typeStorage
+  const backgroundColor = unit.typeStorage === StorageTypeEnum.RACK ? 'bg-yellow-100 border-yellow-300' : 
+                         'bg-blue-100 border-blue-300';
 
   return (
     <div
@@ -54,13 +54,16 @@ export const DraggableStorageUnit = ({ unit, onClick, onDoubleClick, isDraggable
       <span 
         className="text-sm font-medium text-center px-2 py-1 select-none"
         style={{
-          transform: unit.rotation ? `rotate(${unit.rotation}deg)` : undefined,
+          transform: unit.textStyling?.rotation ? `rotate(${unit.textStyling.rotation}deg)` : undefined,
           transformOrigin: 'center',
+          fontSize: unit.textStyling?.fontSize ? `${unit.textStyling.fontSize}px` : undefined,
+          fontFamily: unit.textStyling?.fontFamily,
+          color: unit.textStyling?.textColor,
         }}
       >
         {unit.name}
       </span>
-      {unit.stackLevel > 0 && (
+      {unit.stackLevel && unit.stackLevel > 0 && (
         <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs">
           {unit.stackLevel}
         </div>

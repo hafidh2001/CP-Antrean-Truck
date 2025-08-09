@@ -1,34 +1,32 @@
 import { useState, useRef, useCallback } from 'react';
 import { useDraggable } from '@dnd-kit/core';
-import { StorageUnit } from '@/types/warehouse';
+import { IStorageUnit, TResizeDirection } from '@/types/warehouseDetail';
+import { StorageTypeEnum } from '@/types';
 import { cn } from '@/lib/utils';
 import { useMultiWarehouseStore } from '@/store/multiWarehouseStore';
 
 interface ResizableStorageUnitProps {
-  unit: StorageUnit;
+  unit: IStorageUnit;
   onClick?: () => void;
-  onDoubleClick?: () => void;
   isDraggable?: boolean;
 }
-
-type ResizeDirection = 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w' | 'nw' | null;
 
 export const ResizableStorageUnit = ({
   unit,
   onClick,
-  onDoubleClick,
   isDraggable = true,
 }: ResizableStorageUnitProps) => {
-  const { updateStorageUnit, currentWarehouse } = useMultiWarehouseStore();
+  const { updateUnit, currentWarehouse } = useMultiWarehouseStore();
   const [isResizing, setIsResizing] = useState(false);
-  const [resizeDirection, setResizeDirection] = useState<ResizeDirection>(null);
-  const [hoveredDirection, setHoveredDirection] = useState<ResizeDirection>(null);
+  const [, setResizeDirection] = useState<TResizeDirection>(null);
+  const [hoveredDirection, setHoveredDirection] = useState<TResizeDirection>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   
   const gridSize = currentWarehouse?.layout.gridSize || 20;
 
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: unit.id,
+    data: unit,
     disabled: !isDraggable || isResizing || hoveredDirection !== null,
   });
 
@@ -36,7 +34,7 @@ export const ResizableStorageUnit = ({
     return Math.round(value / gridSize) * gridSize;
   };
 
-  const getResizeDirection = (e: React.MouseEvent<HTMLDivElement>): ResizeDirection => {
+  const getResizeDirection = (e: React.MouseEvent<HTMLDivElement>): TResizeDirection => {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -65,9 +63,9 @@ export const ResizableStorageUnit = ({
     return null;
   };
 
-  const getCursor = (direction: ResizeDirection): string => {
+  const getCursor = (direction: TResizeDirection): string => {
     if (!direction) return 'move';
-    const cursors: Record<NonNullable<ResizeDirection>, string> = {
+    const cursors: Record<NonNullable<TResizeDirection>, string> = {
       'n': 'ns-resize',
       's': 'ns-resize',
       'e': 'ew-resize',
@@ -140,7 +138,7 @@ export const ResizableStorageUnit = ({
         newY = Math.max(0, Math.min(newY, currentWarehouse.layout.height - newHeight));
         
         // Update dimensions
-        updateStorageUnit(unit.id, {
+        updateUnit(unit.id, {
           x: newX,
           y: newY,
           width: newWidth,
@@ -158,7 +156,7 @@ export const ResizableStorageUnit = ({
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
     }
-  }, [unit, currentWarehouse, gridSize, updateStorageUnit]);
+  }, [unit, currentWarehouse, gridSize, updateUnit]);
 
   const handleClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (!isResizing && !getResizeDirection(e)) {
@@ -174,17 +172,19 @@ export const ResizableStorageUnit = ({
     width: unit.width,
     height: unit.height,
     transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
-    zIndex: unit.stackLevel * 10 + (isDragging ? 1000 : 0),
+    zIndex: (unit.stackLevel || 0) * 10 + (isDragging ? 1000 : 0),
     cursor: getCursor(hoveredDirection),
   };
 
-  const unitColor = unit.type === 'rack' ? 'bg-yellow-100 border-yellow-500' : 'bg-blue-100 border-blue-500';
+  const unitColor = unit.typeStorage === StorageTypeEnum.RACK ? 'bg-yellow-100 border-yellow-500' : 'bg-blue-100 border-blue-500';
 
   return (
     <div
       ref={(node) => {
         setNodeRef(node);
-        containerRef.current = node as HTMLDivElement;
+        if (node) {
+          (containerRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
+        }
       }}
       style={style}
       className={cn(
@@ -197,19 +197,16 @@ export const ResizableStorageUnit = ({
       onMouseMove={handleMouseMove}
       onMouseLeave={() => setHoveredDirection(null)}
       onClick={handleClick}
-      onDoubleClick={(e) => {
-        if (!isResizing) {
-          e.stopPropagation();
-          onDoubleClick?.();
-        }
-      }}
       {...(isDraggable && !isResizing && !hoveredDirection ? listeners : {})}
       {...attributes}
     >
       <span 
         className="text-xs font-medium text-center px-1 pointer-events-none"
         style={{
-          transform: unit.rotation ? `rotate(${unit.rotation}deg)` : undefined,
+          transform: unit.textStyling?.rotation ? `rotate(${unit.textStyling.rotation}deg)` : undefined,
+          fontSize: unit.textStyling?.fontSize ? `${unit.textStyling.fontSize}px` : undefined,
+          fontFamily: unit.textStyling?.fontFamily,
+          color: unit.textStyling?.textColor,
         }}
       >
         {unit.name}

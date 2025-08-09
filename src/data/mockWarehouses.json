@@ -1,33 +1,54 @@
 {
   "warehouses": [
     {
-      "id": "warehouse-a",
+      "id": 1,
       "name": "Gudang A",
       "description": "Gudang utama untuk barang elektronik",
       "layout": {
         "id": "layout-a",
         "name": "Layout Gudang A",
-        "width": 1200,
-        "height": 800,
+        "width": 1512,
+        "height": 857,
         "gridSize": 20,
         "storageUnits": [
           {
-            "id": "unit-1",
+            "id": 1754740187112,
+            "type": "storage",
             "name": "Storage 1",
-            "x": 100,
-            "y": 100,
-            "width": 120,
-            "height": 80,
-            "stackLevel": 0,
-            "color": "bg-blue-100 border-blue-300"
+            "x": 320,
+            "y": 220,
+            "warehouseId": 1,
+            "width": 80,
+            "height": 100,
+            "typeStorage": "warehouse",
+            "textStyling": {
+              "fontSize": 16,
+              "fontFamily": "Arial, sans-serif",
+              "rotation": 0,
+              "textColor": "#000000"
+            }
+          },
+          {
+            "id": 1754740192577,
+            "type": "text",
+            "name": "New Text",
+            "x": 473,
+            "y": 86,
+            "warehouseId": 1,
+            "textStyling": {
+              "fontSize": 16,
+              "fontFamily": "Arial, sans-serif",
+              "rotation": 0,
+              "textColor": "#000000"
+            }
           }
         ]
       },
       "createdAt": "2024-01-01T00:00:00Z",
-      "updatedAt": "2024-01-01T00:00:00Z"
+      "updatedAt": "2025-08-09T11:49:57.969Z"
     },
     {
-      "id": "warehouse-b",
+      "id": 2,
       "name": "Gudang B",
       "description": "Gudang untuk spare parts",
       "layout": {
@@ -42,7 +63,7 @@
       "updatedAt": "2024-01-01T00:00:00Z"
     },
     {
-      "id": "warehouse-c",
+      "id": 3,
       "name": "Gudang C",
       "description": "Cold storage untuk makanan",
       "layout": {
@@ -57,7 +78,7 @@
       "updatedAt": "2024-01-01T00:00:00Z"
     },
     {
-      "id": "warehouse-d",
+      "id": 4,
       "name": "Gudang D",
       "description": "Gudang bahan baku",
       "layout": {
@@ -72,7 +93,7 @@
       "updatedAt": "2024-01-01T00:00:00Z"
     },
     {
-      "id": "warehouse-e",
+      "id": 5,
       "name": "Gudang E",
       "description": "Gudang produk jadi",
       "layout": {
@@ -87,7 +108,7 @@
       "updatedAt": "2024-01-01T00:00:00Z"
     },
     {
-      "id": "warehouse-f",
+      "id": 6,
       "name": "Gudang F",
       "description": "Gudang peralatan",
       "layout": {
@@ -102,7 +123,7 @@
       "updatedAt": "2024-01-01T00:00:00Z"
     },
     {
-      "id": "warehouse-g",
+      "id": 7,
       "name": "Gudang G",
       "description": "Gudang tekstil",
       "layout": {
@@ -117,7 +138,7 @@
       "updatedAt": "2024-01-01T00:00:00Z"
     },
     {
-      "id": "warehouse-h",
+      "id": 8,
       "name": "Gudang H",
       "description": "Gudang farmasi",
       "layout": {

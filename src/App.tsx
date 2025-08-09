@@ -7,7 +7,7 @@ function App() {
   return (
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Routes>
-        <Route path={ROUTES.home} element={<HomePage />} />
+        <Route path={ROUTES.base} element={<HomePage />} />
         <Route 
           path={ROUTES.warehouseDetail(':warehouseId')} 
           element={<WarehouseDetailPage />} 

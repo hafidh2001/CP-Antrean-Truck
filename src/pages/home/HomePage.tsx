@@ -4,11 +4,9 @@ import { Warehouse, Plus, Trash2 } from 'lucide-react';
 import { useMultiWarehouseStore } from '@/store/multiWarehouseStore';
 import { WarehouseDialog } from './_components/WarehouseDialog';
 import { DeleteWarehouseDialog } from './_components/DeleteWarehouseDialog';
-import { Warehouse as WarehouseType } from '@/types/warehouse';
+import { IWarehouse as WarehouseType } from '@/types/home';
 
-export interface HomePageProps {}
-
-export default function HomePage(_props: HomePageProps = {}) {
+export default function HomePage() {
   const navigate = useNavigate();
   const { warehouses, loadWarehouses, addWarehouse, deleteWarehouse } = useMultiWarehouseStore();
   const [dialogOpen, setDialogOpen] = useState(false);

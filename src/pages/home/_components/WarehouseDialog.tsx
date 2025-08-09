@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Warehouse } from 'lucide-react';
 import { useMultiWarehouseStore } from '@/store/multiWarehouseStore';
 
+
 interface WarehouseDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;

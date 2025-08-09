@@ -7,9 +7,7 @@ import { useMultiWarehouseStore } from '@/store/multiWarehouseStore';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 
-export interface WarehouseDetailPageProps {}
-
-export default function WarehouseDetailPage(_props: WarehouseDetailPageProps = {}) {
+export default function WarehouseDetailPage() {
   const { warehouseId } = useParams<{ warehouseId: string }>();
   const navigate = useNavigate();
   const { loadWarehouses, setCurrentWarehouse, currentWarehouse } = useMultiWarehouseStore();
@@ -20,7 +18,7 @@ export default function WarehouseDetailPage(_props: WarehouseDetailPageProps = {
 
   useEffect(() => {
     if (warehouseId) {
-      setCurrentWarehouse(warehouseId);
+      setCurrentWarehouse(parseInt(warehouseId));
     }
   }, [warehouseId, setCurrentWarehouse]);
 

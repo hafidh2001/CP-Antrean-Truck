@@ -1,31 +1,48 @@
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { StorageUnit } from '@/types/warehouse';
-import { Package, Pencil, RotateCw, Palette } from 'lucide-react';
-import { useMultiWarehouseStore } from '@/store/multiWarehouseStore';
+import { IStorageUnit, IFontFamily, ITextStyling } from '@/types/warehouseDetail';
+import { StorageTypeEnum } from '@/types';
+import { Package, RotateCw, Palette, Type } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface StorageUnitDialogProps {
-  unit: StorageUnit | null;
+  unit: IStorageUnit | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onUpdate: (updates: Partial<IStorageUnit>) => void;
+  onDelete: () => void;
 }
 
-export const StorageUnitDialog = ({ unit, open, onOpenChange }: StorageUnitDialogProps) => {
-  const { updateStorageUnit, removeStorageUnit } = useMultiWarehouseStore();
+const fontFamilies: IFontFamily[] = [
+  { value: 'Arial, sans-serif', label: 'Arial' },
+  { value: 'Times New Roman, serif', label: 'Times New Roman' },
+  { value: 'Courier New, monospace', label: 'Courier New' },
+  { value: 'Georgia, serif', label: 'Georgia' },
+  { value: 'Verdana, sans-serif', label: 'Verdana' },
+  { value: 'system-ui', label: 'System UI' },
+];
+
+export const StorageUnitDialog = ({ unit, open, onOpenChange, onUpdate, onDelete }: StorageUnitDialogProps) => {
   const [unitName, setUnitName] = useState(unit?.name || '');
-  const [isEditingName, setIsEditingName] = useState(false);
-  const [rotation, setRotation] = useState(unit?.rotation || 0);
-  const [unitType, setUnitType] = useState(unit?.type || 'warehouse');
+  const [typeStorage, setTypeStorage] = useState(unit?.typeStorage || StorageTypeEnum.WAREHOUSE);
+  const [fontSize, setFontSize] = useState(unit?.textStyling?.fontSize || 16);
+  const [fontFamily, setFontFamily] = useState(unit?.textStyling?.fontFamily || 'Arial, sans-serif');
+  const [rotation, setRotation] = useState(unit?.textStyling?.rotation || 0);
+  const [textColor, setTextColor] = useState(unit?.textStyling?.textColor || '#000000');
 
   // Update local state when unit changes
   useEffect(() => {
     if (unit) {
       setUnitName(unit.name);
-      setRotation(unit.rotation || 0);
-      setUnitType(unit.type || 'warehouse');
+      setTypeStorage(unit.typeStorage || StorageTypeEnum.WAREHOUSE);
+      setFontSize(unit.textStyling?.fontSize || 16);
+      setFontFamily(unit.textStyling?.fontFamily || 'Arial, sans-serif');
+      setRotation(unit.textStyling?.rotation || 0);
+      setTextColor(unit.textStyling?.textColor || '#000000');
     }
   }, [unit]);
 
@@ -34,66 +51,42 @@ export const StorageUnitDialog = ({ unit, open, onOpenChange }: StorageUnitDialo
   const handleRotate = () => {
     const newRotation = (rotation + 90) % 360;
     setRotation(newRotation);
-    updateStorageUnit(unit.id, { rotation: newRotation });
+    onUpdate({ 
+      textStyling: { 
+        ...unit.textStyling, 
+        rotation: newRotation 
+      } 
+    });
   };
 
-  const handleTypeChange = (newType: 'warehouse' | 'rack') => {
-    setUnitType(newType);
-    updateStorageUnit(unit.id, { type: newType });
+  const handleTypeChange = (newType: StorageTypeEnum) => {
+    setTypeStorage(newType);
+    onUpdate({ typeStorage: newType });
   };
 
-  const handleDelete = () => {
-    removeStorageUnit(unit.id);
-    onOpenChange(false);
+  const handleTextStyleUpdate = (field: keyof ITextStyling, value: string | number) => {
+    const updates = {
+      textStyling: {
+        ...unit.textStyling,
+        [field]: value
+      }
+    };
+    onUpdate(updates);
   };
 
-  const handleSaveName = () => {
-    if (unitName.trim() && unitName !== unit.name) {
-      updateStorageUnit(unit.id, { name: unitName.trim() });
-    }
-    setIsEditingName(false);
+  const handleNameChange = (newName: string) => {
+    setUnitName(newName);
+    onUpdate({ name: newName });
   };
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Package className="h-5 w-5" />
-            {isEditingName ? (
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={unitName}
-                  onChange={(e) => setUnitName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleSaveName();
-                    if (e.key === 'Escape') {
-                      setUnitName(unit.name);
-                      setIsEditingName(false);
-                    }
-                  }}
-                  className="px-2 py-1 border rounded text-sm"
-                  autoFocus
-                />
-                <Button size="sm" onClick={handleSaveName}>Save</Button>
-                <Button size="sm" variant="ghost" onClick={() => {
-                  setUnitName(unit.name);
-                  setIsEditingName(false);
-                }}>Cancel</Button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <span>{unit.name}</span>
-                <button
-                  onClick={() => setIsEditingName(true)}
-                  title="Click to edit name"
-                  className="hover:text-primary"
-                >
-                  <Pencil className="h-4 w-4" />
-                </button>
-              </div>
-            )}
+            Edit Properties Storage Unit
           </DialogTitle>
         </DialogHeader>
         
@@ -104,44 +97,149 @@ export const StorageUnitDialog = ({ unit, open, onOpenChange }: StorageUnitDialo
 
           <div className="space-y-4">
             <div>
-              <Label className="text-sm font-medium">Text Rotation</Label>
-              <div className="flex items-center gap-2 mt-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleRotate}
-                  className="flex items-center gap-2"
-                >
-                  <RotateCw className="h-4 w-4" />
-                  {rotation}°
-                </Button>
-                <span className="text-sm text-muted-foreground">Click to rotate text</span>
-              </div>
+              <Label htmlFor="unit-name">Name</Label>
+              <Input
+                id="unit-name"
+                value={unitName}
+                onChange={(e) => handleNameChange(e.target.value)}
+                placeholder="Enter storage unit name"
+                className="mt-1"
+              />
             </div>
 
             <div>
               <Label className="text-sm font-medium">Storage Type</Label>
-              <RadioGroup value={unitType} onValueChange={handleTypeChange} className="mt-2">
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="warehouse" id="warehouse" />
-                  <Label htmlFor="warehouse" className="flex items-center gap-2 cursor-pointer">
-                    <Palette className="h-4 w-4 text-blue-500" />
-                    Warehouse (Blue)
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="rack" id="rack" />
-                  <Label htmlFor="rack" className="flex items-center gap-2 cursor-pointer">
-                    <Palette className="h-4 w-4 text-yellow-500" />
-                    Rack (Yellow)
-                  </Label>
+              <RadioGroup value={typeStorage} onValueChange={handleTypeChange} className="mt-2">
+                <div className="flex gap-6">
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value={StorageTypeEnum.WAREHOUSE} id="warehouse" />
+                    <Label htmlFor="warehouse" className="flex items-center gap-2 cursor-pointer">
+                      <Palette className="h-4 w-4 text-blue-500" />
+                      Warehouse
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value={StorageTypeEnum.RACK} id="rack" />
+                    <Label htmlFor="rack" className="flex items-center gap-2 cursor-pointer">
+                      <Palette className="h-4 w-4 text-yellow-500" />
+                      Rack
+                    </Label>
+                  </div>
                 </div>
               </RadioGroup>
+            </div>
+
+            <div>
+              <Label className="text-sm font-medium mb-2 flex items-center gap-2">
+                <Type className="h-4 w-4" />
+                Text Styling
+              </Label>
+              
+              <div className="space-y-3 mt-2">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="fontSize" className="text-xs">Font Size</Label>
+                    <Input
+                      id="fontSize"
+                      type="number"
+                      value={fontSize}
+                      onChange={(e) => {
+                        const value = Number(e.target.value);
+                        setFontSize(value);
+                        handleTextStyleUpdate('fontSize', value);
+                      }}
+                      min="8"
+                      max="72"
+                      className="mt-1"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="fontFamily" className="text-xs">Font Family</Label>
+                    <Select 
+                      value={fontFamily} 
+                      onValueChange={(value) => {
+                        setFontFamily(value);
+                        handleTextStyleUpdate('fontFamily', value);
+                      }}
+                    >
+                      <SelectTrigger id="fontFamily" className="mt-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {fontFamilies.map((font) => (
+                          <SelectItem key={font.value} value={font.value}>
+                            {font.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-xs">Text Rotation</Label>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleRotate}
+                      className="flex items-center gap-2 mt-1 w-full"
+                    >
+                      <RotateCw className="h-4 w-4" />
+                      {rotation}°
+                    </Button>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="textColor" className="text-xs">Text Color</Label>
+                    <div className="flex gap-2 mt-1">
+                      <Input
+                        id="textColor"
+                        type="color"
+                        value={textColor}
+                        onChange={(e) => {
+                          setTextColor(e.target.value);
+                          handleTextStyleUpdate('textColor', e.target.value);
+                        }}
+                        className="h-9 w-16"
+                      />
+                      <Input
+                        value={textColor}
+                        onChange={(e) => {
+                          setTextColor(e.target.value);
+                          handleTextStyleUpdate('textColor', e.target.value);
+                        }}
+                        placeholder="#000000"
+                        className="flex-1"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-2">
+                  <Label className="text-xs">Preview</Label>
+                  <div className="border rounded p-4 mt-1 flex items-center justify-center min-h-[60px]">
+                    <span
+                      style={{
+                        fontSize: `${fontSize}px`,
+                        fontFamily: fontFamily,
+                        color: textColor,
+                        transform: `rotate(${rotation}deg)`,
+                        transformOrigin: 'center',
+                        display: 'inline-block',
+                      }}
+                    >
+                      {unitName || 'Preview Text'}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
           <div className="flex justify-between pt-4">
-            <Button variant="destructive" onClick={handleDelete}>
+            <Button variant="destructive" onClick={onDelete}>
               Delete Storage Unit
             </Button>
             <Button onClick={() => onOpenChange(false)}>Save</Button>

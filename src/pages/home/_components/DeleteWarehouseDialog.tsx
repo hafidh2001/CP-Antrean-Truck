@@ -1,10 +1,10 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle } from 'lucide-react';
-import { Warehouse } from '@/types/warehouse';
+import { IWarehouse } from '@/types/home';
 
 interface DeleteWarehouseDialogProps {
-  warehouse: Warehouse | null;
+  warehouse: IWarehouse | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;

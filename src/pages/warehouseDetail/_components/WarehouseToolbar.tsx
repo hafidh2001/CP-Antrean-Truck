@@ -20,11 +20,10 @@ export const WarehouseToolbar = () => {
   };
 
   const handleClear = () => {
-    if (confirm('Are you sure you want to clear all storage units and text elements?')) {
+    if (confirm('Are you sure you want to clear all storage units?')) {
       if (currentWarehouse) {
         updateWarehouseLayout(currentWarehouse.id, {
           storageUnits: [],
-          textElements: [],
         });
       }
     }

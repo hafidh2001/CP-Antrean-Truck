@@ -1,20 +1,19 @@
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
-import { TextElement } from '@/types/warehouse';
+import { ITextElement } from '@/types/warehouseDetail';
 import { cn } from '@/lib/utils';
 
 interface DraggableTextElementProps {
-  element: TextElement;
+  element: ITextElement;
   isSelected: boolean;
   onClick: () => void;
-  onDoubleClick?: () => void;
   isDraggable?: boolean;
 }
 
-export const DraggableTextElement = ({ element, isSelected, onClick, onDoubleClick, isDraggable = true }: DraggableTextElementProps) => {
+export const DraggableTextElement = ({ element, isSelected, onClick, isDraggable = true }: DraggableTextElementProps) => {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
-    id: `text-${element.id}`,
-    data: { ...element, elementType: 'text' },
+    id: element.id,
+    data: element,
     disabled: !isDraggable,
   });
 
@@ -22,14 +21,14 @@ export const DraggableTextElement = ({ element, isSelected, onClick, onDoubleCli
     transform: CSS.Translate.toString(transform),
     left: element.x,
     top: element.y,
-    fontSize: `${element.fontSize}px`,
-    fontFamily: element.fontFamily,
-    color: element.color || '#000000',
+    fontSize: `${element.textStyling?.fontSize || 16}px`,
+    fontFamily: element.textStyling?.fontFamily || 'Arial, sans-serif',
+    color: element.textStyling?.textColor || '#000000',
     lineHeight: 1.2,
   };
 
   const textStyle = {
-    transform: `rotate(${element.rotation}deg)`,
+    transform: `rotate(${element.textStyling?.rotation || 0}deg)`,
     transformOrigin: 'center',
     display: 'inline-block',
   };
@@ -39,18 +38,18 @@ export const DraggableTextElement = ({ element, isSelected, onClick, onDoubleCli
       ref={setNodeRef}
       style={style}
       onClick={onClick}
-      onDoubleClick={onDoubleClick}
       className={cn(
         "absolute select-none",
         "cursor-move", // Always show move cursor since dragging is always enabled
         isDragging ? "opacity-50 z-50" : "",
-        "hover:opacity-80 transition-opacity"
+        "hover:opacity-80 transition-opacity",
+        isSelected && "ring-2 ring-primary ring-offset-2"
       )}
       {...listeners}
       {...attributes}
     >
       <span style={textStyle}>
-        {element.text}
+        {element.name}
       </span>
     </div>
   );

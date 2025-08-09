@@ -1,4 +1,4 @@
-import { Suspense, ComponentType, lazy } from 'react';
+import React, { Suspense, ComponentType, lazy } from 'react';
 import { Loader2 } from 'lucide-react';
 
 interface LazyLoadProps {
@@ -13,20 +13,23 @@ const DefaultFallback = () => (
 );
 
 // Higher-order component for lazy loading
-export function lazyLoad<T extends ComponentType<any>>(
-  importFunc: () => Promise<{ default: T }>
-) {
+export function lazyLoad(
+  importFunc: () => Promise<{ default: ComponentType }>
+): React.FC<LazyLoadProps> {
   const LazyComponent = lazy(importFunc);
 
-  return (props: React.ComponentProps<T> & LazyLoadProps) => {
-    const { fallback = <DefaultFallback />, ...componentProps } = props;
-
+  // Return a component that renders the lazy-loaded component
+  const WrappedComponent: React.FC<LazyLoadProps> = ({ fallback = <DefaultFallback /> }) => {
     return (
       <Suspense fallback={fallback}>
-        <LazyComponent {...componentProps as any} />
+        <LazyComponent />
       </Suspense>
     );
   };
+  
+  WrappedComponent.displayName = `LazyLoad(Component)`;
+  
+  return WrappedComponent;
 }
 
 // Simple wrapper component for lazy loaded components

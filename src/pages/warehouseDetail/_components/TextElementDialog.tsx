@@ -1,21 +1,21 @@
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { TextElement } from '@/types/warehouse';
+import { ITextElement, IFontFamily, ITextStyling } from '@/types/warehouseDetail';
 import { Type, RotateCw, Trash2 } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface TextElementDialogProps {
-  element: TextElement | null;
+  element: ITextElement | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onUpdate: (id: string, updates: Partial<TextElement>) => void;
-  onDelete: (id: string) => void;
+  onUpdate: (updates: Partial<ITextElement>) => void;
+  onDelete: () => void;
 }
 
-const fontFamilies = [
+const fontFamilies: IFontFamily[] = [
   { value: 'Arial, sans-serif', label: 'Arial' },
   { value: 'Times New Roman, serif', label: 'Times New Roman' },
   { value: 'Courier New, monospace', label: 'Courier New' },
@@ -25,19 +25,19 @@ const fontFamilies = [
 ];
 
 export const TextElementDialog = ({ element, open, onOpenChange, onUpdate, onDelete }: TextElementDialogProps) => {
-  const [text, setText] = useState(element?.text || '');
-  const [fontSize, setFontSize] = useState(element?.fontSize || 16);
-  const [fontFamily, setFontFamily] = useState(element?.fontFamily || 'Arial, sans-serif');
-  const [rotation, setRotation] = useState(element?.rotation || 0);
-  const [color, setColor] = useState(element?.color || '#000000');
+  const [text, setText] = useState(element?.name || '');
+  const [fontSize, setFontSize] = useState(element?.textStyling?.fontSize || 16);
+  const [fontFamily, setFontFamily] = useState(element?.textStyling?.fontFamily || 'Arial, sans-serif');
+  const [rotation, setRotation] = useState(element?.textStyling?.rotation || 0);
+  const [textColor, setTextColor] = useState(element?.textStyling?.textColor || '#000000');
 
   useEffect(() => {
     if (element) {
-      setText(element.text);
-      setFontSize(element.fontSize);
-      setFontFamily(element.fontFamily);
-      setRotation(element.rotation);
-      setColor(element.color || '#000000');
+      setText(element.name);
+      setFontSize(element.textStyling?.fontSize || 16);
+      setFontFamily(element.textStyling?.fontFamily || 'Arial, sans-serif');
+      setRotation(element.textStyling?.rotation || 0);
+      setTextColor(element.textStyling?.textColor || '#000000');
     }
   }, [element]);
 
@@ -46,32 +46,27 @@ export const TextElementDialog = ({ element, open, onOpenChange, onUpdate, onDel
   const handleRotate = () => {
     const newRotation = (rotation + 90) % 360;
     setRotation(newRotation);
-    onUpdate(element.id, { rotation: newRotation });
+    onUpdate({ 
+      textStyling: { 
+        ...element.textStyling, 
+        rotation: newRotation 
+      } 
+    });
   };
 
   const handleTextChange = (newText: string) => {
     setText(newText);
-    onUpdate(element.id, { text: newText });
+    onUpdate({ name: newText });
   };
 
-  const handleFontSizeChange = (newSize: number) => {
-    setFontSize(newSize);
-    onUpdate(element.id, { fontSize: newSize });
-  };
-
-  const handleFontFamilyChange = (newFamily: string) => {
-    setFontFamily(newFamily);
-    onUpdate(element.id, { fontFamily: newFamily });
-  };
-
-  const handleColorChange = (newColor: string) => {
-    setColor(newColor);
-    onUpdate(element.id, { color: newColor });
-  };
-
-  const handleDelete = () => {
-    onDelete(element.id);
-    onOpenChange(false);
+  const handleTextStyleUpdate = (field: keyof ITextStyling, value: string | number) => {
+    const updates = {
+      textStyling: {
+        ...element.textStyling,
+        [field]: value
+      }
+    };
+    onUpdate(updates);
   };
 
   return (
@@ -80,7 +75,7 @@ export const TextElementDialog = ({ element, open, onOpenChange, onUpdate, onDel
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Type className="h-5 w-5" />
-            Edit Text Element
+            Edit Properties Text
           </DialogTitle>
         </DialogHeader>
         
@@ -108,7 +103,11 @@ export const TextElementDialog = ({ element, open, onOpenChange, onUpdate, onDel
                   id="fontSize"
                   type="number"
                   value={fontSize}
-                  onChange={(e) => handleFontSizeChange(Number(e.target.value))}
+                  onChange={(e) => {
+                    const value = Number(e.target.value);
+                    setFontSize(value);
+                    handleTextStyleUpdate('fontSize', value);
+                  }}
                   min="8"
                   max="72"
                   className="mt-1"
@@ -117,7 +116,13 @@ export const TextElementDialog = ({ element, open, onOpenChange, onUpdate, onDel
 
               <div>
                 <Label htmlFor="fontFamily">Font Family</Label>
-                <Select value={fontFamily} onValueChange={handleFontFamilyChange}>
+                <Select 
+                  value={fontFamily} 
+                  onValueChange={(value) => {
+                    setFontFamily(value);
+                    handleTextStyleUpdate('fontFamily', value);
+                  }}
+                >
                   <SelectTrigger id="fontFamily" className="mt-1">
                     <SelectValue />
                   </SelectTrigger>
@@ -147,18 +152,24 @@ export const TextElementDialog = ({ element, open, onOpenChange, onUpdate, onDel
               </div>
 
               <div>
-                <Label htmlFor="color">Text Color</Label>
+                <Label htmlFor="textColor">Text Color</Label>
                 <div className="flex gap-2 mt-1">
                   <Input
-                    id="color"
+                    id="textColor"
                     type="color"
-                    value={color}
-                    onChange={(e) => handleColorChange(e.target.value)}
+                    value={textColor}
+                    onChange={(e) => {
+                      setTextColor(e.target.value);
+                      handleTextStyleUpdate('textColor', e.target.value);
+                    }}
                     className="h-9 w-16"
                   />
                   <Input
-                    value={color}
-                    onChange={(e) => handleColorChange(e.target.value)}
+                    value={textColor}
+                    onChange={(e) => {
+                      setTextColor(e.target.value);
+                      handleTextStyleUpdate('textColor', e.target.value);
+                    }}
                     placeholder="#000000"
                     className="flex-1"
                   />
@@ -173,7 +184,7 @@ export const TextElementDialog = ({ element, open, onOpenChange, onUpdate, onDel
                   style={{
                     fontSize: `${fontSize}px`,
                     fontFamily: fontFamily,
-                    color: color,
+                    color: textColor,
                     transform: `rotate(${rotation}deg)`,
                     transformOrigin: 'center',
                     display: 'inline-block',
@@ -186,7 +197,7 @@ export const TextElementDialog = ({ element, open, onOpenChange, onUpdate, onDel
           </div>
 
           <div className="flex justify-between pt-4">
-            <Button variant="destructive" onClick={handleDelete}>
+            <Button variant="destructive" onClick={onDelete}>
               <Trash2 className="h-4 w-4 mr-2" />
               Delete Text
             </Button>

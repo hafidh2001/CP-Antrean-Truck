@@ -2,11 +2,7 @@ export class ROUTES {
   static get base() {
     return `/` as const;
   }
-  
-  static get home() {
-    return `/` as const;
-  }
-  
+    
   static get warehouse() {
     return `/warehouse` as const;
   }

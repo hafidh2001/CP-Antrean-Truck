@@ -5,39 +5,32 @@ import { ResizableStorageUnit } from './ResizableStorageUnit';
 import { DraggableTextElement } from './DraggableTextElement';
 import { StorageUnitDialog } from './StorageUnitDialog';
 import { TextElementDialog } from './TextElementDialog';
-import { StorageUnit, TextElement } from '@/types/warehouse';
+import { IStorageUnit, ITextElement, IDrawingRect, TAnyStorageUnit } from '@/types/warehouseDetail';
+import { ElementTypeEnum, StorageTypeEnum } from '@/types';
+import { isStorageUnit, isTextElement } from '@/functions/warehouseHelpers';
 import { cn } from '@/lib/utils';
 
-interface DrawingRect {
-  startX: number;
-  startY: number;
-  endX: number;
-  endY: number;
-}
 
 export const WarehouseFloorPlan = () => {
   const { 
     currentWarehouse, 
-    addStorageUnit, 
-    moveStorageUnit, 
+    addUnit, 
+    moveUnit, 
     selectUnit, 
     selectedUnit, 
     checkOverlap, 
     stackUnits, 
-    removeStorageUnit,
-    selectedTextElement,
-    selectTextElement,
-    moveTextElement,
-    updateTextElement,
-    removeTextElement,
-    addTextElement,
-    toolMode
+    removeUnit,
+    updateUnit,
+    toolMode,
+    getStorageUnits,
+    getTextElements
   } = useMultiWarehouseStore();
   
   const [dialogOpen, setDialogOpen] = useState(false);
   const [textDialogOpen, setTextDialogOpen] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [drawingRect, setDrawingRect] = useState<DrawingRect | null>(null);
+  const [drawingRect, setDrawingRect] = useState<IDrawingRect | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   
   const sensors = useSensors(
@@ -62,37 +55,21 @@ export const WarehouseFloorPlan = () => {
     // When dragging starts, ensure we're in a mode that shows selection
     if (toolMode !== 'select') {
       // Optionally switch to select mode when dragging
-      // This is a UX decision - uncomment if you want auto-switch
-      // useMultiWarehouseStore.getState().setToolMode('select');
     }
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, delta } = event;
-    const activeData = active.data.current as any;
+    const activeData = active.data.current as TAnyStorageUnit | undefined;
     
-    if (activeData?.elementType === 'text') {
-      // Handle text element drag
-      const textElement = layout.textElements?.find((t: TextElement) => t.id === activeData.id);
-      if (textElement) {
-        const newX = snapToGrid(textElement.x + delta.x);
-        const newY = snapToGrid(textElement.y + delta.y);
-        
-        // Keep within bounds
-        const boundedX = Math.max(0, Math.min(newX, layout.width - 100));
-        const boundedY = Math.max(0, Math.min(newY, layout.height - 50));
-        
-        moveTextElement(textElement.id, boundedX, boundedY);
-      }
-    } else {
-      // Handle storage unit drag
-      const unit = layout.storageUnits.find((u: StorageUnit) => u.id === active.id);
+    const unit = layout.storageUnits.find((u) => u.id === active.id || (activeData?.id && u.id === activeData.id));
+    
+    if (unit) {
+      const newX = snapToGrid(unit.x + delta.x);
+      const newY = snapToGrid(unit.y + delta.y);
       
-      if (unit) {
-        const newX = snapToGrid(unit.x + delta.x);
-        const newY = snapToGrid(unit.y + delta.y);
-        
-        // Keep within bounds
+      // Keep within bounds
+      if (isStorageUnit(unit)) {
         const boundedX = Math.max(0, Math.min(newX, layout.width - unit.width));
         const boundedY = Math.max(0, Math.min(newY, layout.height - unit.height));
         
@@ -101,8 +78,13 @@ export const WarehouseFloorPlan = () => {
         if (overlappedUnit && window.confirm(`Stack on top of ${overlappedUnit.name}?`)) {
           stackUnits(unit.id, overlappedUnit.id);
         } else {
-          moveStorageUnit(unit.id, boundedX, boundedY);
+          moveUnit(unit.id, boundedX, boundedY);
         }
+      } else {
+        // Text element
+        const boundedX = Math.max(0, Math.min(newX, layout.width - 100));
+        const boundedY = Math.max(0, Math.min(newY, layout.height - 50));
+        moveUnit(unit.id, boundedX, boundedY);
       }
     }
   };
@@ -116,18 +98,22 @@ export const WarehouseFloorPlan = () => {
     
     if (toolMode === 'text') {
       // Create text immediately on click
-      const newTextElement: TextElement = {
-        id: `text-${Date.now()}`,
-        text: 'New Text',
+      const newTextElement: ITextElement = {
+        id: Date.now(),
+        type: ElementTypeEnum.TEXT,
+        name: 'New Text',
         x: x,
         y: y,
-        fontSize: 16,
-        fontFamily: 'Arial, sans-serif',
-        rotation: 0,
-        color: '#000000',
+        warehouseId: currentWarehouse.id,
+        textStyling: {
+          fontSize: 16,
+          fontFamily: 'Arial, sans-serif',
+          rotation: 0,
+          textColor: '#000000',
+        }
       };
-      addTextElement(newTextElement);
-      selectTextElement(newTextElement);
+      addUnit(newTextElement);
+      selectUnit(newTextElement);
       setTextDialogOpen(true);
     } else if (toolMode === 'rectangle') {
       // Start drawing rectangle
@@ -143,7 +129,6 @@ export const WarehouseFloorPlan = () => {
     } else if (toolMode === 'select') {
       // Clear selection when clicking on empty space
       selectUnit(null);
-      selectTextElement(null);
     }
   };
 
@@ -168,17 +153,25 @@ export const WarehouseFloorPlan = () => {
     const height = Math.abs(drawingRect.endY - drawingRect.startY);
     
     if (width >= layout.gridSize && height >= layout.gridSize) {
-      const newUnit: StorageUnit = {
-        id: Date.now().toString(),
-        name: `Storage ${layout.storageUnits.length + 1}`,
+      const newUnit: IStorageUnit = {
+        id: Date.now(),
+        type: ElementTypeEnum.STORAGE,
+        name: `Storage ${getStorageUnits().length + 1}`,
         x: Math.min(drawingRect.startX, drawingRect.endX),
         y: Math.min(drawingRect.startY, drawingRect.endY),
+        warehouseId: currentWarehouse.id,
         width,
         height,
         stackLevel: 0,
-        color: 'bg-blue-100 border-blue-300',
+        typeStorage: StorageTypeEnum.WAREHOUSE,
+        textStyling: {
+          fontSize: 16,
+          fontFamily: 'Arial, sans-serif',
+          rotation: 0,
+          textColor: '#000000',
+        }
       };
-      addStorageUnit(newUnit);
+      addUnit(newUnit);
       selectUnit(newUnit);
     }
     
@@ -186,24 +179,14 @@ export const WarehouseFloorPlan = () => {
     setDrawingRect(null);
   };
 
-  const handleUnitClick = (unit: StorageUnit) => {
+  const handleUnitClick = (unit: IStorageUnit) => {
     selectUnit(unit);
-    selectTextElement(null);
-    setDialogOpen(true); // Always open dialog on click
+    setDialogOpen(true);
   };
 
-  const handleUnitDoubleClick = (_unit: StorageUnit) => {
-    // Double-click functionality removed for API integration
-  };
-
-  const handleTextClick = (element: TextElement) => {
-    selectTextElement(element);
-    selectUnit(null);
-    setTextDialogOpen(true); // Always open dialog on click
-  };
-
-  const handleTextDoubleClick = (_element: TextElement) => {
-    // Double-click functionality removed for API integration
+  const handleTextClick = (element: ITextElement) => {
+    selectUnit(element);
+    setTextDialogOpen(true);
   };
 
   // Keyboard shortcuts
@@ -224,15 +207,10 @@ export const WarehouseFloorPlan = () => {
       
       // Delete shortcut
       if (e.key === 'Delete') {
-        if (selectedUnit && !dialogOpen) {
+        if (selectedUnit && !dialogOpen && !textDialogOpen) {
           if (window.confirm(`Delete ${selectedUnit.name}?`)) {
-            removeStorageUnit(selectedUnit.id);
+            removeUnit(selectedUnit.id);
             selectUnit(null);
-          }
-        } else if (selectedTextElement && !textDialogOpen) {
-          if (window.confirm(`Delete text element?`)) {
-            removeTextElement(selectedTextElement.id);
-            selectTextElement(null);
           }
         }
       }
@@ -240,7 +218,7 @@ export const WarehouseFloorPlan = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedUnit, selectedTextElement, dialogOpen, textDialogOpen, removeStorageUnit, removeTextElement, selectUnit, selectTextElement]);
+  }, [selectedUnit, dialogOpen, textDialogOpen, removeUnit, selectUnit]);
 
   const getDrawingRectStyle = () => {
     if (!drawingRect) return {};
@@ -281,23 +259,21 @@ export const WarehouseFloorPlan = () => {
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
         >
-          {layout.storageUnits.map((unit: StorageUnit) => (
+          {getStorageUnits().map((unit) => (
             <ResizableStorageUnit
               key={unit.id}
               unit={unit}
               onClick={() => handleUnitClick(unit)}
-              onDoubleClick={() => handleUnitDoubleClick(unit)}
               isDraggable={true}
             />
           ))}
           
-          {layout.textElements?.map((element: TextElement) => (
+          {getTextElements().map((element) => (
             <DraggableTextElement
               key={element.id}
               element={element}
-              isSelected={selectedTextElement?.id === element.id}
+              isSelected={selectedUnit?.id === element.id}
               onClick={() => handleTextClick(element)}
-              onDoubleClick={() => handleTextDoubleClick(element)}
               isDraggable={true}
             />
           ))}
@@ -312,19 +288,36 @@ export const WarehouseFloorPlan = () => {
       </DndContext>
       
       <StorageUnitDialog
-        unit={selectedUnit}
+        unit={selectedUnit && isStorageUnit(selectedUnit) ? selectedUnit : null}
         open={dialogOpen}
         onOpenChange={setDialogOpen}
+        onUpdate={(updates) => {
+          if (selectedUnit) {
+            updateUnit(selectedUnit.id, updates);
+          }
+        }}
+        onDelete={() => {
+          if (selectedUnit) {
+            removeUnit(selectedUnit.id);
+            setDialogOpen(false);
+          }
+        }}
       />
       
       <TextElementDialog
-        element={selectedTextElement}
+        element={selectedUnit && isTextElement(selectedUnit) ? selectedUnit : null}
         open={textDialogOpen}
         onOpenChange={setTextDialogOpen}
-        onUpdate={updateTextElement}
-        onDelete={(id) => {
-          removeTextElement(id);
-          selectTextElement(null);
+        onUpdate={(updates) => {
+          if (selectedUnit) {
+            updateUnit(selectedUnit.id, updates);
+          }
+        }}
+        onDelete={() => {
+          if (selectedUnit) {
+            removeUnit(selectedUnit.id);
+            setTextDialogOpen(false);
+          }
         }}
       />
     </div>
