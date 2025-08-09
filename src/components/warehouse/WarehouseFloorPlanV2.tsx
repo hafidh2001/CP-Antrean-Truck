@@ -198,12 +198,8 @@ export function WarehouseFloorPlanV2() {
     }
   };
 
-  const handleUnitDoubleClick = (unit: StorageUnit) => {
-    // Quick rename on double click
-    const newName = window.prompt('Enter new name for storage unit:', unit.name);
-    if (newName && newName.trim() && newName !== unit.name) {
-      updateStorageUnit(unit.id, { name: newName.trim() });
-    }
+  const handleUnitDoubleClick = (_unit: StorageUnit) => {
+    // Double-click functionality removed for API integration
   };
 
   const handleTextClick = (element: TextElement) => {
@@ -217,12 +213,8 @@ export function WarehouseFloorPlanV2() {
     }
   };
 
-  const handleTextDoubleClick = (element: TextElement) => {
-    // Quick edit on double click
-    const newText = window.prompt('Enter new text:', element.text);
-    if (newText && newText.trim() && newText !== element.text) {
-      updateTextElement(element.id, { text: newText.trim() });
-    }
+  const handleTextDoubleClick = (_element: TextElement) => {
+    // Double-click functionality removed for API integration
   };
 
   // Keyboard shortcuts

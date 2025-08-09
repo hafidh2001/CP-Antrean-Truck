@@ -42,7 +42,6 @@ export function WarehouseHelper() {
             <p><strong>R</strong> - Rectangle tool (draw storage units)</p>
             <p><strong>T</strong> - Text tool (click to add text)</p>
             <p><strong>Click selected element</strong> to edit properties</p>
-            <p><strong>Double-click</strong> to quickly edit names</p>
             <p><strong>Delete key</strong> to remove selected element</p>
           </div>
         </div>

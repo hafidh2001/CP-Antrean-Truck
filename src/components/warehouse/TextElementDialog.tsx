@@ -190,7 +190,7 @@ export function TextElementDialog({ element, open, onOpenChange, onUpdate, onDel
               <Trash2 className="h-4 w-4 mr-2" />
               Delete Text
             </Button>
-            <Button onClick={() => onOpenChange(false)}>Close</Button>
+            <Button onClick={() => onOpenChange(false)}>Save</Button>
           </div>
         </div>
       </DialogContent>

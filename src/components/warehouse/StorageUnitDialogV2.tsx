@@ -144,7 +144,7 @@ export function StorageUnitDialogV2({ unit, open, onOpenChange }: StorageUnitDia
             <Button variant="destructive" onClick={handleDelete}>
               Delete Storage Unit
             </Button>
-            <Button onClick={() => onOpenChange(false)}>Close</Button>
+            <Button onClick={() => onOpenChange(false)}>Save</Button>
           </div>
         </div>
       </DialogContent>
