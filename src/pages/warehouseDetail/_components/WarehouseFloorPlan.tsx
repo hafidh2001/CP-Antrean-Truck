@@ -81,9 +81,9 @@ export const WarehouseFloorPlan = () => {
           moveUnit(unit.id, boundedX, boundedY);
         }
       } else {
-        // Text element
-        const boundedX = Math.max(0, Math.min(newX, layout.width - 100));
-        const boundedY = Math.max(0, Math.min(newY, layout.height - 50));
+        // Text element - allow positioning up to the edge
+        const boundedX = Math.max(0, Math.min(newX, layout.width));
+        const boundedY = Math.max(0, Math.min(newY, layout.height));
         moveUnit(unit.id, boundedX, boundedY);
       }
     }
@@ -202,6 +202,13 @@ export const WarehouseFloorPlan = () => {
           store.setToolMode('rectangle');
         } else if (e.key === 't' || e.key === 'T') {
           store.setToolMode('text');
+        }
+      }
+      
+      // Escape shortcut to deselect
+      if (e.key === 'Escape') {
+        if (selectedUnit && !dialogOpen && !textDialogOpen) {
+          selectUnit(null);
         }
       }
       

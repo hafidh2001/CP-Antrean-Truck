@@ -17,40 +17,50 @@ export const DraggableTextElement = ({ element, isSelected, onClick, isDraggable
     disabled: !isDraggable,
   });
 
+  const rotation = element.textStyling?.rotation || 0;
+  
   const style = {
     transform: CSS.Translate.toString(transform),
     left: element.x,
     top: element.y,
+  };
+
+  const innerStyle = {
+    transform: `rotate(${rotation}deg)`,
+    transformOrigin: 'center',
+    display: 'inline-block',
     fontSize: `${element.textStyling?.fontSize || 16}px`,
     fontFamily: element.textStyling?.fontFamily || 'Arial, sans-serif',
     color: element.textStyling?.textColor || '#000000',
     lineHeight: 1.2,
-  };
-
-  const textStyle = {
-    transform: `rotate(${element.textStyling?.rotation || 0}deg)`,
-    transformOrigin: 'center',
-    display: 'inline-block',
+    whiteSpace: 'nowrap' as const,
   };
 
   return (
     <div
       ref={setNodeRef}
       style={style}
-      onClick={onClick}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
       className={cn(
         "absolute select-none",
         "cursor-move", // Always show move cursor since dragging is always enabled
         isDragging ? "opacity-50 z-50" : "",
-        "hover:opacity-80 transition-opacity",
-        isSelected && "ring-2 ring-primary ring-offset-2"
+        "hover:opacity-80 transition-opacity"
       )}
       {...listeners}
       {...attributes}
     >
-      <span style={textStyle}>
+      <div 
+        style={innerStyle}
+        className={cn(
+          isSelected && "outline outline-2 outline-primary outline-offset-2"
+        )}
+      >
         {element.name}
-      </span>
+      </div>
     </div>
   );
 };

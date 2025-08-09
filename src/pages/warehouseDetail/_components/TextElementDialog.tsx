@@ -193,6 +193,7 @@ export const TextElementDialog = ({ element, open, onOpenChange, onUpdate, onDel
                     transform: `rotate(${rotation}deg)`,
                     transformOrigin: 'center',
                     display: 'inline-block',
+                    whiteSpace: 'nowrap',
                   }}
                 >
                   {text || 'Preview Text'}

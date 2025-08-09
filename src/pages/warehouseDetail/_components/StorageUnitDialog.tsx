@@ -233,6 +233,7 @@ export const StorageUnitDialog = ({ unit, open, onOpenChange, onUpdate, onDelete
                         transform: `rotate(${rotation}deg)`,
                         transformOrigin: 'center',
                         display: 'inline-block',
+                        whiteSpace: 'nowrap',
                       }}
                     >
                       {unitName || 'Preview Text'}
