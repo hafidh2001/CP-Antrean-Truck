@@ -1,16 +1,31 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
-import HomePage from '@/pages/home'
-import WarehousePage from '@/pages/warehouse'
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import HomePage from '@/pages/home';
+import WarehouseDetail from '@/pages/warehouseDetail';
+import { ROUTES } from '@/utils/routes';
 
 function App() {
   return (
-    <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/warehouse/:warehouseId" element={<WarehousePage />} />
+        <Route path={ROUTES.home} element={<HomePage />} />
+        <Route 
+          path={ROUTES.warehouseDetail(':warehouseId')} 
+          element={<WarehouseDetail />} 
+        />
+        <Route 
+          path="*" 
+          element={
+            <div className="flex items-center justify-center min-h-screen">
+              <div className="text-center">
+                <h1 className="text-4xl font-bold text-gray-800 mb-4">404</h1>
+                <p className="text-gray-600">Page not found</p>
+              </div>
+            </div>
+          } 
+        />
       </Routes>
-    </Router>
-  )
+    </BrowserRouter>
+  );
 }
 
-export default App
+export default App;
