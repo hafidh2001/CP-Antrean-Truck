@@ -36,8 +36,8 @@ export const WarehouseViewFloorPlan = ({ viewportWidth, viewportHeight }: Wareho
   };
 
   const getUnitStyle = (unit: IStorageUnit) => {
-    const baseColor = unit.typeStorage === StorageTypeEnum.WAREHOUSE ? 'bg-blue-100' : 'bg-yellow-100';
-    const borderColor = unit.typeStorage === StorageTypeEnum.WAREHOUSE ? 'border-blue-300' : 'border-yellow-300';
+    const baseColor = unit.type_storage === StorageTypeEnum.WAREHOUSE ? 'bg-blue-100' : 'bg-yellow-100';
+    const borderColor = unit.type_storage === StorageTypeEnum.WAREHOUSE ? 'border-blue-300' : 'border-yellow-300';
     
     return cn(
       "absolute border-2 flex items-center justify-center cursor-pointer transition-all hover:opacity-80",
@@ -50,10 +50,10 @@ export const WarehouseViewFloorPlan = ({ viewportWidth, viewportHeight }: Wareho
     return {
       left: element.x * scale,
       top: element.y * scale,
-      fontSize: `${(element.textStyling?.fontSize || 16) * scale}px`,
-      fontFamily: element.textStyling?.fontFamily || 'Arial, sans-serif',
-      color: element.textStyling?.textColor || '#000000',
-      transform: `rotate(${element.textStyling?.rotation || 0}deg)`,
+      fontSize: `${(element.text_styling?.font_size || 16) * scale}px`,
+      fontFamily: element.text_styling?.font_family || 'Arial, sans-serif',
+      color: element.text_styling?.text_color || '#000000',
+      transform: `rotate(${element.text_styling?.rotation || 0}deg)`,
       transformOrigin: 'center',
       whiteSpace: 'nowrap' as const,
     };
@@ -85,14 +85,14 @@ export const WarehouseViewFloorPlan = ({ viewportWidth, viewportHeight }: Wareho
             <span 
               className="text-center px-1 select-none"
               style={{
-                fontSize: `${(unit.textStyling?.fontSize || 14) * scale}px`,
-                fontFamily: unit.textStyling?.fontFamily || 'Arial, sans-serif',
-                color: unit.textStyling?.textColor || '#000000',
-                transform: `rotate(${unit.textStyling?.rotation || 0}deg)`,
+                fontSize: `${(unit.text_styling?.font_size || 14) * scale}px`,
+                fontFamily: unit.text_styling?.font_family || 'Arial, sans-serif',
+                color: unit.text_styling?.text_color || '#000000',
+                transform: `rotate(${unit.text_styling?.rotation || 0}deg)`,
                 display: 'inline-block',
               }}
             >
-              {unit.name}
+              {unit.label}
             </span>
           </div>
         ))}
@@ -104,7 +104,7 @@ export const WarehouseViewFloorPlan = ({ viewportWidth, viewportHeight }: Wareho
             className="absolute select-none"
             style={getTextElementStyle(element)}
           >
-            {element.name}
+            {element.label}
           </div>
         ))}
       </div>

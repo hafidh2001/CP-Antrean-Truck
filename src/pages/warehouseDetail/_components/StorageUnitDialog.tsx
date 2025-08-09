@@ -27,22 +27,22 @@ const fontFamilies: IFontFamily[] = [
 ];
 
 export const StorageUnitDialog = ({ unit, open, onOpenChange, onUpdate, onDelete }: StorageUnitDialogProps) => {
-  const [unitName, setUnitName] = useState(unit?.name || '');
-  const [typeStorage, setTypeStorage] = useState(unit?.typeStorage || StorageTypeEnum.WAREHOUSE);
-  const [fontSize, setFontSize] = useState(unit?.textStyling?.fontSize || 16);
-  const [fontFamily, setFontFamily] = useState(unit?.textStyling?.fontFamily || 'Arial, sans-serif');
-  const [rotation, setRotation] = useState(unit?.textStyling?.rotation || 0);
-  const [textColor, setTextColor] = useState(unit?.textStyling?.textColor || '#000000');
+  const [unitName, setUnitName] = useState(unit?.label || '');
+  const [typeStorage, setTypeStorage] = useState(unit?.type_storage || StorageTypeEnum.WAREHOUSE);
+  const [fontSize, setFontSize] = useState(unit?.text_styling?.font_size || 16);
+  const [fontFamily, setFontFamily] = useState(unit?.text_styling?.font_family || 'Arial, sans-serif');
+  const [rotation, setRotation] = useState(unit?.text_styling?.rotation || 0);
+  const [textColor, setTextColor] = useState(unit?.text_styling?.text_color || '#000000');
 
   // Update local state when unit changes
   useEffect(() => {
     if (unit) {
-      setUnitName(unit.name);
-      setTypeStorage(unit.typeStorage || StorageTypeEnum.WAREHOUSE);
-      setFontSize(unit.textStyling?.fontSize || 16);
-      setFontFamily(unit.textStyling?.fontFamily || 'Arial, sans-serif');
-      setRotation(unit.textStyling?.rotation || 0);
-      setTextColor(unit.textStyling?.textColor || '#000000');
+      setUnitName(unit.label);
+      setTypeStorage(unit.type_storage || StorageTypeEnum.WAREHOUSE);
+      setFontSize(unit.text_styling?.font_size || 16);
+      setFontFamily(unit.text_styling?.font_family || 'Arial, sans-serif');
+      setRotation(unit.text_styling?.rotation || 0);
+      setTextColor(unit.text_styling?.text_color || '#000000');
     }
   }, [unit]);
 
@@ -52,27 +52,27 @@ export const StorageUnitDialog = ({ unit, open, onOpenChange, onUpdate, onDelete
     const newRotation = (rotation + 90) % 360;
     setRotation(newRotation);
     onUpdate({ 
-      textStyling: { 
-        fontSize,
-        fontFamily,
+      text_styling: { 
+        font_size: fontSize,
+        font_family: fontFamily,
         rotation: newRotation,
-        textColor
+        text_color: textColor
       } 
     });
   };
 
   const handleTypeChange = (newType: StorageTypeEnum) => {
     setTypeStorage(newType);
-    onUpdate({ typeStorage: newType });
+    onUpdate({ type_storage: newType });
   };
 
   const handleTextStyleUpdate = (field: keyof ITextStyling, value: string | number) => {
     const updates = {
-      textStyling: {
-        fontSize,
-        fontFamily,
+      text_styling: {
+        font_size: fontSize,
+        font_family: fontFamily,
         rotation,
-        textColor,
+        text_color: textColor,
         [field]: value
       }
     };
@@ -81,7 +81,7 @@ export const StorageUnitDialog = ({ unit, open, onOpenChange, onUpdate, onDelete
 
   const handleNameChange = (newName: string) => {
     setUnitName(newName);
-    onUpdate({ name: newName });
+    onUpdate({ label: newName });
   };
 
 
@@ -151,7 +151,7 @@ export const StorageUnitDialog = ({ unit, open, onOpenChange, onUpdate, onDelete
                       onChange={(e) => {
                         const value = Number(e.target.value);
                         setFontSize(value);
-                        handleTextStyleUpdate('fontSize', value);
+                        handleTextStyleUpdate('font_size', value);
                       }}
                       min="8"
                       max="72"
@@ -165,7 +165,7 @@ export const StorageUnitDialog = ({ unit, open, onOpenChange, onUpdate, onDelete
                       value={fontFamily} 
                       onValueChange={(value) => {
                         setFontFamily(value);
-                        handleTextStyleUpdate('fontFamily', value);
+                        handleTextStyleUpdate('font_family', value);
                       }}
                     >
                       <SelectTrigger id="fontFamily" className="mt-1">
@@ -205,7 +205,7 @@ export const StorageUnitDialog = ({ unit, open, onOpenChange, onUpdate, onDelete
                         value={textColor}
                         onChange={(e) => {
                           setTextColor(e.target.value);
-                          handleTextStyleUpdate('textColor', e.target.value);
+                          handleTextStyleUpdate('text_color', e.target.value);
                         }}
                         className="h-9 w-16"
                       />
@@ -213,7 +213,7 @@ export const StorageUnitDialog = ({ unit, open, onOpenChange, onUpdate, onDelete
                         value={textColor}
                         onChange={(e) => {
                           setTextColor(e.target.value);
-                          handleTextStyleUpdate('textColor', e.target.value);
+                          handleTextStyleUpdate('text_color', e.target.value);
                         }}
                         placeholder="#000000"
                         className="flex-1"

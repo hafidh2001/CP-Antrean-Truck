@@ -177,7 +177,7 @@ export const ResizableStorageUnit = ({
     cursor: getCursor(hoveredDirection),
   };
 
-  const unitColor = unit.typeStorage === StorageTypeEnum.RACK ? 'bg-yellow-100 border-yellow-500' : 'bg-blue-100 border-blue-500';
+  const unitColor = unit.type_storage === StorageTypeEnum.RACK ? 'bg-yellow-100 border-yellow-500' : 'bg-blue-100 border-blue-500';
 
   return (
     <div
@@ -204,13 +204,13 @@ export const ResizableStorageUnit = ({
       <span 
         className="text-xs font-medium text-center px-1 pointer-events-none"
         style={{
-          transform: unit.textStyling?.rotation ? `rotate(${unit.textStyling.rotation}deg)` : undefined,
-          fontSize: unit.textStyling?.fontSize ? `${unit.textStyling.fontSize}px` : undefined,
-          fontFamily: unit.textStyling?.fontFamily,
-          color: unit.textStyling?.textColor,
+          transform: unit.text_styling?.rotation ? `rotate(${unit.text_styling.rotation}deg)` : undefined,
+          fontSize: unit.text_styling?.font_size ? `${unit.text_styling.font_size}px` : undefined,
+          fontFamily: unit.text_styling?.font_family,
+          color: unit.text_styling?.text_color,
         }}
       >
-        {unit.name}
+        {unit.label}
       </span>
 
       {/* Visual indicators for resize areas - half grid size (10px) */}

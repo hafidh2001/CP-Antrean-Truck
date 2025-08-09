@@ -39,32 +39,32 @@ interface MultiWarehouseStore {
 const migrateOldData = (data: any[]): IWarehouse[] => {
   return data.map((warehouse: any) => {
     const warehouseId = typeof warehouse.id === 'string' ? parseInt(warehouse.id) || 1 : warehouse.id;
-    let storageUnits: TAnyStorageUnit[] = [];
+    let storage_units: TAnyStorageUnit[] = [];
 
     // Handle old structure with layout
     if (warehouse.layout) {
       // Migrate old storageUnits from layout
-      if (warehouse.layout.storageUnits) {
-        warehouse.layout.storageUnits.forEach((unit: any) => {
+      if (warehouse.layout.storage_units) {
+        warehouse.layout.storage_units.forEach((unit: any) => {
           if ('type' in unit && unit.type === ElementTypeEnum.STORAGE) {
-            storageUnits.push(unit as TAnyStorageUnit);
+            storage_units.push(unit as TAnyStorageUnit);
           } else {
             // Legacy storage unit
-            storageUnits.push({
+            storage_units.push({
               id: typeof unit.id === 'string' ? parseInt(unit.id) || Date.now() : unit.id,
               type: ElementTypeEnum.STORAGE,
-              name: unit.name,
+              label: unit.name,
               x: unit.x,
               y: unit.y,
-              warehouseId: warehouseId,
+              warehouse_id: warehouseId,
               width: unit.width,
               height: unit.height,
-              typeStorage: unit.type === 'rack' ? StorageTypeEnum.RACK : StorageTypeEnum.WAREHOUSE,
-              textStyling: {
-                fontSize: 16,
-                fontFamily: 'Arial, sans-serif',
+              type_storage: unit.type === 'rack' ? StorageTypeEnum.RACK : StorageTypeEnum.WAREHOUSE,
+              text_styling: {
+                font_size: 16,
+                font_family: 'Arial, sans-serif',
                 rotation: unit.rotation || 0,
-                textColor: '#000000'
+                text_color: '#000000'
               }
             } as IStorageUnit);
           }
@@ -72,36 +72,36 @@ const migrateOldData = (data: any[]): IWarehouse[] => {
       }
       
       // Migrate old textElements from layout
-      if (warehouse.layout.textElements) {
-        warehouse.layout.textElements.forEach((element: any) => {
-          storageUnits.push({
+      if (warehouse.layout.text_elements) {
+        warehouse.layout.text_elements.forEach((element: any) => {
+          storage_units.push({
             id: typeof element.id === 'string' ? parseInt(element.id) || Date.now() : element.id,
             type: ElementTypeEnum.TEXT,
-            name: element.text || 'Text',
+            label: element.text || 'Text',
             x: element.x,
             y: element.y,
-            warehouseId: warehouseId,
-            textStyling: {
-              fontSize: element.fontSize || 16,
-              fontFamily: element.fontFamily || 'Arial, sans-serif',
+            warehouse_id: warehouseId,
+            text_styling: {
+              font_size: element.font_size || 16,
+              font_family: element.font_family || 'Arial, sans-serif',
               rotation: element.rotation || 0,
-              textColor: element.color || '#000000'
+              text_color: element.color || '#000000'
             }
           } as ITextElement);
         });
       }
-    } else if (warehouse.storageUnits) {
+    } else if (warehouse.storage_units) {
       // Already in new format
-      storageUnits = warehouse.storageUnits;
+      storage_units = warehouse.storage_units;
     }
     
     return {
       id: warehouseId,
       name: warehouse.name,
       description: warehouse.description,
-      storageUnits: storageUnits,
-      createdAt: warehouse.createdAt,
-      updatedAt: warehouse.updatedAt
+      storage_units: storage_units,
+      created_at: warehouse.created_at || warehouse.createdAt,
+      updated_at: warehouse.updated_at || warehouse.updatedAt
     } as IWarehouse;
   });
 };
@@ -136,9 +136,9 @@ export const useMultiWarehouseStore = create<MultiWarehouseStore>((set, get) => 
       id: maxId + 1,
       name,
       description,
-      storageUnits: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      storage_units: [],
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     };
 
     set((state) => {
@@ -176,7 +176,7 @@ export const useMultiWarehouseStore = create<MultiWarehouseStore>((set, get) => 
     set((state) => {
       const warehouses = state.warehouses.map(w => 
         w.id === warehouseId 
-          ? { ...w, ...updates, updatedAt: new Date().toISOString() }
+          ? { ...w, ...updates, updated_at: new Date().toISOString() }
           : w
       );
       
@@ -206,26 +206,26 @@ export const useMultiWarehouseStore = create<MultiWarehouseStore>((set, get) => 
     const currentWarehouse = get().currentWarehouse;
     if (!currentWarehouse) return;
     
-    const updatedUnits = [...currentWarehouse.storageUnits, unit];
-    get().updateWarehouse(currentWarehouse.id, { storageUnits: updatedUnits });
+    const updatedUnits = [...currentWarehouse.storage_units, unit];
+    get().updateWarehouse(currentWarehouse.id, { storage_units: updatedUnits });
   },
 
   updateUnit: (id, updates) => {
     const currentWarehouse = get().currentWarehouse;
     if (!currentWarehouse) return;
     
-    const updatedUnits = currentWarehouse.storageUnits.map(unit => 
+    const updatedUnits = currentWarehouse.storage_units.map(unit => 
       unit.id === id ? { ...unit, ...updates } as TAnyStorageUnit : unit
     );
-    get().updateWarehouse(currentWarehouse.id, { storageUnits: updatedUnits });
+    get().updateWarehouse(currentWarehouse.id, { storage_units: updatedUnits });
   },
 
   removeUnit: (id) => {
     const currentWarehouse = get().currentWarehouse;
     if (!currentWarehouse) return;
     
-    const updatedUnits = currentWarehouse.storageUnits.filter(unit => unit.id !== id);
-    get().updateWarehouse(currentWarehouse.id, { storageUnits: updatedUnits });
+    const updatedUnits = currentWarehouse.storage_units.filter(unit => unit.id !== id);
+    get().updateWarehouse(currentWarehouse.id, { storage_units: updatedUnits });
     set({ selectedUnit: null });
   },
 
@@ -239,13 +239,13 @@ export const useMultiWarehouseStore = create<MultiWarehouseStore>((set, get) => 
   getStorageUnits: () => {
     const { currentWarehouse } = get();
     if (!currentWarehouse) return [];
-    return currentWarehouse.storageUnits.filter(isStorageUnit);
+    return currentWarehouse.storage_units.filter(isStorageUnit);
   },
 
   getTextElements: () => {
     const { currentWarehouse } = get();
     if (!currentWarehouse) return [];
-    return currentWarehouse.storageUnits.filter(isTextElement);
+    return currentWarehouse.storage_units.filter(isTextElement);
   },
 
   checkOverlap: (unit, newX, newY) => {

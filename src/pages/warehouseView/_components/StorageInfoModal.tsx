@@ -24,7 +24,7 @@ export const StorageInfoModal = ({ unit, open, onOpenChange }: StorageInfoModalP
         
         <div className="space-y-4">
           <div className="bg-muted/50 rounded-lg p-4">
-            <h3 className="font-semibold text-lg mb-2">{unit.name}</h3>
+            <h3 className="font-semibold text-lg mb-2">{unit.label}</h3>
             
             <div className="space-y-2 text-sm">
               <div className="flex items-center gap-2">
@@ -42,13 +42,13 @@ export const StorageInfoModal = ({ unit, open, onOpenChange }: StorageInfoModalP
               <div className="flex items-center gap-2">
                 <Palette className={cn(
                   "h-4 w-4",
-                  unit.typeStorage === StorageTypeEnum.WAREHOUSE 
+                  unit.type_storage === StorageTypeEnum.WAREHOUSE 
                     ? "text-blue-500" 
                     : "text-yellow-500"
                 )} />
                 <span className="text-muted-foreground">Type:</span>
                 <span className="font-medium">
-                  {unit.typeStorage === StorageTypeEnum.WAREHOUSE ? 'Warehouse' : 'Rack'}
+                  {unit.type_storage === StorageTypeEnum.WAREHOUSE ? 'Warehouse' : 'Rack'}
                 </span>
               </div>
               

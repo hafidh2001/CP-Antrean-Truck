@@ -2,152 +2,152 @@
   "id": 1,
   "name": "Gudang Utama",
   "description": "Gudang utama perusahaan",
-  "storageUnits": [
+  "storage_units": [
     {
       "id": 1754769977018,
       "type": "storage",
-      "name": "Storage 1",
+      "label": "Storage 1",
       "x": 20,
       "y": 20,
-      "warehouseId": 1,
+      "warehouse_id": 1,
       "width": 200,
       "height": 120,
-      "typeStorage": "warehouse",
-      "textStyling": {
-        "fontSize": 16,
-        "fontFamily": "Arial, sans-serif",
+      "type_storage": "warehouse",
+      "text_styling": {
+        "font_size": 16,
+        "font_family": "Arial, sans-serif",
         "rotation": 0,
-        "textColor": "#000000"
+        "text_color": "#000000"
       }
     },
     {
       "id": 1754769977685,
       "type": "storage",
-      "name": "Storage 2",
+      "label": "Storage 2",
       "x": 660,
       "y": 320,
-      "warehouseId": 1,
+      "warehouse_id": 1,
       "width": 240,
       "height": 100,
-      "typeStorage": "rack",
-      "textStyling": {
-        "fontSize": 16,
-        "fontFamily": "Arial, sans-serif",
+      "type_storage": "rack",
+      "text_styling": {
+        "font_size": 16,
+        "font_family": "Arial, sans-serif",
         "rotation": 0,
-        "textColor": "#000000"
+        "text_color": "#000000"
       }
     },
     {
       "id": 1754769978344,
       "type": "storage",
-      "name": "Storage 3",
+      "label": "Storage 3",
       "x": 20,
       "y": 660,
-      "warehouseId": 1,
+      "warehouse_id": 1,
       "width": 260,
       "height": 180,
-      "typeStorage": "warehouse",
-      "textStyling": {
-        "fontSize": 16,
-        "fontFamily": "Arial, sans-serif",
+      "type_storage": "warehouse",
+      "text_styling": {
+        "font_size": 16,
+        "font_family": "Arial, sans-serif",
         "rotation": 0,
-        "textColor": "#000000"
+        "text_color": "#000000"
       }
     },
     {
       "id": 1754769979072,
       "type": "storage",
-      "name": "Storage 4",
+      "label": "Storage 4",
       "x": 1300,
       "y": 20,
-      "warehouseId": 1,
+      "warehouse_id": 1,
       "width": 160,
       "height": 140,
-      "typeStorage": "warehouse",
-      "textStyling": {
-        "fontSize": 16,
-        "fontFamily": "Arial, sans-serif",
+      "type_storage": "warehouse",
+      "text_styling": {
+        "font_size": 16,
+        "font_family": "Arial, sans-serif",
         "rotation": 0,
-        "textColor": "#000000"
+        "text_color": "#000000"
       }
     },
     {
       "id": 1754769979801,
       "type": "storage",
-      "name": "Storage 5",
+      "label": "Storage 5",
       "x": 1320,
       "y": 700,
-      "warehouseId": 1,
+      "warehouse_id": 1,
       "width": 140,
       "height": 140,
-      "typeStorage": "warehouse",
-      "textStyling": {
-        "fontSize": 16,
-        "fontFamily": "Arial, sans-serif",
+      "type_storage": "warehouse",
+      "text_styling": {
+        "font_size": 16,
+        "font_family": "Arial, sans-serif",
         "rotation": 0,
-        "textColor": "#000000"
+        "text_color": "#000000"
       }
     },
     {
       "id": 1754769980954,
       "type": "storage",
-      "name": "Storage 6",
+      "label": "Storage 6",
       "x": 720,
       "y": 720,
-      "warehouseId": 1,
+      "warehouse_id": 1,
       "width": 160,
       "height": 120,
-      "typeStorage": "rack",
-      "textStyling": {
-        "fontSize": 16,
-        "fontFamily": "Arial, sans-serif",
+      "type_storage": "rack",
+      "text_styling": {
+        "font_size": 16,
+        "font_family": "Arial, sans-serif",
         "rotation": 0,
-        "textColor": "#000000"
+        "text_color": "#000000"
       }
     },
     {
       "id": 1754769982720,
       "type": "text",
-      "name": "New Text",
+      "label": "New Text",
       "x": 740,
       "y": 20,
-      "warehouseId": 1,
-      "textStyling": {
-        "fontSize": 16,
-        "fontFamily": "Arial, sans-serif",
+      "warehouse_id": 1,
+      "text_styling": {
+        "font_size": 16,
+        "font_family": "Arial, sans-serif",
         "rotation": 0,
-        "textColor": "#000000"
+        "text_color": "#000000"
       }
     },
     {
       "id": 1754769984439,
       "type": "text",
-      "name": "New Text",
+      "label": "New Text",
       "x": 0,
       "y": 400,
-      "warehouseId": 1,
-      "textStyling": {
-        "fontSize": 16,
-        "fontFamily": "Arial, sans-serif",
+      "warehouse_id": 1,
+      "text_styling": {
+        "font_size": 16,
+        "font_family": "Arial, sans-serif",
         "rotation": 270,
-        "textColor": "#000000"
+        "text_color": "#000000"
       }
     },
     {
       "id": 1754769985564,
       "type": "text",
-      "name": "New Text",
+      "label": "New Text",
       "x": 1420,
       "y": 380,
-      "warehouseId": 1,
-      "textStyling": {
-        "fontSize": 16,
-        "fontFamily": "Arial, sans-serif",
+      "warehouse_id": 1,
+      "text_styling": {
+        "font_size": 16,
+        "font_family": "Arial, sans-serif",
         "rotation": 90,
-        "textColor": "#000000"
+        "text_color": "#000000"
       }
     }
   ],
-  "createdAt": "2025-08-09T20:06:09.057Z",
-  "updatedAt": "2025-08-09T21:23:21.360Z"
+  "created_at": "2025-08-09T20:06:09.057Z",
+  "updated_at": "2025-08-09T21:23:21.360Z"
 }

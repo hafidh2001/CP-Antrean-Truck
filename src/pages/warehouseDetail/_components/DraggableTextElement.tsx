@@ -17,7 +17,7 @@ export const DraggableTextElement = ({ element, isSelected, onClick, isDraggable
     disabled: !isDraggable,
   });
 
-  const rotation = element.textStyling?.rotation || 0;
+  const rotation = element.text_styling?.rotation || 0;
   
   const style = {
     transform: CSS.Translate.toString(transform),
@@ -29,9 +29,9 @@ export const DraggableTextElement = ({ element, isSelected, onClick, isDraggable
     transform: `rotate(${rotation}deg)`,
     transformOrigin: 'center',
     display: 'inline-block',
-    fontSize: `${element.textStyling?.fontSize || 16}px`,
-    fontFamily: element.textStyling?.fontFamily || 'Arial, sans-serif',
-    color: element.textStyling?.textColor || '#000000',
+    fontSize: `${element.text_styling?.font_size || 16}px`,
+    fontFamily: element.text_styling?.font_family || 'Arial, sans-serif',
+    color: element.text_styling?.text_color || '#000000',
     lineHeight: 1.2,
     whiteSpace: 'nowrap' as const,
   };
@@ -59,7 +59,7 @@ export const DraggableTextElement = ({ element, isSelected, onClick, isDraggable
           isSelected && "outline outline-2 outline-primary outline-offset-2"
         )}
       >
-        {element.name}
+        {element.label}
       </div>
     </div>
   );

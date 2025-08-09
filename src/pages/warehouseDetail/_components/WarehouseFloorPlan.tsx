@@ -78,7 +78,7 @@ export const WarehouseFloorPlan = () => {
         moveUnit(unit.id, boundedX, boundedY);
       } else {
         // Text element - consider approximate text height (fontSize + padding)
-        const textHeight = ((unit as ITextElement).textStyling?.fontSize || 16) + 10;
+        const textHeight = ((unit as ITextElement).text_styling?.font_size || 16) + 10;
         const boundedX = Math.max(0, Math.min(newX, WAREHOUSE_CONSTANTS.WIDTH - 50)); // 50px buffer for text width
         const boundedY = Math.max(0, Math.min(newY, WAREHOUSE_CONSTANTS.HEIGHT - textHeight));
         moveUnit(unit.id, boundedX, boundedY);
@@ -103,15 +103,15 @@ export const WarehouseFloorPlan = () => {
       const newTextElement: ITextElement = {
         id: Date.now(),
         type: ElementTypeEnum.TEXT,
-        name: 'New Text',
+        label: 'New Text',
         x: maxX,
         y: maxY,
-        warehouseId: currentWarehouse.id,
-        textStyling: {
-          fontSize: fontSize,
-          fontFamily: 'Arial, sans-serif',
+        warehouse_id: currentWarehouse.id,
+        text_styling: {
+          font_size: fontSize,
+          font_family: 'Arial, sans-serif',
           rotation: 0,
-          textColor: '#000000',
+          text_color: '#000000',
         }
       };
       addUnit(newTextElement);
@@ -162,18 +162,18 @@ export const WarehouseFloorPlan = () => {
       const newUnit: IStorageUnit = {
         id: Date.now(),
         type: ElementTypeEnum.STORAGE,
-        name: `Storage ${getStorageUnits().length + 1}`,
+        label: `Storage ${getStorageUnits().length + 1}`,
         x: Math.min(drawingRect.startX, drawingRect.endX),
         y: Math.min(drawingRect.startY, drawingRect.endY),
-        warehouseId: currentWarehouse.id,
+        warehouse_id: currentWarehouse.id,
         width,
         height,
-        typeStorage: StorageTypeEnum.WAREHOUSE,
-        textStyling: {
-          fontSize: 16,
-          fontFamily: 'Arial, sans-serif',
+        type_storage: StorageTypeEnum.WAREHOUSE,
+        text_styling: {
+          font_size: 16,
+          font_family: 'Arial, sans-serif',
           rotation: 0,
-          textColor: '#000000',
+          text_color: '#000000',
         }
       };
       addUnit(newUnit);
@@ -338,7 +338,7 @@ export const WarehouseFloorPlan = () => {
         isShown={isShownDelete}
         toggle={toggleDelete}
         title="Delete Element"
-        description={pendingDelete ? `Are you sure you want to delete "${pendingDelete.name}"? This action cannot be undone.` : ''}
+        description={pendingDelete ? `Are you sure you want to delete "${pendingDelete.label}"? This action cannot be undone.` : ''}
         onConfirm={() => {
           if (pendingDelete) {
             removeUnit(pendingDelete.id);

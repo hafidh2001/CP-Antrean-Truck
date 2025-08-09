@@ -2,21 +2,21 @@ import { ElementTypeEnum, StorageTypeEnum } from '../index';
 
 // Text styling interface
 export interface ITextStyling {
-  fontSize: number;
-  fontFamily: string;
+  font_size: number;
+  font_family: string;
   rotation: number;
-  textColor: string;
+  text_color: string;
 }
 
 // Base storage unit interface (for both storage units and text elements)
 export interface IBaseStorageUnit {
   id: number;
   type: ElementTypeEnum;
-  name: string;
+  label: string;
   x: number;
   y: number;
-  warehouseId: number;
-  textStyling: ITextStyling;
+  warehouse_id: number;
+  text_styling: ITextStyling;
 }
 
 // Storage unit specific interface
@@ -24,7 +24,7 @@ export interface IStorageUnit extends IBaseStorageUnit {
   type: ElementTypeEnum.STORAGE;
   width: number;
   height: number;
-  typeStorage: StorageTypeEnum;
+  type_storage: StorageTypeEnum;
 }
 
 // Text element specific interface
@@ -40,9 +40,9 @@ export interface IWarehouse {
   id: number;
   name: string;
   description?: string;
-  storageUnits: TAnyStorageUnit[];
-  createdAt: string;
-  updatedAt: string;
+  storage_units: TAnyStorageUnit[];
+  created_at: string;
+  updated_at: string;
 }
 
 // Drawing rect interface for floor plan

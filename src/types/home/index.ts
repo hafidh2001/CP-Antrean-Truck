@@ -3,7 +3,7 @@ export interface IWarehouse {
   id: number;
   name: string;
   description?: string;
-  storageUnits: Array<unknown>; // Simplified for home module
-  createdAt: string;
-  updatedAt: string;
+  storage_units: Array<unknown>; // Simplified for home module
+  created_at: string;
+  updated_at: string;
 }

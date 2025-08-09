@@ -31,7 +31,7 @@ export const DraggableStorageUnit = ({ unit, onClick, onDoubleClick, isDraggable
   };
 
   // Determine background color based on typeStorage
-  const backgroundColor = unit.typeStorage === StorageTypeEnum.RACK ? 'bg-yellow-100 border-yellow-300' : 
+  const backgroundColor = unit.type_storage === StorageTypeEnum.RACK ? 'bg-yellow-100 border-yellow-300' : 
                          'bg-blue-100 border-blue-300';
 
   return (
@@ -54,14 +54,14 @@ export const DraggableStorageUnit = ({ unit, onClick, onDoubleClick, isDraggable
       <span 
         className="text-sm font-medium text-center px-2 py-1 select-none"
         style={{
-          transform: unit.textStyling?.rotation ? `rotate(${unit.textStyling.rotation}deg)` : undefined,
+          transform: unit.text_styling?.rotation ? `rotate(${unit.text_styling.rotation}deg)` : undefined,
           transformOrigin: 'center',
-          fontSize: unit.textStyling?.fontSize ? `${unit.textStyling.fontSize}px` : undefined,
-          fontFamily: unit.textStyling?.fontFamily,
-          color: unit.textStyling?.textColor,
+          fontSize: unit.text_styling?.font_size ? `${unit.text_styling.font_size}px` : undefined,
+          fontFamily: unit.text_styling?.font_family,
+          color: unit.text_styling?.text_color,
         }}
       >
-        {unit.name}
+        {unit.label}
       </span>
     </div>
   );
