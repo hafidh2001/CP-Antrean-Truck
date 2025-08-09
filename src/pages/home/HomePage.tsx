@@ -6,7 +6,9 @@ import { NewWarehouseDialog } from '@/components/warehouse/NewWarehouseDialog';
 import { DeleteWarehouseDialog } from '@/components/warehouse/DeleteWarehouseDialog';
 import { Warehouse as WarehouseType } from '@/types/warehouse';
 
-export function HomePage() {
+export interface HomePageProps {}
+
+export default function HomePage(_props: HomePageProps = {}) {
   const navigate = useNavigate();
   const { warehouses, loadWarehouses, addWarehouse, deleteWarehouse } = useMultiWarehouseStore();
   const [dialogOpen, setDialogOpen] = useState(false);

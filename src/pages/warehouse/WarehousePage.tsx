@@ -7,7 +7,9 @@ import { useMultiWarehouseStore } from '@/store/multiWarehouseStore';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 
-export function WarehousePage() {
+export interface WarehousePageProps {}
+
+export default function WarehousePage(_props: WarehousePageProps = {}) {
   const { warehouseId } = useParams<{ warehouseId: string }>();
   const navigate = useNavigate();
   const { loadWarehouses, setCurrentWarehouse, currentWarehouse } = useMultiWarehouseStore();
