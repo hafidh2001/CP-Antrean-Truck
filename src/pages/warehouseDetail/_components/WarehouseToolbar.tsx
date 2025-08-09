@@ -26,7 +26,7 @@ export const WarehouseToolbar = () => {
   const handleClearConfirm = () => {
     if (currentWarehouse) {
       updateWarehouse(currentWarehouse.id, {
-        storageUnits: [],
+        storage_units: [],
       });
     }
   };

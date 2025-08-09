@@ -19,7 +19,7 @@ export const DeleteWarehouseDialog = ({
   
   if (!warehouse) return null;
 
-  const hasStorageUnits = warehouse.storageUnits.length > 0;
+  const hasStorageUnits = warehouse.storage_units.length > 0;
 
   const handleConfirm = () => {
     onConfirm();
@@ -44,7 +44,7 @@ export const DeleteWarehouseDialog = ({
           {hasStorageUnits && (
             <div className="bg-amber-50 border border-amber-200 rounded-md p-3">
               <p className="text-sm text-amber-800">
-                <strong>Perhatian:</strong> Gudang ini memiliki {warehouse.storageUnits.length} storage unit
+                <strong>Perhatian:</strong> Gudang ini memiliki {warehouse.storage_units.length} storage unit
                 yang akan ikut terhapus.
               </p>
             </div>

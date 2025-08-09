@@ -63,7 +63,7 @@ export const WarehouseFloorPlan = () => {
     const { active, delta } = event;
     const activeData = active.data.current as TAnyStorageUnit | undefined;
     
-    const unit = currentWarehouse.storageUnits.find((u) => u.id === active.id || (activeData?.id && u.id === activeData.id));
+    const unit = currentWarehouse.storage_units.find((u: TAnyStorageUnit) => u.id === active.id || (activeData?.id && u.id === activeData.id));
     
     if (unit) {
       const newX = snapToGrid(unit.x + delta.x);
