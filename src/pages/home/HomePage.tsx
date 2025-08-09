@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Warehouse, Plus, Trash2 } from 'lucide-react';
+import { Warehouse, Plus, Trash2, Monitor, Tablet } from 'lucide-react';
 import { useMultiWarehouseStore } from '@/store/multiWarehouseStore';
 import { WarehouseDialog } from './_components/WarehouseDialog';
 import { DeleteWarehouseDialog } from './_components/DeleteWarehouseDialog';
@@ -83,13 +83,37 @@ export default function HomePage() {
                     </p>
                   </div>
                 </Link>
-                <button
-                  onClick={(e) => handleDeleteClick(e, warehouse)}
-                  className="absolute top-2 right-2 p-2 bg-background border rounded-md opacity-0 group-hover:opacity-100 transition-all shadow-sm hover:bg-destructive hover:text-destructive-foreground hover:border-destructive"
-                  title="Hapus gudang"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      navigate(`/warehouse/${warehouse.id}/view?mode=desktop`);
+                    }}
+                    className="p-2 bg-background border rounded-md shadow-sm hover:bg-accent hover:border-primary"
+                    title="View Desktop"
+                  >
+                    <Monitor className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      navigate(`/warehouse/${warehouse.id}/view?mode=tablet`);
+                    }}
+                    className="p-2 bg-background border rounded-md shadow-sm hover:bg-accent hover:border-primary"
+                    title="View Tablet"
+                  >
+                    <Tablet className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={(e) => handleDeleteClick(e, warehouse)}
+                    className="p-2 bg-background border rounded-md shadow-sm hover:bg-destructive hover:text-destructive-foreground hover:border-destructive"
+                    title="Hapus gudang"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
             ))}
             

@@ -1,6 +1,7 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import HomePage from '@/pages/home';
 import WarehouseDetailPage from '@/pages/warehouseDetail';
+import WarehouseViewPage from '@/pages/warehouseView';
 import { ROUTES } from '@/utils/routes';
 
 function App() {
@@ -11,6 +12,10 @@ function App() {
         <Route 
           path={ROUTES.warehouseDetail(':warehouseId')} 
           element={<WarehouseDetailPage />} 
+        />
+        <Route 
+          path="/warehouse/:id/view" 
+          element={<WarehouseViewPage />} 
         />
         <Route 
           path="*" 
