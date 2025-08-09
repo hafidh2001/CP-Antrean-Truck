@@ -1,0 +1,71 @@
+<?php
+
+class IWithdraw extends ActiveRecord
+{
+
+	public function tableName()
+	{
+		return 'i_withdraw';
+	}
+
+	public function rules()
+	{
+		return array(
+			array('client_code, withdraw_date, amount, sync_date, status, created_by_name, withdraw_no', 'required'),
+			array('client_code, status, updated_by, created_by_name, withdraw_no', 'length', 'max'=>256),
+		);
+	}
+
+	public function relations()
+	{
+		return array(
+			'iWithdrawLines' => array(self::HAS_MANY, 'IWithdrawLine', 'id_withdraw'),
+		);
+	}
+
+	public function attributeLabels()
+	{
+		return array(
+			'id' => 'ID',
+			'client_code' => 'Client Code',
+			'withdraw_date' => 'Withdraw Date',
+			'amount' => 'Amount',
+			'sync_date' => 'Sync Date',
+			'status' => 'Status',
+			'image_url' => 'Image Url',
+			'updated_by' => 'Updated By',
+			'updated_date' => 'Updated Date',
+			'created_by_name' => 'Created By Name',
+			'withdraw_no' => 'Withdraw No',
+			'remarks' => 'Remarks',
+		);
+	}
+    
+    public function postWitdrawModel($post = null) {
+        $with = new IWithdraw();
+        $with->client_code = $post['client_code'];
+        $with->withdraw_date = $post['withdraw_date'];
+        $with->amount = $post['amount'];
+        $with->sync_date = $post['created_date'];
+        $with->status = $post['status'];
+        $with->created_by_name = $post['created_by_name'];
+        $with->withdraw_no = $post['withdraw_no'];
+        if($with->save()) {
+            
+            foreach($post['line'] as $k => $v) {
+                $with_l = new IWithdrawLine();
+                $with_l->id_withdraw = $with->id;
+                $with_l->sales_order_number = $post['line'][$k]['sales_order_number'];
+                $with_l->amount = $post['line'][$k]['amount'];
+                $with_l->save();
+            }
+            
+            $response = [];
+            $response['status'] = 1;
+            $response['withdraw_no'] = $post['withdraw_no'];
+            $response['message'] = 'Success';
+        }
+
+        return $response; 
+    }
+}

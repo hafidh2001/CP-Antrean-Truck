@@ -1,0 +1,345 @@
+<?php
+
+class MCustomer extends ActiveRecord
+{
+
+	public function tableName()
+	{
+		return 'm_customer';
+	}
+
+	public function rules()
+	{
+		return array(
+			array('name, status, created_by, created_date, id_client, user_token', 'required'),
+			array('payment_term, id_segment, created_by, id_client, is_customer, is_vendor, is_one_time, id_customer_group, id_sales', 'numerical', 'integerOnly'=>true),
+			array('code, name, address, phone1, phone2, fax, contact_person_name, contact_person_phone, npwp, tax_address, status, email, new_city, new_province, new_country, user_token, password, username, token, foto, gender, web_verify_token', 'length', 'max'=>256),
+			array('reg_mode', 'length', 'max'=>10),
+			array('credit_limit, identity, born_date, web_verified_at, is_deleted', 'safe'),
+		);
+	}
+
+	public function relations()
+	{
+		return array(
+			'mContacts' => array(self::HAS_MANY, 'MContact', 'id_customer'),
+			'tPurchaseOrders' => array(self::HAS_MANY, 'TPurchaseOrder', 'id_vendor'),
+			'tVisits' => array(self::HAS_MANY, 'TVisit', 'id_customer'),
+			'tOpportunities' => array(self::HAS_MANY, 'TOpportunity', 'id_customer'),
+			'mMembershipCustomers' => array(self::HAS_MANY, 'MMembershipCustomer', 'id_customer'),
+			'tCustomerPoins' => array(self::HAS_MANY, 'TCustomerPoin', 'id_customer'),
+			'tSalesOrders' => array(self::HAS_MANY, 'TSalesOrder', 'id_customer'),
+			'mCustomerContacts' => array(self::HAS_MANY, 'MCustomerContact', 'id_customer'),
+			'tRoadPlans' => array(self::HAS_MANY, 'TRoadPlan', 'id_customer'),
+			'idSales' => array(self::BELONGS_TO, 'User', 'id_sales'),
+			'idCustomerGroup' => array(self::BELONGS_TO, 'MCustomerGroup', 'id_customer_group'),
+			'idSegment' => array(self::BELONGS_TO, 'MCustomerSegment', 'id_segment'),
+			'idClient' => array(self::BELONGS_TO, 'MClient', 'id_client'),
+			'tHits' => array(self::HAS_MANY, 'THit', 'id_customer'),
+			'mCustomerSocialMedias' => array(self::HAS_MANY, 'MCustomerSocialMedia', 'id_customer'),
+			'tTickets' => array(self::HAS_MANY, 'TTicket', 'id_customer'),
+		);
+	}
+
+	public function attributeLabels()
+	{
+		return array(
+			'id' => 'ID',
+			'code' => 'Code',
+			'name' => 'Name',
+			'address' => 'Address',
+			'phone1' => 'Phone1',
+			'phone2' => 'Phone2',
+			'fax' => 'Fax',
+			'credit_limit' => 'Credit Limit',
+			'contact_person_name' => 'Contact Person Name',
+			'contact_person_phone' => 'Contact Person Phone',
+			'npwp' => 'Npwp',
+			'tax_address' => 'Tax Address',
+			'status' => 'Status',
+			'payment_term' => 'Payment Term',
+			'id_segment' => 'Id Segment',
+			'created_by' => 'Created By',
+			'created_date' => 'Created Date',
+			'identity' => 'Identity',
+			'id_client' => 'Id Client',
+			'email' => 'Email',
+			'is_customer' => 'Is Customer',
+			'is_vendor' => 'Is Vendor',
+			'new_city' => 'New City',
+			'new_province' => 'New Province',
+			'new_country' => 'New Country',
+			'user_token' => 'User Token',
+			'password' => 'Password',
+			'username' => 'Username',
+			'token' => 'Token',
+			'is_one_time' => 'Is One Time',
+			'id_customer_group' => 'Id Customer Group',
+			'foto' => 'Foto',
+			'born_date' => 'Born Date',
+			'gender' => 'Gender',
+			'id_sales' => 'Id Sales',
+			'reg_mode' => 'Reg Mode',
+			'web_verify_token' => 'Web Verify Token',
+			'web_verified_at' => 'Web Verified At',
+			'is_deleted' => 'Is Deleted',
+		);
+	}
+	 public function getListCustomerModel($client = null, $user_token = null, $limit = null)
+    {
+
+        $query = "select pr.role_name,
+                    t.id_outlet
+                    from p_user t 
+                    inner join p_user_role pur on pur.user_id = t.id
+                    inner join p_role pr on pr.id = pur.role_id
+                    where t.user_token = '" . $user_token . "'";
+        $sql = Yii::app()->db->createCommand($query);
+        $result = $sql->queryrow();
+         
+        if ($result['role_name'] == 'Administrator') {
+            $query = "select t.id, t.code, t.name, t.address, t.phone1, t.phone2, new_city, new_province, new_country, t.contact_person_name,t.contact_person_phone,t.email,mcs.name as segment, t.foto,t.is_one_time, t.status, s.fullname as sales_name
+                        from m_customer t
+                        left join m_customer_segment mcs on mcs.id = t.id_segment
+                        
+                        left join p_user s on s.id = t.id_sales
+                        where t.is_deleted=false AND t.id_client = " . $client . " order by t.name asc " . $limit . ";";
+        } else if ($result['role_name'] == 'Sales') {
+            $setting = MSetting::model()->findByAttributes(["item" => "sales_view_all_customer"]);
+            $settingvalue = MSettingValue::model()->findByAttributes(["id_setting" => $setting->id, "id_client" => $client]);
+            $created = " and (t.id_sales = (select id from p_user where user_token = '" . $user_token . "' limit 1) OR t.id_sales IS NULL)";
+            // $created = "";
+            // if($settingvalue) {
+            //     if($settingvalue->value == false) {
+                    
+            //     }
+            // }
+            // else{
+            //     $created = " and t.created_by = (select id from p_user where user_token = '" . $user_token . "' limit 1) ";
+            // }
+
+            $query = "select t.id, t.code, t.name, t.address, t.phone1, t.phone2, new_city, new_province, new_country, t.contact_person_name,t.contact_person_phone,t.email,mcs.name as segment, t.foto,t.is_one_time, t.status, s.fullname as sales_name
+                        from m_customer t
+                        left join m_customer_segment mcs on mcs.id = t.id_segment
+                        left join p_user s on s.id = t.id_sales
+                        where t.is_deleted=false AND t.id_client = " . $client . $created .
+                        " order by t.name asc " . $limit . ";";
+                        
+                        
+        }else if($result['role_name'] == 'outlet_manager'){
+            
+            
+            $setting = MSetting::model()->findByAttributes(["item" => "sales_view_all_customer"]);
+            $settingvalue = MSettingValue::model()->findByAttributes(["id_setting" => $setting->id, "id_client" => $client]);
+            $created = " and (t.id_sales = (select id from p_user where user_token = '" . $user_token . "' limit 1) OR t.id_sales IS NULL)";
+            // $created = "";
+            // if($settingvalue) {
+            //     if($settingvalue->value == false) {
+                    
+            //     }
+            // }
+            // else{
+            //     $created = " and t.created_by = (select id from p_user where user_token = '" . $user_token . "' limit 1) ";
+            // }
+
+            $query = "select t.id, t.code, t.name, t.address, t.phone1, t.phone2, new_city, new_province, new_country, t.contact_person_name,t.contact_person_phone,t.email,mcs.name as segment, t.foto,t.is_one_time, t.status, pu.fullname as sales_name
+                        from m_customer t
+                        left join m_customer_segment mcs on mcs.id = t.id_segment
+                        left join p_user pu on (pu.id = t.id_sales)
+                        where t.is_deleted=false AND t.id_client = " . $client . "and 
+                        
+                        case when t.id_sales is not null then  
+                        pu.id_outlet =".$result["id_outlet"]."
+                        else true end".
+                        " order by t.name asc " . $limit . ";";
+            
+        }
+
+        $sql = Yii::app()->db->createCommand($query);
+        $result = $sql->queryAll();
+        return json_encode($result);
+    }
+
+    //detail customer
+    public function getDetailCustomerModel($client = null, $customer = null)
+    {
+        $query = "select t.*, mcs.name as segment, mcs.id as id_segment, s.fullname as sales_name
+                        from m_customer t
+                        left join m_customer_segment mcs on mcs.id = t.id_segment
+                        left join p_user s on s.id = t.id_sales
+                        where t.is_deleted=false AND t.id_client = " . $client . " and t.id = " . $customer . " ;";
+        $sql = Yii::app()->db->createCommand($query);
+        $result = $sql->queryRow();
+
+        return json_encode($result);
+    }
+
+    //new customer
+    public function newCustomerModel($userToken = null, $client = null, $name = null, $address = null, $phone1 = null, $phone2 = null, $fax = null, $credit_limit = null, $contact_person_name = null, $contact_person_phone = null, $npwp = null, $tax_address = null, $payment_term = null, $id_segment = null, $identity = null, $email = null, $is_customer = null, $is_vendor = null, $country = null, $province = null, $city = null)
+    {
+
+        if ($credit_limit == '') {
+            $credit_limit = 0;
+        }
+        if ($payment_term == '') {
+            $payment_term = 0;
+        }
+        if ($is_customer == 1) {
+            $is_customer = ", " . $is_customer;
+            $status = ", 'Leads'";
+        } else {
+            $is_customer = ", NULL";
+        }
+        if ($is_vendor == 1) {
+            $is_vendor = ", " . $is_vendor;
+            $status = ", 'Aktif'";
+        } else {
+            $is_vendor = ", NULL";
+        }
+        if ($payment_term == '') {
+            $payment_term = 0;
+        }
+        if ($payment_term == '') {
+            $payment_term = 0;
+        }
+
+        $query = "insert into m_customer (code, name, address, phone1, phone2, fax, credit_limit, contact_person_name, contact_person_phone,                     npwp, tax_address, status, payment_term, id_segment, created_by, created_date, identity, id_client, email, is_customer,
+                    is_vendor, new_city, new_province, new_country)
+                    values ('', '" . $name . "', '" . $address . "', '" . $phone1 . "', '" . $phone2 . "', '" . $fax . "', " . $credit_limit . ", '" . $contact_person_name . "', '" . $contact_person_phone . "', '" . $npwp . "', '" . $tax_address . "'" . $status . ", " . $payment_term . ", " . $id_segment . ", 
+                    (select id from p_user where user_token = '" . $userToken . "' limit 1), 
+                    now(), '" . $identity . "', " . $client . ", '" . $email . "'" . $is_customer . " " . $is_vendor . ", '" . $city . "', '" . $province . "', '" . $country . "');";
+
+        /*print_r($query);
+        die();*/
+        $sql = Yii::app()->db->createCommand($query);
+        $result = $sql->execute();
+        return json_encode($result);
+    }
+
+    //edit customer
+    public function editCustomerModel($customer = null, $address = null, $phone1 = null, $phone2 = null, $fax = null, $credit_limit = null, $contact_person_name = null, $contact_person_phone = null, $npwp = null, $tax_address = null, $payment_term = null, $id_segment = null, $identity = null, $email = null, $is_customer = null, $is_vendor = null, $country = null, $province = null, $city = null, $name = null)
+    {
+
+        $query = "update m_customer set address = '" . $address . "', phone1 = '" . $phone1 . "', phone2 = '" . $phone2 . "', fax= '" . $fax . "', 
+                    credit_limit = " . $credit_limit . " , contact_person_name = '" . $contact_person_name . "' , 
+                    contact_person_phone = '" . $contact_person_phone . "', npwp= '" . $npwp . "', tax_address = '" . $tax_address . "', 
+                    payment_term = " . $payment_term . ", id_segment = " . $id_segment . ",  identity = '" . $identity . "', email = '" . $email . "', 
+                    is_customer = " . $is_customer . ", is_vendor = " . $is_vendor . ", new_city = '" . $city . "' , new_province = '" . $province . "', 
+                    new_country = '" . $country . "', name = '$name'  
+                    where id = " . $customer;
+        echo $query;
+        die();
+        $sql = Yii::app()->db->createCommand($query);
+        $result = $sql->queryRow();
+        return json_encode($result);
+    }
+
+    //list vendor
+    public function getListVendorModel($client = null, $user_token = null, $limit = null)
+    {
+
+        $query = "select t.id, t.code, t.name, t.address, t.phone1
+                        from m_customer t
+                        where t.is_deleted=false AND t.id_client = " . $client . " and is_vendor = 1 order by t.name asc " . $limit . ";";
+
+
+        $sql = Yii::app()->db->createCommand($query);
+        $result = $sql->queryAll();
+        return json_encode($result);
+    }
+
+    //detail vendor
+    public function getDetailVendorModel($client = null, $customer = null)
+    {
+
+        $query = "select t.id, t.code, t.name, t.address, t.phone1, t.phone2, t.fax, t.credit_limit, t.contact_person_name, 
+                        t.contact_person_phone, t.npwp, t.tax_address, t.status, t.payment_term, t.identity, t.email, mcs.name
+                        from m_customer t
+                        left join m_customer_segment mcs on mcs.id = t.id_segment
+                        where t.is_deleted=false AND t.id_client = " . $client . " and t.id = " . $customer . " and is_vendor = 1;";
+        $sql = Yii::app()->db->createCommand($query);
+        $result = $sql->queryRow();
+
+        return json_encode($result);
+    }
+
+    public function gridCustomer($params = null)
+    {
+
+        $client = ' t.id_client = ' . Yii::app()->user->info['id_client'];
+        if (Yii::app()->user->info['role'] == 'Sales') {
+            $user = ' AND (t.id_sales = ' . Yii::app()->user->id.' OR t.id_sales IS NULL)';
+        } else if (Yii::app()->user->info['role'] == 'Administrator') {
+            $user = ' ';
+        } else if (Yii::app()->user->info['role'] == 'outlet_manager'){
+            $o = Yii::app()->user->info['id_outlet'];
+            $user = ' AND (p.id_outlet = ' . $o .' OR t.id_sales IS NULL)';
+        }
+
+        if (!is_null($params[':cari']) && $params[':cari'] != '' && $params[':cari'] != 'js: model.cari') {
+            $cari = " and (lower(t.name) like lower('%" . $params[':cari'] . "%') or lower(t.address) like lower('%" . $params[':cari'] . "%') or lower(t.phone1) like lower('%" . $params[':cari'] . "%')) ";
+            $var = ' AND '.$client . ' ' . $user . ' ' . $cari;
+        } else {
+            $var = ' AND '.$client . ' ' . $user;
+        }
+
+        $query = "SELECT t.*, mcs.name as name_segment 
+                    FROM m_customer t 
+                    LEFT JOIN p_user p ON p.id = t.id_sales
+                    LEFT JOIN m_customer_segment mcs on mcs.id = t.id_segment 
+                    where t.is_deleted=false AND 1=1 $var {  and [where]}  
+                    {[order], t.name asc} {[paging]};";
+        return $query;
+    }
+
+    public function countgridCustomer($params = null)
+    {
+
+        $client = ' t.id_client = ' . Yii::app()->user->info['id_client'];
+        if (Yii::app()->user->info['role'] == 'Sales') {
+            $user = ' AND (t.id_sales = ' . Yii::app()->user->id.' OR t.id_sales IS NULL)';    
+        } else if (Yii::app()->user->info['role'] == 'Administrator') {
+            $user = ' ';
+        } else if (Yii::app()->user->info['role'] == 'outlet_manager'){
+            $o = Yii::app()->user->info['id_outlet'];
+            $user = ' AND (p.id_outlet = ' . $o .' OR t.id_sales IS NULL)';
+        }
+
+        if (!is_null($params[':cari']) && $params[':cari'] != '' && $params[':cari'] != 'js: model.cari') {
+            $cari = " and (lower(t.name) like lower('%" . $params[':cari'] . "%') or lower(t.address) like lower('%" . $params[':cari'] . "%') or lower(t.phone1) like lower('%" . $params[':cari'] . "%')) ";
+            $var = ' AND '.$client . ' ' . $user . ' ' . $cari;
+        } else {
+            $var = ' AND '.$client . ' ' . $user;
+        }
+
+        $query = "SELECT COUNT(1)
+                    FROM m_customer t 
+                    LEFT JOIN p_user p ON p.id = t.id_sales
+                    left join m_customer_segment mcs on mcs.id = t.id_segment 
+                    where t.is_deleted=false AND 1=1 $var {  and [where]};";
+        return $query;
+    }
+
+
+    //dropdown list for customer
+    public function getCustomerList()
+    {
+        $client =  "t.id_client = " . Yii::app()->user->info['id_client'];
+
+        if (Yii::app()->user->info['role'] == 'Sales') {
+            $user = " and t.created_by = " . Yii::app()->user->id;;
+        } else if (Yii::app()->user->info['role'] == 'Administrator') {
+            $user = " ";
+        }
+
+        $query = "  select t.id, t.name
+                    from m_customer t
+                    where t.is_deleted=false AND $client.$user
+                    ORDER BY   t.name asc ;";
+        $data = Yii::app()->db->createCommand($query)->queryAll();
+
+        $result = array_combine(array_column($data, 'id'), array_column($data, 'name'));
+        return $result;
+    }
+
+}

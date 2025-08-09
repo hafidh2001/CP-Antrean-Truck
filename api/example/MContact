@@ -1,0 +1,79 @@
+<?php
+
+class MContact extends ActiveRecord
+{
+
+	public function tableName()
+	{
+		return 'm_contact';
+	}
+
+	public function rules()
+	{
+		return array(
+			array('name', 'required'),
+			array('created_by, id_client, updated_by, id_customer, id_contact_type', 'numerical', 'integerOnly'=>true),
+			array('name, position', 'length', 'max'=>256),
+			array('phone1, phone2, phone3', 'length', 'max'=>20),
+			array('email, updated_date', 'safe'),
+		);
+	}
+
+	public function relations()
+	{
+		return array(
+			'idClient' => array(self::BELONGS_TO, 'MClient', 'id_client'),
+			'createdBy' => array(self::BELONGS_TO, 'User', 'created_by'),
+			'idCustomer' => array(self::BELONGS_TO, 'MCustomer', 'id_customer'),
+			'mCustomerContacts' => array(self::HAS_MANY, 'MCustomerContact', 'id_contact'),
+		);
+	}
+
+	public function attributeLabels()
+	{
+		return array(
+			'id' => 'ID',
+			'name' => 'Name',
+			'email' => 'Email',
+			'phone1' => 'Phone1',
+			'phone2' => 'Phone2',
+			'phone3' => 'Phone3',
+			'created_by' => 'Created By',
+			'created_date' => 'Created Date',
+			'id_client' => 'Id Client',
+			'updated_by' => 'Updated By',
+			'updated_date' => 'Updated Date',
+			'id_customer' => 'Id Customer',
+			'id_contact_type' => 'Id Contact Type',
+			'position' => 'Position',
+		);
+	}
+
+    public function gridContact($params = null)
+    {
+        
+        $client = ' t.id_client = '.Yii::app()->user->info['id_client'];
+        
+	    if(Yii::app()->user->info['role'] == 'Sales'){
+	        $user = ' and t.created_by = '.Yii::app()->user->id;
+	    } 
+	    else if(Yii::app()->user->info['role'] == 'Administrator') {
+	        $user = ' ';
+	    }
+
+        if(!is_null($params[':cari']) && $params[':cari'] != '' && $params[':cari'] != 'js: model.cari') {
+            $cari = " and (lower(t.name) like lower('%".$params[':cari']."%') or lower(t.email) like lower('%".$params[':cari']."%') or lower(t.phone1) like lower('%".$params[':cari']."%') or lower(t.phone2) like lower('%".$params[':cari']."%') or lower(t.phone3) like lower('%".$params[':cari']."%')) ";
+            $var = $client.' '.$user.' '.$cari;
+        }
+        else {
+            $var = $client.' '.$user;
+        }
+
+        $query = "SELECT t.* 
+                    FROM m_contact t
+                    where $var { and [where]}  
+                    ORDER BY t.name asc LIMIT 25;";
+//echo $query;
+        return $query;
+    }
+}

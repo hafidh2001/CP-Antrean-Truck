@@ -1,0 +1,62 @@
+<?php
+
+class MChannelPembayaran extends ActiveRecord
+{
+
+	public function tableName()
+	{
+		return 'm_channel_pembayaran';
+	}
+
+	public function rules()
+	{
+		return array(
+			array('name, id_client', 'required'),
+			array('id_client', 'numerical', 'integerOnly'=>true),
+			array('name, img_url', 'length', 'max'=>256),
+			array('midsuit_code', 'length', 'max'=>25),
+		);
+	}
+
+	public function relations()
+	{
+		return array(
+			'mOutletHasChannelPembayarans' => array(self::HAS_MANY, 'MOutletHasChannelPembayaran', 'channel_pembayaran'),
+			'idClient' => array(self::BELONGS_TO, 'MClient', 'id_client'),
+		);
+	}
+
+	public function attributeLabels()
+	{
+		return array(
+			'id' => 'ID',
+			'name' => 'Name',
+			'img_url' => 'Img Url',
+			'id_client' => 'Id Client',
+			'midsuit_code' => 'Midsuit Code',
+		);
+	}
+	
+	public function getList(){
+	    $c = Yii::app()->user->info['id_client'];
+	    $sql = "SELECT * FROM m_channel_pembayaran WHERE id_client = $c OR id_client = -1";
+	    $r = Yii::app()->db->createCommand($sql)->queryAll();
+	    $res = [];
+	    foreach($r as $k => $v){
+	        $res[$v['id']] = $v['name'];
+	    }
+	    return $res;
+	}
+	
+	public function getListModel($c = null){
+	    
+	    $sql = "SELECT * FROM m_channel_pembayaran WHERE id_client = $c";
+	    $r = Yii::app()->db->createCommand($sql)->queryAll();
+	   // $res = [];
+	   // foreach($r as $k => $v){
+	   //     $res[$v['id']] = $v['name'];
+	   // }
+	    return json_encode($r);
+	}
+
+}

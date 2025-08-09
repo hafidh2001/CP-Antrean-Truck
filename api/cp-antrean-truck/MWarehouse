@@ -1,0 +1,166 @@
+<?php
+
+class MWarehouse extends ActiveRecord
+{
+
+	public function tableName()
+	{
+		return 'm_warehouse';
+	}
+
+	public function rules()
+	{
+		return array(
+			array('name', 'required'),
+			array('name', 'length', 'max'=>256),
+		);
+	}
+
+	public function relations()
+	{
+		return array(
+			'mGates' => array(self::HAS_MANY, 'MGate', 'warehouse_id'),
+		);
+	}
+
+	public function attributeLabels()
+	{
+		return array(
+			'id' => 'ID',
+			'name' => 'Name',
+		);
+	}
+	
+	public static function saveFloorPlan($params){
+	    vdump($params);
+	    return true;
+	}
+	
+	public static function getFloorPlan($params){
+	    $w = MWarehouse::model()->findByPk($params['id']);
+	    return $w->attributes;
+	}
+	
+	public static function getLayout($params){
+	   // $w = MWarehouse::model()->findByPk($params['id']);
+	   // return $w->attributes;
+	   // $q = "SELECT wh.*     
+    //             FROM m_warehouse wh
+    //             WHERE wh.id = ".$w.";";
+    //     $r = Yii::app()->db->createCommand($q)->queryRow();
+	    
+	    
+	    $warehouse = [
+            'warehouse_name' => 'Warehouse B',
+            'location' => [
+            [
+                'location_id' => 1,
+                'location_name' => 'Lokasi B1',
+                'x' => 100,
+                'y' => 100,
+                'h' => 500,
+                'w' => 300,
+                'items' => [
+                    [
+                        'code' => 'PR1-1',
+                        'qty' => '12',
+                        'uom' => 'P',
+                        'prod_date' => '12/6',
+                    ],
+                    [
+                        'code' => 'PR1-2',
+                        'qty' => '8',
+                        'uom' => 'P',
+                        'prod_date' => '13/6',
+                    ],
+                ],
+            ],
+            [
+                'location_id' => 2,
+                'location_name' => 'Lokasi B2',
+                'x' => 100,
+                'y' => 700,
+                'h' => 200,
+                'w' => 600,
+                'items' => [
+                    [
+                        'code' => 'PR2-1',
+                        'qty' => '20',
+                        'uom' => 'P',
+                        'prod_date' => '14/6',
+                    ],
+                    [
+                        'code' => 'PR2-1',
+                        'qty' => '20',
+                        'uom' => 'P',
+                        'prod_date' => '14/6',
+                    ],
+                ],
+            ],
+            [
+                'location_id' => 3,
+                'location_name' => 'Lokasi B3',
+                'x' => 450,
+                'y' => 100,
+                'h' => 300,
+                'w' => 300,
+                'items' => [
+                    [
+                        'code' => 'PR3-1',
+                        'qty' => '5',
+                        'uom' => 'P',
+                        'prod_date' => '15/6',
+                    ],
+                    [
+                        'code' => 'PR3-2',
+                        'qty' => '18',
+                        'uom' => 'P',
+                        'prod_date' => '16/6',
+                    ],
+                    [
+                        'code' => 'PR3-3',
+                        'qty' => '10',
+                        'uom' => 'P',
+                        'prod_date' => '17/6',
+                    ],
+                ],
+            ],
+            [
+                'location_id' => 4,
+                'location_name' => 'Lokasi B4',
+                'x' => 850,
+                'y' => 100,
+                'h' => 300,
+                'w' => 200,
+                'items' => [
+                    [
+                        'code' => 'PR3-1',
+                        'qty' => '5',
+                        'uom' => 'P',
+                        'prod_date' => '15/6',
+                    ],
+                    [
+                        'code' => 'PR3-2',
+                        'qty' => '18',
+                        'uom' => 'P',
+                        'prod_date' => '16/6',
+                    ],
+                    [
+                        'code' => 'PR3-3',
+                        'qty' => '10',
+                        'uom' => 'P',
+                        'prod_date' => '17/6',
+                    ],
+                ],
+            ],
+        ],
+    ];
+    
+    // Output as JSON
+    echo json_encode($warehouse);
+        
+        
+        
+	}
+
+}

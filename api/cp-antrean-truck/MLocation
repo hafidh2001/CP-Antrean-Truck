@@ -1,0 +1,36 @@
+<?php
+
+class MLocation extends ActiveRecord
+{
+
+	public function tableName()
+	{
+		return 'm_location';
+	}
+
+	public function rules()
+	{
+		return array(
+			array('warehouse_id, label', 'required'),
+			array('warehouse_id', 'numerical', 'integerOnly'=>true),
+			array('label', 'length', 'max'=>256),
+		);
+	}
+
+	public function relations()
+	{
+		return array(
+			'tStocks' => array(self::HAS_MANY, 'TStock', 'location_id'),
+		);
+	}
+
+	public function attributeLabels()
+	{
+		return array(
+			'id' => 'ID',
+			'warehouse_id' => 'Warehouse',
+			'label' => 'Label',
+		);
+	}
+
+}

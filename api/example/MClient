@@ -1,0 +1,203 @@
+<?php
+
+class MClient extends ActiveRecord
+{
+
+	public function tableName()
+	{
+		return 'm_client';
+	}
+
+	public function rules()
+	{
+		return array(
+			array('client_name, created_date, email, pic_name, phone, package_exp', 'required'),
+			array('active_package', 'numerical', 'integerOnly'=>true),
+			array('client_name, email, pic_name, npwp, code, bank_name, bank_account_name, bank_account_no, logo_url, catalog_url, print_template, payment_gateway, bg_crp', 'length', 'max'=>256),
+			array('phone', 'length', 'max'=>13),
+			array('callback_url, invoice_add_text, additional_field, meta_data', 'safe'),
+		);
+	}
+
+	public function relations()
+	{
+		return array(
+// 			'mCities' => array(self::HAS_MANY, 'MCity', 'id_client'),
+// 			'mContacts' => array(self::HAS_MANY, 'MContact', 'id_client'),
+// 			'mCountries' => array(self::HAS_MANY, 'MCountry', 'id_client'),
+// 			'mChannelPembayarans' => array(self::HAS_MANY, 'MChannelPembayaran', 'id_client'),
+// 			'mMembershipLevels' => array(self::HAS_MANY, 'MMembershipLevel', 'id_client'),
+// 			'mOutlets' => array(self::HAS_MANY, 'MOutlet', 'id_client'),
+// 			'mOpportunityStages' => array(self::HAS_MANY, 'MOpportunityStage', 'id_client'),
+// 			'mKnowledges' => array(self::HAS_MANY, 'MKnowledge', 'id_client'),
+// 			'mMembershipClients' => array(self::HAS_MANY, 'MMembershipClient', 'id_client'),
+// 			'tProductRatings' => array(self::HAS_MANY, 'TProductRating', 'id_client'),
+// 			'mProductBrands' => array(self::HAS_MANY, 'MProductBrand', 'id_client'),
+// 			'mProductPrices' => array(self::HAS_MANY, 'MProductPrice', 'id_client'),
+// 			'mProductOutlets' => array(self::HAS_MANY, 'MProductOutlet', 'id_client'),
+// 			'mProductComplements' => array(self::HAS_MANY, 'MProductComplement', 'id_client'),
+// 			'mProductGroups' => array(self::HAS_MANY, 'MProductGroup', 'id_client'),
+// 			'mSettingValues' => array(self::HAS_MANY, 'MSettingValue', 'id_client'),
+// 			'mTotems' => array(self::HAS_MANY, 'MTotem', 'id_client'),
+// 			'tNews' => array(self::HAS_MANY, 'TNews', 'id_client'),
+// 			'tPromos' => array(self::HAS_MANY, 'TPromo', 'id_client'),
+// 			'mClientHasNotifRules' => array(self::HAS_MANY, 'MClientHasNotifRules', 'id_client'),
+// 			'tPurchaseOrders' => array(self::HAS_MANY, 'TPurchaseOrder', 'id_client'),
+// 			'tOpportunities' => array(self::HAS_MANY, 'TOpportunity', 'id_client'),
+// 			'mMembershipCustomers' => array(self::HAS_MANY, 'MMembershipCustomer', 'id_client'),
+// 			'mAddOnClients' => array(self::HAS_MANY, 'MAddOnClient', 'id_client'),
+// 			'mClientPayments' => array(self::HAS_MANY, 'MClientPayment', 'id_client'),
+// 			'tPayments' => array(self::HAS_MANY, 'TPayment', 'id_client'),
+// 			'mProductOutletPrices' => array(self::HAS_MANY, 'MProductOutletPrice', 'id_client'),
+// 			'tRoadPlans' => array(self::HAS_MANY, 'TRoadPlan', 'id_client'),
+// 			'mProvinces' => array(self::HAS_MANY, 'MProvince', 'id_client'),
+// 			'mProducts' => array(self::HAS_MANY, 'MProduct', 'id_client'),
+// 			'mCustomerSegments' => array(self::HAS_MANY, 'MCustomerSegment', 'id_client'),
+// 			'mCustomers' => array(self::HAS_MANY, 'MCustomer', 'id_client'),
+// 			'mAreas' => array(self::HAS_MANY, 'MArea', 'id_client'),
+// 			'mProductBoms' => array(self::HAS_MANY, 'MProductBom', 'id_client'),
+// 			'tSalesOrderDeliveryItemStatuses' => array(self::HAS_MANY, 'TSalesOrderDeliveryItemStatus', 'id_client'),
+// 			'tProductOutletMovements' => array(self::HAS_MANY, 'TProductOutletMovement', 'id_client'),
+// 			'mProductMaterials' => array(self::HAS_MANY, 'MProductMaterial', 'id_client'),
+// 			'tHits' => array(self::HAS_MANY, 'THit', 'id_cilent'),
+// 			'mProductOutletCustomerGroups' => array(self::HAS_MANY, 'MProductOutletCustomerGroup', 'id_client'),
+// 			'mCustomerGroups' => array(self::HAS_MANY, 'MCustomerGroup', 'id_client'),
+// 			'mProductComplementNews' => array(self::HAS_MANY, 'MProductComplementNew', 'id_client'),
+// 			'tProductOutletStocks' => array(self::HAS_MANY, 'TProductOutletStock', 'id_client'),
+// 			'mOutletSettings' => array(self::HAS_MANY, 'MOutletSetting', 'id_client'),
+// 			'mSosmeds' => array(self::HAS_MANY, 'MSosmed', 'id_client'),
+// 			'mOutletQueueAds' => array(self::HAS_MANY, 'MOutletQueueAds', 'id_client'),
+// 			'mProductCategories' => array(self::HAS_MANY, 'MProductCategory', 'id_client'),
+// 			'mTicketCategories' => array(self::HAS_MANY, 'MTicketCategory', 'id_client'),
+// 			'tTickets' => array(self::HAS_MANY, 'TTicket', 'id_client'),
+// 			'mTicketTypes' => array(self::HAS_MANY, 'MTicketType', 'id_client'),
+// 			'activePackage' => array(self::BELONGS_TO, 'MPackage', 'active_package'),
+// 			'mTicketPriorities' => array(self::HAS_MANY, 'MTicketPriority', 'id_client'),
+// 			'mTicketSources' => array(self::HAS_MANY, 'MTicketSource', 'id_client'),
+// 			'mTicketStatuses' => array(self::HAS_MANY, 'MTicketStatus', 'id_client'),
+// 			'mReviews' => array(self::HAS_MANY, 'MReview', 'id_client'),
+// 			'mReviewDetails' => array(self::HAS_MANY, 'MReviewDetail', 'id_client'),
+		);
+	}
+
+	public function attributeLabels()
+	{
+		return array(
+			'id' => 'ID',
+			'client_name' => 'Client Name',
+			'created_date' => 'Created Date',
+			'email' => 'Email',
+			'pic_name' => 'Pic Name',
+			'phone' => 'Phone',
+			'npwp' => 'Npwp',
+			'active_package' => 'Active Package',
+			'package_exp' => 'Package Exp',
+			'code' => 'Code',
+			'callback_url' => 'Callback Url',
+			'bank_name' => 'Bank Name',
+			'bank_account_name' => 'Bank Account Name',
+			'bank_account_no' => 'Bank Account No',
+			'logo_url' => 'Logo Url',
+			'invoice_add_text' => 'Invoice Add Text',
+			'catalog_url' => 'Catalog Url',
+			'additional_field' => 'Additional Field',
+			'print_template' => 'Print Template',
+			'payment_gateway' => 'Payment Gateway',
+			'bg_crp' => 'Bg Crp',
+			'meta_data' => 'Meta Data',
+		);
+	}
+	
+	public function getHeaderPrintModel($outlet = null, $client = null)
+    {
+        if(!is_null($outlet)){
+            $query = "SELECT mc.client_name, t.nama as outlet_name, t.alamat, t.telpon, t.kota, mc.logo_url, mc.invoice_add_text
+                        FROM m_outlet t
+                        inner join m_client mc on mc.id = t.id_client
+                        where t.id = ".$outlet." and t.id_client = ".$client."  
+                        LIMIT 1;";    
+        } else {
+            $query = "SELECT mc.client_name, mc.logo_url, mc.invoice_add_text
+                        FROM m_client mc
+                        where mc.id_client = ".$client."  
+                        LIMIT 1;";    
+        }
+        
+        $sql = Yii::app()->db->createCommand($query);
+        $result = $sql->queryRow();
+
+        return json_encode($result);
+    }
+    
+    
+    public function getListFieldModel($client = null, $user_token = null, $limit = null)
+    {
+        $query = "select t.additional_field
+                    from m_client t 
+                    where t.id = " . $client . ";";
+        $sql = Yii::app()->db->createCommand($query);
+        $result = $sql->queryrow();
+         
+        return json_encode(json_decode($result["additional_field"]));
+    }
+    
+    
+    public function getClientSingle($client = null){
+        $query = "SELECT *
+                    FROM m_client
+                    where id = $client";
+        
+        $sql = Yii::app()->db->createCommand($query);
+        $result = $sql->queryRow();
+        
+        return ($result);
+    }
+    
+    public function getPaymentGateway($mode, $id_client){
+        $id_client = $id_client;
+        $client = MClient::model()->findByPk($id_client);
+        if(is_null($client->payment_gateway)){
+            $path = "/var/www/payment_gateway/default.json";
+        } else {
+            $path = $client->payment_gateway;
+        }
+        
+        // put the content of the file in a variable
+        $data = file_get_contents($path); 
+        // JSON decode
+        $payment_gateway = json_decode($data, true); 
+        
+        return $payment_gateway[$mode];
+    }
+    
+    public function getLaporStaticId($client){
+        $query = "select t.meta_data
+                    from m_client t 
+                    where t.id = " . $client . ";";
+        $sql = Yii::app()->db->createCommand($query);
+        $result = $sql->queryrow();
+         
+        return json_decode($result["meta_data"]);
+    }
+    
+    public function getCustomField($params){
+        if(isset($params[':type']) && $params[':type'] != '' && $params[':type'] != 'js: params.type'){
+            $t = $params[':type'];
+        } else {
+            $t = 'customer';
+        }
+        
+        $c = Yii::app()->user->info['id_client'];
+        // $c = 107;
+        $sql = "SELECT additional_field->'$t' as fields
+                FROM m_client
+                WHERE id = $c";
+        
+        $r = Yii::app()->db->createCommand($sql)->queryRow();
+        
+        $res = json_decode($r['fields']);
+        return $res[0]->fields;
+    }
+
+
+}

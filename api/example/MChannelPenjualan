@@ -1,0 +1,53 @@
+<?php
+
+class MChannelPenjualan extends ActiveRecord
+{
+
+	public function tableName()
+	{
+		return 'm_channel_penjualan';
+	}
+
+	public function rules()
+	{
+		return array(
+			array('nama, id_client', 'required'),
+			array('id_client', 'numerical', 'integerOnly'=>true),
+			array('nama, img_url, default_customer_name', 'length', 'max'=>256),
+			array('status', 'safe'),
+		);
+	}
+
+	public function relations()
+	{
+		return array(
+		);
+	}
+
+	public function attributeLabels()
+	{
+		return array(
+			'id' => 'ID',
+			'nama' => 'Nama',
+			'img_url' => 'Img Url',
+			'status' => 'Status',
+			'id_client' => 'Id Client',
+			'default_customer_name' => 'Default Customer Name',
+		);
+	}
+	
+	
+	
+	public function getListModel($c = null){
+	    
+	    $sql = "SELECT * FROM m_channel_penjualan WHERE id_client = $c and status='ACTIVE'";
+	    $r = Yii::app()->db->createCommand($sql)->queryAll();
+	   // $res = [];
+	   // foreach($r as $k => $v){
+	   //     $res[$v['id']] = $v['name'];
+	   // }
+	    return $r;
+	}
+	
+
+}

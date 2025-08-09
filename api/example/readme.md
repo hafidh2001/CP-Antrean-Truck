@@ -1,0 +1,3 @@
+- api dibuat menggunakan online editor plansys
+- api terdapat pada builder/model builder
+- berikut adalah beberapa model builder dari project yang sudah jadi
