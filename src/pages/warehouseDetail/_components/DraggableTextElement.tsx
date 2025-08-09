@@ -52,14 +52,6 @@ export const DraggableTextElement = ({ element, isSelected, onClick, onDoubleCli
       <span style={textStyle}>
         {element.text}
       </span>
-      {isSelected && (
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute -top-1 -left-1 w-2 h-2 border-l-2 border-t-2 border-primary"></div>
-          <div className="absolute -top-1 -right-1 w-2 h-2 border-r-2 border-t-2 border-primary"></div>
-          <div className="absolute -bottom-1 -left-1 w-2 h-2 border-l-2 border-b-2 border-primary"></div>
-          <div className="absolute -bottom-1 -right-1 w-2 h-2 border-r-2 border-b-2 border-primary"></div>
-        </div>
-      )}
     </div>
   );
 };

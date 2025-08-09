@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { DndContext, DragEndEvent, useSensor, useSensors, PointerSensor } from '@dnd-kit/core';
 import { useMultiWarehouseStore } from '@/store/multiWarehouseStore';
-import { DraggableStorageUnit } from './DraggableStorageUnit';
+import { ResizableStorageUnit } from './ResizableStorageUnit';
 import { DraggableTextElement } from './DraggableTextElement';
 import { StorageUnitDialog } from './StorageUnitDialog';
 import { TextElementDialog } from './TextElementDialog';
@@ -25,7 +25,6 @@ export const WarehouseFloorPlan = () => {
     checkOverlap, 
     stackUnits, 
     removeStorageUnit,
-    updateStorageUnit,
     selectedTextElement,
     selectTextElement,
     moveTextElement,
@@ -188,14 +187,9 @@ export const WarehouseFloorPlan = () => {
   };
 
   const handleUnitClick = (unit: StorageUnit) => {
-    const wasAlreadySelected = selectedUnit?.id === unit.id;
     selectUnit(unit);
     selectTextElement(null);
-    
-    // Open dialog if clicking on already selected unit, or if in select mode
-    if (wasAlreadySelected || toolMode === 'select') {
-      setDialogOpen(true);
-    }
+    setDialogOpen(true); // Always open dialog on click
   };
 
   const handleUnitDoubleClick = (_unit: StorageUnit) => {
@@ -203,14 +197,9 @@ export const WarehouseFloorPlan = () => {
   };
 
   const handleTextClick = (element: TextElement) => {
-    const wasAlreadySelected = selectedTextElement?.id === element.id;
     selectTextElement(element);
     selectUnit(null);
-    
-    // Open dialog if clicking on already selected element, or if in select mode
-    if (wasAlreadySelected || toolMode === 'select') {
-      setTextDialogOpen(true);
-    }
+    setTextDialogOpen(true); // Always open dialog on click
   };
 
   const handleTextDoubleClick = (_element: TextElement) => {
@@ -293,7 +282,7 @@ export const WarehouseFloorPlan = () => {
           onMouseLeave={handleMouseUp}
         >
           {layout.storageUnits.map((unit: StorageUnit) => (
-            <DraggableStorageUnit
+            <ResizableStorageUnit
               key={unit.id}
               unit={unit}
               onClick={() => handleUnitClick(unit)}
