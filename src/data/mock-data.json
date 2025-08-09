@@ -1,0 +1,159 @@
+{
+  "id": 1,
+  "name": "Gudang Utama",
+  "description": "Gudang utama perusahaan",
+  "storageUnits": [
+    {
+      "id": 1754769977018,
+      "type": "storage",
+      "name": "Storage 1",
+      "x": 20,
+      "y": 20,
+      "warehouseId": 1,
+      "width": 200,
+      "height": 120,
+      "stackLevel": 0,
+      "typeStorage": "warehouse",
+      "textStyling": {
+        "fontSize": 16,
+        "fontFamily": "Arial, sans-serif",
+        "rotation": 0,
+        "textColor": "#000000"
+      }
+    },
+    {
+      "id": 1754769977685,
+      "type": "storage",
+      "name": "Storage 2",
+      "x": 660,
+      "y": 320,
+      "warehouseId": 1,
+      "width": 240,
+      "height": 100,
+      "stackLevel": 0,
+      "typeStorage": "rack",
+      "textStyling": {
+        "fontSize": 16,
+        "fontFamily": "Arial, sans-serif",
+        "rotation": 0,
+        "textColor": "#000000"
+      }
+    },
+    {
+      "id": 1754769978344,
+      "type": "storage",
+      "name": "Storage 3",
+      "x": 20,
+      "y": 660,
+      "warehouseId": 1,
+      "width": 260,
+      "height": 180,
+      "stackLevel": 0,
+      "typeStorage": "warehouse",
+      "textStyling": {
+        "fontSize": 16,
+        "fontFamily": "Arial, sans-serif",
+        "rotation": 0,
+        "textColor": "#000000"
+      }
+    },
+    {
+      "id": 1754769979072,
+      "type": "storage",
+      "name": "Storage 4",
+      "x": 1340,
+      "y": 20,
+      "warehouseId": 1,
+      "width": 160,
+      "height": 140,
+      "stackLevel": 0,
+      "typeStorage": "warehouse",
+      "textStyling": {
+        "fontSize": 16,
+        "fontFamily": "Arial, sans-serif",
+        "rotation": 0,
+        "textColor": "#000000"
+      }
+    },
+    {
+      "id": 1754769979801,
+      "type": "storage",
+      "name": "Storage 5",
+      "x": 1360,
+      "y": 700,
+      "warehouseId": 1,
+      "width": 140,
+      "height": 140,
+      "stackLevel": 0,
+      "typeStorage": "warehouse",
+      "textStyling": {
+        "fontSize": 16,
+        "fontFamily": "Arial, sans-serif",
+        "rotation": 0,
+        "textColor": "#000000"
+      }
+    },
+    {
+      "id": 1754769980954,
+      "type": "storage",
+      "name": "Storage 6",
+      "x": 740,
+      "y": 720,
+      "warehouseId": 1,
+      "width": 160,
+      "height": 120,
+      "stackLevel": 0,
+      "typeStorage": "rack",
+      "textStyling": {
+        "fontSize": 16,
+        "fontFamily": "Arial, sans-serif",
+        "rotation": 0,
+        "textColor": "#000000"
+      }
+    },
+    {
+      "id": 1754769982720,
+      "type": "text",
+      "name": "New Text",
+      "x": 740,
+      "y": 20,
+      "warehouseId": 1,
+      "textStyling": {
+        "fontSize": 16,
+        "fontFamily": "Arial, sans-serif",
+        "rotation": 0,
+        "textColor": "#000000"
+      }
+    },
+    {
+      "id": 1754769984439,
+      "type": "text",
+      "name": "New Text",
+      "x": 0,
+      "y": 400,
+      "warehouseId": 1,
+      "textStyling": {
+        "fontSize": 16,
+        "fontFamily": "Arial, sans-serif",
+        "rotation": 270,
+        "textColor": "#000000"
+      }
+    },
+    {
+      "id": 1754769985564,
+      "type": "text",
+      "name": "New Text",
+      "x": 1460,
+      "y": 380,
+      "warehouseId": 1,
+      "textStyling": {
+        "fontSize": 16,
+        "fontFamily": "Arial, sans-serif",
+        "rotation": 90,
+        "textColor": "#000000"
+      }
+    }
+  ],
+  "createdAt": "2025-08-09T20:06:09.057Z",
+  "updatedAt": "2025-08-09T20:27:24.628Z"
+}

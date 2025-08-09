@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { IWarehouse, IStorageUnit, ITextElement, TAnyStorageUnit, TToolMode } from '@/types/warehouseDetail';
 import { ElementTypeEnum, StorageTypeEnum } from '@/types';
 import { isStorageUnit, isTextElement } from '@/functions/warehouseHelpers';
+import mockData from '@/data/mock-data.json';
 
 
 
@@ -121,15 +122,8 @@ export const useMultiWarehouseStore = create<MultiWarehouseStore>((set, get) => 
       const migrated = migrateOldData(Array.isArray(parsed) ? parsed : parsed.warehouses || []);
       set({ warehouses: migrated });
     } else {
-      // Create default warehouse if none exists
-      const defaultWarehouse: IWarehouse = {
-        id: 1,
-        name: 'Gudang Utama',
-        description: 'Gudang utama perusahaan',
-        storageUnits: [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
+      // Use default warehouse with mock data
+      const defaultWarehouse = migrateOldData([mockData])[0];
       set({ warehouses: [defaultWarehouse] });
       localStorage.setItem('allWarehouses', JSON.stringify([defaultWarehouse]));
     }
