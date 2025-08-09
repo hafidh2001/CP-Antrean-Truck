@@ -53,8 +53,10 @@ export const StorageUnitDialog = ({ unit, open, onOpenChange, onUpdate, onDelete
     setRotation(newRotation);
     onUpdate({ 
       textStyling: { 
-        ...unit.textStyling, 
-        rotation: newRotation 
+        fontSize,
+        fontFamily,
+        rotation: newRotation,
+        textColor
       } 
     });
   };
@@ -67,7 +69,10 @@ export const StorageUnitDialog = ({ unit, open, onOpenChange, onUpdate, onDelete
   const handleTextStyleUpdate = (field: keyof ITextStyling, value: string | number) => {
     const updates = {
       textStyling: {
-        ...unit.textStyling,
+        fontSize,
+        fontFamily,
+        rotation,
+        textColor,
         [field]: value
       }
     };

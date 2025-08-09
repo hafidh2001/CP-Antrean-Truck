@@ -48,8 +48,10 @@ export const TextElementDialog = ({ element, open, onOpenChange, onUpdate, onDel
     setRotation(newRotation);
     onUpdate({ 
       textStyling: { 
-        ...element.textStyling, 
-        rotation: newRotation 
+        fontSize,
+        fontFamily,
+        rotation: newRotation,
+        textColor
       } 
     });
   };
@@ -62,7 +64,10 @@ export const TextElementDialog = ({ element, open, onOpenChange, onUpdate, onDel
   const handleTextStyleUpdate = (field: keyof ITextStyling, value: string | number) => {
     const updates = {
       textStyling: {
-        ...element.textStyling,
+        fontSize,
+        fontFamily,
+        rotation,
+        textColor,
         [field]: value
       }
     };
