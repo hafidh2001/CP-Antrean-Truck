@@ -4,6 +4,4 @@ export interface IWarehouse {
   name: string;
   description?: string;
   storage_units: Array<unknown>; // Simplified for home module
-  created_at: string;
-  updated_at: string;
 }

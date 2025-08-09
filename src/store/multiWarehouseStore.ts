@@ -99,9 +99,7 @@ const migrateOldData = (data: any[]): IWarehouse[] => {
       id: warehouseId,
       name: warehouse.name,
       description: warehouse.description,
-      storage_units: storage_units,
-      created_at: warehouse.created_at || warehouse.createdAt,
-      updated_at: warehouse.updated_at || warehouse.updatedAt
+      storage_units: storage_units
     } as IWarehouse;
   });
 };
@@ -136,9 +134,7 @@ export const useMultiWarehouseStore = create<MultiWarehouseStore>((set, get) => 
       id: maxId + 1,
       name,
       description,
-      storage_units: [],
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      storage_units: []
     };
 
     set((state) => {
@@ -176,7 +172,7 @@ export const useMultiWarehouseStore = create<MultiWarehouseStore>((set, get) => 
     set((state) => {
       const warehouses = state.warehouses.map(w => 
         w.id === warehouseId 
-          ? { ...w, ...updates, updated_at: new Date().toISOString() }
+          ? { ...w, ...updates }
           : w
       );
       

@@ -41,8 +41,6 @@ export interface IWarehouse {
   name: string;
   description?: string;
   storage_units: TAnyStorageUnit[];
-  created_at: string;
-  updated_at: string;
 }
 
 // Drawing rect interface for floor plan
