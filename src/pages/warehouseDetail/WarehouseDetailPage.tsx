@@ -31,7 +31,7 @@ export default function WarehouseDetailPage() {
   }
 
   return (
-    <div className="relative w-screen h-screen bg-background overflow-hidden">
+    <div className="relative w-full h-screen bg-background overflow-hidden">
       {/* Header with warehouse name and back button */}
       <div className="absolute top-4 left-4 z-10 flex items-center gap-4">
         <Button onClick={handleBack} size="sm" variant="outline">

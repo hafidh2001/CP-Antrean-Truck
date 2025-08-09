@@ -3,11 +3,13 @@ import HomePage from '@/pages/home';
 import WarehouseDetailPage from '@/pages/warehouseDetail';
 import WarehouseViewPage from '@/pages/warehouseView';
 import { ROUTES } from '@/utils/routes';
+import { AppWrapper } from '@/components/layout/AppWrapper';
 
 function App() {
   return (
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-      <Routes>
+      <AppWrapper>
+        <Routes>
         <Route path={ROUTES.base} element={<HomePage />} />
         <Route 
           path={ROUTES.warehouseDetail(':warehouseId')} 
@@ -28,7 +30,8 @@ function App() {
             </div>
           } 
         />
-      </Routes>
+        </Routes>
+      </AppWrapper>
     </BrowserRouter>
   );
 }
