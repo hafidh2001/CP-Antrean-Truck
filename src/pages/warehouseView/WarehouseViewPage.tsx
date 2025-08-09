@@ -4,9 +4,10 @@ import { useMultiWarehouseStore } from '@/store/multiWarehouseStore';
 import { WarehouseViewFloorPlan } from './_components/WarehouseViewFloorPlan';
 import { ChevronLeft, Monitor, Tablet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ROUTES } from '@/utils/routes';
 
 export default function WarehouseViewPage() {
-  const { id } = useParams<{ id: string }>();
+  const { warehouseId } = useParams<{ warehouseId: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const mode = searchParams.get('mode') || 'desktop';
@@ -15,10 +16,10 @@ export default function WarehouseViewPage() {
 
   useEffect(() => {
     loadWarehouses();
-    if (id) {
-      setCurrentWarehouse(Number(id));
+    if (warehouseId) {
+      setCurrentWarehouse(Number(warehouseId));
     }
-  }, [id, setCurrentWarehouse, loadWarehouses]);
+  }, [warehouseId, setCurrentWarehouse, loadWarehouses]);
 
   useEffect(() => {
     const updateViewportSize = () => {
@@ -27,8 +28,8 @@ export default function WarehouseViewPage() {
         // iPad landscape dimensions
         setViewportSize({ width: 1024, height: 768 });
       } else {
-        // Desktop dimensions
-        setViewportSize({ width: 1200, height: 800 });
+        // Desktop dimensions - adjusted height for better fit
+        setViewportSize({ width: 1200, height: 700 });
       }
     };
 
@@ -44,16 +45,16 @@ export default function WarehouseViewPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gray-100">
       {/* Header */}
-      <div className="bg-card border-b">
+      <div className="bg-white border-b shadow-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => navigate('/')}
+                onClick={() => navigate(ROUTES.base)}
                 className="gap-2"
               >
                 <ChevronLeft className="h-4 w-4" />
@@ -78,10 +79,10 @@ export default function WarehouseViewPage() {
       </div>
 
       {/* Main Content */}
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-center">
+      <div className="p-6 bg-gray-100" style={{ minHeight: 'calc(100vh - 73px)' }}>
+        <div className="flex justify-center items-center" style={{ minHeight: 'calc(100vh - 73px - 48px)' }}>
           <div 
-            className="bg-white rounded-lg shadow-lg overflow-hidden"
+            className="bg-white shadow-xl overflow-hidden rounded-lg border border-gray-200"
             style={{
               width: `${viewportSize.width}px`,
               height: `${viewportSize.height}px`,

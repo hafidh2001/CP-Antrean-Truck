@@ -10,4 +10,8 @@ export class ROUTES {
   static warehouseDetail(warehouseId: string): string {
     return `${this.warehouse}/${warehouseId}` as const;
   }
+  
+  static warehouseView(warehouseId: string): string {
+    return `${this.warehouse}/${warehouseId}/view` as const;
+  }
 }

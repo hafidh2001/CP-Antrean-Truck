@@ -5,6 +5,7 @@ import { useMultiWarehouseStore } from '@/store/multiWarehouseStore';
 import { WarehouseDialog } from './_components/WarehouseDialog';
 import { DeleteWarehouseDialog } from './_components/DeleteWarehouseDialog';
 import { IWarehouse as WarehouseType } from '@/types/home';
+import { ROUTES } from '@/utils/routes';
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -24,7 +25,7 @@ export default function HomePage() {
       const latestWarehouses = useMultiWarehouseStore.getState().warehouses;
       const newWarehouse = latestWarehouses[latestWarehouses.length - 1];
       if (newWarehouse) {
-        navigate(`/warehouse/${newWarehouse.id}`);
+        navigate(ROUTES.warehouseDetail(String(newWarehouse.id)));
       }
     }, 100);
   };
@@ -67,7 +68,7 @@ export default function HomePage() {
             {warehouses.map((warehouse) => (
               <div key={warehouse.id} className="relative group">
                 <Link
-                  to={`/warehouse/${warehouse.id}`}
+                  to={ROUTES.warehouseDetail(String(warehouse.id))}
                   className="block"
                 >
                   <div className="border rounded-lg p-6 bg-card hover:bg-accent hover:border-primary transition-all cursor-pointer h-full">
@@ -88,7 +89,7 @@ export default function HomePage() {
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      navigate(`/warehouse/${warehouse.id}/view?mode=desktop`);
+                      navigate(`${ROUTES.warehouseView(String(warehouse.id))}?mode=desktop`);
                     }}
                     className="p-2 bg-background border rounded-md shadow-sm hover:bg-accent hover:border-primary"
                     title="View Desktop"
@@ -99,7 +100,7 @@ export default function HomePage() {
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      navigate(`/warehouse/${warehouse.id}/view?mode=tablet`);
+                      navigate(`${ROUTES.warehouseView(String(warehouse.id))}?mode=tablet`);
                     }}
                     className="p-2 bg-background border rounded-md shadow-sm hover:bg-accent hover:border-primary"
                     title="View Tablet"

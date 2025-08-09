@@ -14,7 +14,7 @@ function App() {
           element={<WarehouseDetailPage />} 
         />
         <Route 
-          path="/warehouse/:id/view" 
+          path={ROUTES.warehouseView(':warehouseId')} 
           element={<WarehouseViewPage />} 
         />
         <Route 

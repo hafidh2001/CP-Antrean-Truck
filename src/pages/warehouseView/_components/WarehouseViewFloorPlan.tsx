@@ -27,7 +27,7 @@ export const WarehouseViewFloorPlan = ({ viewportWidth, viewportHeight }: Wareho
   useEffect(() => {
     const scaleX = viewportWidth / layout.width;
     const scaleY = viewportHeight / layout.height;
-    const newScale = Math.min(scaleX, scaleY) * 0.9; // 0.9 for some padding
+    const newScale = Math.min(scaleX, scaleY) * 0.95; // 0.95 for minimal padding
     setScale(newScale);
   }, [viewportWidth, viewportHeight, layout.width, layout.height]);
 
@@ -62,10 +62,10 @@ export const WarehouseViewFloorPlan = ({ viewportWidth, viewportHeight }: Wareho
   };
 
   return (
-    <div className="relative w-full h-full flex items-center justify-center bg-gray-50">
+    <div className="relative w-full h-full flex items-center justify-center">
       <div 
         ref={containerRef}
-        className="relative bg-white shadow-inner"
+        className="relative bg-white"
         style={{
           width: layout.width * scale,
           height: layout.height * scale,
