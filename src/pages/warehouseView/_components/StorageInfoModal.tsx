@@ -52,13 +52,6 @@ export const StorageInfoModal = ({ unit, open, onOpenChange }: StorageInfoModalP
                 </span>
               </div>
               
-              {unit.stackLevel !== undefined && unit.stackLevel > 0 && (
-                <div className="flex items-center gap-2">
-                  <Info className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">Stack Level:</span>
-                  <span className="font-medium">{unit.stackLevel}</span>
-                </div>
-              )}
             </div>
           </div>
           

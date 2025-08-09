@@ -25,7 +25,6 @@ export interface IStorageUnit extends IBaseStorageUnit {
   width: number;
   height: number;
   typeStorage: StorageTypeEnum;
-  stackLevel?: number;
 }
 
 // Text element specific interface

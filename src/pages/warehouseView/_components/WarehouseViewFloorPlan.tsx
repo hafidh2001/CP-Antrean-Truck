@@ -42,8 +42,7 @@ export const WarehouseViewFloorPlan = ({ viewportWidth, viewportHeight }: Wareho
     return cn(
       "absolute border-2 flex items-center justify-center cursor-pointer transition-all hover:opacity-80",
       baseColor,
-      borderColor,
-      unit.stackLevel && unit.stackLevel > 0 && "shadow-lg"
+      borderColor
     );
   };
 
@@ -80,7 +79,6 @@ export const WarehouseViewFloorPlan = ({ viewportWidth, viewportHeight }: Wareho
               top: unit.y * scale,
               width: unit.width * scale,
               height: unit.height * scale,
-              zIndex: unit.stackLevel || 0,
             }}
             onClick={() => handleUnitClick(unit)}
           >

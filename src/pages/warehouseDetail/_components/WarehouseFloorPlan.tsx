@@ -21,8 +21,6 @@ export const WarehouseFloorPlan = () => {
     moveUnit, 
     selectUnit, 
     selectedUnit, 
-    checkOverlap, 
-    stackUnits, 
     removeUnit,
     updateUnit,
     toolMode,
@@ -36,9 +34,7 @@ export const WarehouseFloorPlan = () => {
   const [drawingRect, setDrawingRect] = useState<IDrawingRect | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const { isShown: isShownDelete, toggle: toggleDelete } = useModal();
-  const { isShown: isShownStack, toggle: toggleStack } = useModal();
   const [pendingDelete, setPendingDelete] = useState<TAnyStorageUnit | null>(null);
-  const [pendingStack, setPendingStack] = useState<{ unit: IStorageUnit; overlappedUnit: IStorageUnit } | null>(null);
   
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -78,14 +74,8 @@ export const WarehouseFloorPlan = () => {
         const boundedX = Math.max(0, Math.min(newX, WAREHOUSE_CONSTANTS.WIDTH - unit.width));
         const boundedY = Math.max(0, Math.min(newY, WAREHOUSE_CONSTANTS.HEIGHT - unit.height));
         
-        // Check for overlap and offer stacking
-        const overlappedUnit = checkOverlap(unit, boundedX, boundedY);
-        if (overlappedUnit) {
-          setPendingStack({ unit, overlappedUnit });
-          toggleStack(true);
-        } else {
-          moveUnit(unit.id, boundedX, boundedY);
-        }
+        // Just move the unit
+        moveUnit(unit.id, boundedX, boundedY);
       } else {
         // Text element - consider approximate text height (fontSize + padding)
         const textHeight = ((unit as ITextElement).textStyling?.fontSize || 16) + 10;
@@ -178,7 +168,6 @@ export const WarehouseFloorPlan = () => {
         warehouseId: currentWarehouse.id,
         width,
         height,
-        stackLevel: 0,
         typeStorage: StorageTypeEnum.WAREHOUSE,
         textStyling: {
           fontSize: 16,
@@ -360,31 +349,6 @@ export const WarehouseFloorPlan = () => {
         confirmText="Delete"
         cancelText="Cancel"
         confirmVariant="destructive"
-      />
-      
-      <ConfirmationModal
-        isShown={isShownStack}
-        toggle={toggleStack}
-        title="Stack Storage Units"
-        description={pendingStack ? `Do you want to stack this unit on top of "${pendingStack.overlappedUnit.name}"?` : ''}
-        onConfirm={() => {
-          if (pendingStack) {
-            stackUnits(pendingStack.unit.id, pendingStack.overlappedUnit.id);
-            setPendingStack(null);
-          }
-        }}
-        onCancel={() => {
-          if (pendingStack) {
-            const { unit } = pendingStack;
-            const boundedX = Math.max(0, Math.min(unit.x, WAREHOUSE_CONSTANTS.WIDTH - unit.width));
-            const boundedY = Math.max(0, Math.min(unit.y, WAREHOUSE_CONSTANTS.HEIGHT - unit.height));
-            moveUnit(unit.id, boundedX, boundedY);
-            setPendingStack(null);
-          }
-        }}
-        confirmText="Stack"
-        cancelText="Cancel"
-        confirmVariant="default"
       />
     </div>
   );

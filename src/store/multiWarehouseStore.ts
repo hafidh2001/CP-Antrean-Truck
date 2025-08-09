@@ -33,7 +33,6 @@ interface MultiWarehouseStore {
   getStorageUnits: () => IStorageUnit[];
   getTextElements: () => ITextElement[];
   checkOverlap: (unit: IStorageUnit, newX: number, newY: number) => IStorageUnit | null;
-  stackUnits: (draggedId: number, targetId: number) => void;
 }
 
 // Helper function to ensure data compatibility
@@ -61,7 +60,6 @@ const migrateOldData = (data: any[]): IWarehouse[] => {
               width: unit.width,
               height: unit.height,
               typeStorage: unit.type === 'rack' ? StorageTypeEnum.RACK : StorageTypeEnum.WAREHOUSE,
-              stackLevel: unit.stackLevel || 0,
               textStyling: {
                 fontSize: 16,
                 fontFamily: 'Arial, sans-serif',
@@ -265,24 +263,5 @@ export const useMultiWarehouseStore = create<MultiWarehouseStore>((set, get) => 
       if (overlap) return other;
     }
     return null;
-  },
-
-  stackUnits: (draggedId, targetId) => {
-    const currentWarehouse = get().currentWarehouse;
-    if (!currentWarehouse) return;
-    
-    const draggedUnit = currentWarehouse.storageUnits.find(u => u.id === draggedId);
-    const targetUnit = currentWarehouse.storageUnits.find(u => u.id === targetId);
-    
-    if (!draggedUnit || !targetUnit || !isStorageUnit(draggedUnit) || !isStorageUnit(targetUnit)) return;
-    
-    // Position dragged unit on top of target
-    const updates: Partial<IStorageUnit> = {
-      x: targetUnit.x,
-      y: targetUnit.y,
-      stackLevel: (targetUnit.stackLevel || 0) + 1
-    };
-    
-    get().updateUnit(draggedId, updates);
   }
 }));

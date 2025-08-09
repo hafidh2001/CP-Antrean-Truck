@@ -173,7 +173,7 @@ export const ResizableStorageUnit = ({
     width: unit.width,
     height: unit.height,
     transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
-    zIndex: (unit.stackLevel || 0) * 10 + (isDragging ? 1000 : 0),
+    zIndex: isDragging ? 1000 : 0,
     cursor: getCursor(hoveredDirection),
   };
 

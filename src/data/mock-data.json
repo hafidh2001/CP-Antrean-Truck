@@ -12,7 +12,6 @@
       "warehouseId": 1,
       "width": 200,
       "height": 120,
-      "stackLevel": 0,
       "typeStorage": "warehouse",
       "textStyling": {
         "fontSize": 16,
@@ -30,7 +29,6 @@
       "warehouseId": 1,
       "width": 240,
       "height": 100,
-      "stackLevel": 0,
       "typeStorage": "rack",
       "textStyling": {
         "fontSize": 16,
@@ -48,7 +46,6 @@
       "warehouseId": 1,
       "width": 260,
       "height": 180,
-      "stackLevel": 0,
       "typeStorage": "warehouse",
       "textStyling": {
         "fontSize": 16,
@@ -61,12 +58,11 @@
       "id": 1754769979072,
       "type": "storage",
       "name": "Storage 4",
-      "x": 1340,
+      "x": 1300,
       "y": 20,
       "warehouseId": 1,
       "width": 160,
       "height": 140,
-      "stackLevel": 0,
       "typeStorage": "warehouse",
       "textStyling": {
         "fontSize": 16,
@@ -79,12 +75,11 @@
       "id": 1754769979801,
       "type": "storage",
       "name": "Storage 5",
-      "x": 1360,
+      "x": 1320,
       "y": 700,
       "warehouseId": 1,
       "width": 140,
       "height": 140,
-      "stackLevel": 0,
       "typeStorage": "warehouse",
       "textStyling": {
         "fontSize": 16,
@@ -97,12 +92,11 @@
       "id": 1754769980954,
       "type": "storage",
       "name": "Storage 6",
-      "x": 740,
+      "x": 720,
       "y": 720,
       "warehouseId": 1,
       "width": 160,
       "height": 120,
-      "stackLevel": 0,
       "typeStorage": "rack",
       "textStyling": {
         "fontSize": 16,
@@ -143,7 +137,7 @@
       "id": 1754769985564,
       "type": "text",
       "name": "New Text",
-      "x": 1460,
+      "x": 1420,
       "y": 380,
       "warehouseId": 1,
       "textStyling": {
@@ -155,5 +149,5 @@
     }
   ],
   "createdAt": "2025-08-09T20:06:09.057Z",
-  "updatedAt": "2025-08-09T20:27:24.628Z"
+  "updatedAt": "2025-08-09T21:23:21.360Z"
 }
