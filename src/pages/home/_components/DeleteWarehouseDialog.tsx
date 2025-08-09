@@ -10,12 +10,12 @@ interface DeleteWarehouseDialogProps {
   onConfirm: () => void;
 }
 
-export function DeleteWarehouseDialog({ 
+export const DeleteWarehouseDialog = ({ 
   warehouse, 
   open, 
   onOpenChange, 
   onConfirm 
-}: DeleteWarehouseDialogProps) {
+}: DeleteWarehouseDialogProps) => {
   
   if (!warehouse) return null;
 
@@ -66,4 +66,4 @@ export function DeleteWarehouseDialog({
       </DialogContent>
     </Dialog>
   );
-}
+};

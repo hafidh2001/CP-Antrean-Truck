@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Warehouse, Plus, Trash2 } from 'lucide-react';
 import { useMultiWarehouseStore } from '@/store/multiWarehouseStore';
-import { NewWarehouseDialog } from '@/components/warehouse/NewWarehouseDialog';
-import { DeleteWarehouseDialog } from '@/components/warehouse/DeleteWarehouseDialog';
+import { WarehouseDialog } from './_components/WarehouseDialog';
+import { DeleteWarehouseDialog } from './_components/DeleteWarehouseDialog';
 import { Warehouse as WarehouseType } from '@/types/warehouse';
 
 export interface HomePageProps {}
@@ -109,7 +109,7 @@ export default function HomePage(_props: HomePageProps = {}) {
         </div>
       </div>
 
-      <NewWarehouseDialog
+      <WarehouseDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         onCreateWarehouse={handleCreateWarehouse}

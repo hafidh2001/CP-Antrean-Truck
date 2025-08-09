@@ -24,7 +24,7 @@ const fontFamilies = [
   { value: 'system-ui', label: 'System UI' },
 ];
 
-export function TextElementDialog({ element, open, onOpenChange, onUpdate, onDelete }: TextElementDialogProps) {
+export const TextElementDialog = ({ element, open, onOpenChange, onUpdate, onDelete }: TextElementDialogProps) => {
   const [text, setText] = useState(element?.text || '');
   const [fontSize, setFontSize] = useState(element?.fontSize || 16);
   const [fontFamily, setFontFamily] = useState(element?.fontFamily || 'Arial, sans-serif');
@@ -196,4 +196,4 @@ export function TextElementDialog({ element, open, onOpenChange, onUpdate, onDel
       </DialogContent>
     </Dialog>
   );
-}
+};

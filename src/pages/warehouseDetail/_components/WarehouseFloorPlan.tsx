@@ -3,7 +3,7 @@ import { DndContext, DragEndEvent, useSensor, useSensors, PointerSensor } from '
 import { useMultiWarehouseStore } from '@/store/multiWarehouseStore';
 import { DraggableStorageUnit } from './DraggableStorageUnit';
 import { DraggableTextElement } from './DraggableTextElement';
-import { StorageUnitDialogV2 } from './StorageUnitDialogV2';
+import { StorageUnitDialog } from './StorageUnitDialog';
 import { TextElementDialog } from './TextElementDialog';
 import { StorageUnit, TextElement } from '@/types/warehouse';
 import { cn } from '@/lib/utils';
@@ -15,7 +15,7 @@ interface DrawingRect {
   endY: number;
 }
 
-export function WarehouseFloorPlanV2() {
+export const WarehouseFloorPlan = () => {
   const { 
     currentWarehouse, 
     addStorageUnit, 
@@ -322,7 +322,7 @@ export function WarehouseFloorPlanV2() {
         </div>
       </DndContext>
       
-      <StorageUnitDialogV2
+      <StorageUnitDialog
         unit={selectedUnit}
         open={dialogOpen}
         onOpenChange={setDialogOpen}
@@ -340,4 +340,4 @@ export function WarehouseFloorPlanV2() {
       />
     </div>
   );
-}
+};

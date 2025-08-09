@@ -1,15 +1,15 @@
 import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { WarehouseFloorPlanV2 } from '@/components/warehouse/WarehouseFloorPlanV2';
-import { WarehouseToolbar } from '@/components/warehouse/WarehouseToolbar';
-import { WarehouseHelper } from '@/components/warehouse/WarehouseHelper';
+import { WarehouseFloorPlan } from './_components/WarehouseFloorPlan';
+import { WarehouseToolbar } from './_components/WarehouseToolbar';
+import { WarehouseHelper } from './_components/WarehouseHelper';
 import { useMultiWarehouseStore } from '@/store/multiWarehouseStore';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 
-export interface WarehouseProps {}
+export interface WarehouseDetailPageProps {}
 
-export default function WarehouseDetail(_props: WarehouseProps = {}) {
+export default function WarehouseDetailPage(_props: WarehouseDetailPageProps = {}) {
   const { warehouseId } = useParams<{ warehouseId: string }>();
   const navigate = useNavigate();
   const { loadWarehouses, setCurrentWarehouse, currentWarehouse } = useMultiWarehouseStore();
@@ -44,7 +44,7 @@ export default function WarehouseDetail(_props: WarehouseProps = {}) {
       </div>
       
       <WarehouseToolbar />
-      <WarehouseFloorPlanV2 />
+      <WarehouseFloorPlan />
       <WarehouseHelper />
     </div>
   );

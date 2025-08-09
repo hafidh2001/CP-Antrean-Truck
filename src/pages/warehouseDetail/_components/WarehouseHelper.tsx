@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Info, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export function WarehouseHelper() {
+export const WarehouseHelper = () => {
   // Always start expanded
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -48,4 +48,4 @@ export function WarehouseHelper() {
       )}
     </div>
   );
-}
+};

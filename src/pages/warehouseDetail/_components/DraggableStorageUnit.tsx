@@ -11,7 +11,7 @@ interface DraggableStorageUnitProps {
   isDraggable?: boolean;
 }
 
-export function DraggableStorageUnit({ unit, onClick, onDoubleClick, isDraggable = true }: DraggableStorageUnitProps) {
+export const DraggableStorageUnit = ({ unit, onClick, onDoubleClick, isDraggable = true }: DraggableStorageUnitProps) => {
   const { selectedUnit } = useMultiWarehouseStore();
   const isSelected = selectedUnit?.id === unit.id;
   
@@ -67,4 +67,4 @@ export function DraggableStorageUnit({ unit, onClick, onDoubleClick, isDraggable
       )}
     </div>
   );
-}
+};

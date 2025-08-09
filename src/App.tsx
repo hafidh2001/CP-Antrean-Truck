@@ -1,6 +1,6 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import HomePage from '@/pages/home';
-import WarehouseDetail from '@/pages/warehouseDetail';
+import WarehouseDetailPage from '@/pages/warehouseDetail';
 import { ROUTES } from '@/utils/routes';
 
 function App() {
@@ -10,7 +10,7 @@ function App() {
         <Route path={ROUTES.home} element={<HomePage />} />
         <Route 
           path={ROUTES.warehouseDetail(':warehouseId')} 
-          element={<WarehouseDetail />} 
+          element={<WarehouseDetailPage />} 
         />
         <Route 
           path="*" 

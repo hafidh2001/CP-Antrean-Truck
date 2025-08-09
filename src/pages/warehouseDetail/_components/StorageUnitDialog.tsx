@@ -13,7 +13,7 @@ interface StorageUnitDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function StorageUnitDialogV2({ unit, open, onOpenChange }: StorageUnitDialogProps) {
+export const StorageUnitDialog = ({ unit, open, onOpenChange }: StorageUnitDialogProps) => {
   const { updateStorageUnit, removeStorageUnit } = useMultiWarehouseStore();
   const [unitName, setUnitName] = useState(unit?.name || '');
   const [isEditingName, setIsEditingName] = useState(false);
@@ -150,4 +150,4 @@ export function StorageUnitDialogV2({ unit, open, onOpenChange }: StorageUnitDia
       </DialogContent>
     </Dialog>
   );
-}
+};

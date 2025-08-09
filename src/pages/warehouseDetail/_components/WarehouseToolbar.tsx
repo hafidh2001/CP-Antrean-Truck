@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { useMultiWarehouseStore } from '@/store/multiWarehouseStore';
 import { Save, Trash2, Type, Square, MousePointer } from 'lucide-react';
 
-export function WarehouseToolbar() {
+export const WarehouseToolbar = () => {
   const multiStore = useMultiWarehouseStore();
   const { toolMode, setToolMode, currentWarehouse, updateWarehouseLayout, saveWarehouseToStorage } = multiStore;
 
@@ -72,4 +72,4 @@ export function WarehouseToolbar() {
       </Button>
     </div>
   );
-}
+};

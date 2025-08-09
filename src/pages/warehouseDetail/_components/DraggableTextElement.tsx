@@ -11,7 +11,7 @@ interface DraggableTextElementProps {
   isDraggable?: boolean;
 }
 
-export function DraggableTextElement({ element, isSelected, onClick, onDoubleClick, isDraggable = true }: DraggableTextElementProps) {
+export const DraggableTextElement = ({ element, isSelected, onClick, onDoubleClick, isDraggable = true }: DraggableTextElementProps) => {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: `text-${element.id}`,
     data: { ...element, elementType: 'text' },
@@ -62,4 +62,4 @@ export function DraggableTextElement({ element, isSelected, onClick, onDoubleCli
       )}
     </div>
   );
-}
+};

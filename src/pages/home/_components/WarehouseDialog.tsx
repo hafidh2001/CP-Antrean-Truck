@@ -4,13 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Warehouse } from 'lucide-react';
 import { useMultiWarehouseStore } from '@/store/multiWarehouseStore';
 
-interface NewWarehouseDialogProps {
+interface WarehouseDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreateWarehouse: (name: string, description: string) => void;
 }
 
-export function NewWarehouseDialog({ open, onOpenChange, onCreateWarehouse }: NewWarehouseDialogProps) {
+export const WarehouseDialog = ({ open, onOpenChange, onCreateWarehouse }: WarehouseDialogProps) => {
   const { warehouses } = useMultiWarehouseStore();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -106,4 +106,4 @@ export function NewWarehouseDialog({ open, onOpenChange, onCreateWarehouse }: Ne
       </DialogContent>
     </Dialog>
   );
-}
+};
