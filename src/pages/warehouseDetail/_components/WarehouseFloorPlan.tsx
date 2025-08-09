@@ -9,6 +9,8 @@ import { IStorageUnit, ITextElement, IDrawingRect, TAnyStorageUnit } from '@/typ
 import { ElementTypeEnum, StorageTypeEnum } from '@/types';
 import { isStorageUnit, isTextElement } from '@/functions/warehouseHelpers';
 import { cn } from '@/lib/utils';
+import useModal from '@/hooks/useModal';
+import { ConfirmationModal } from '@/components/confirmationModal';
 
 
 export const WarehouseFloorPlan = () => {
@@ -32,6 +34,10 @@ export const WarehouseFloorPlan = () => {
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawingRect, setDrawingRect] = useState<IDrawingRect | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const { isShown: isShownDelete, toggle: toggleDelete } = useModal();
+  const { isShown: isShownStack, toggle: toggleStack } = useModal();
+  const [pendingDelete, setPendingDelete] = useState<TAnyStorageUnit | null>(null);
+  const [pendingStack, setPendingStack] = useState<{ unit: IStorageUnit; overlappedUnit: IStorageUnit } | null>(null);
   
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -75,8 +81,9 @@ export const WarehouseFloorPlan = () => {
         
         // Check for overlap and offer stacking
         const overlappedUnit = checkOverlap(unit, boundedX, boundedY);
-        if (overlappedUnit && window.confirm(`Stack on top of ${overlappedUnit.name}?`)) {
-          stackUnits(unit.id, overlappedUnit.id);
+        if (overlappedUnit) {
+          setPendingStack({ unit, overlappedUnit });
+          toggleStack(true);
         } else {
           moveUnit(unit.id, boundedX, boundedY);
         }
@@ -215,10 +222,9 @@ export const WarehouseFloorPlan = () => {
       // Delete shortcut
       if (e.key === 'Delete') {
         if (selectedUnit && !dialogOpen && !textDialogOpen) {
-          if (window.confirm(`Delete ${selectedUnit.name}?`)) {
-            removeUnit(selectedUnit.id);
-            selectUnit(null);
-          }
+          e.preventDefault();
+          setPendingDelete(selectedUnit);
+          toggleDelete(true);
         }
       }
     };
@@ -326,6 +332,48 @@ export const WarehouseFloorPlan = () => {
             setTextDialogOpen(false);
           }
         }}
+      />
+      
+      <ConfirmationModal
+        isShown={isShownDelete}
+        toggle={toggleDelete}
+        title="Delete Element"
+        description={pendingDelete ? `Are you sure you want to delete "${pendingDelete.name}"? This action cannot be undone.` : ''}
+        onConfirm={() => {
+          if (pendingDelete) {
+            removeUnit(pendingDelete.id);
+            selectUnit(null);
+            setPendingDelete(null);
+          }
+        }}
+        confirmText="Delete"
+        cancelText="Cancel"
+        confirmVariant="destructive"
+      />
+      
+      <ConfirmationModal
+        isShown={isShownStack}
+        toggle={toggleStack}
+        title="Stack Storage Units"
+        description={pendingStack ? `Do you want to stack this unit on top of "${pendingStack.overlappedUnit.name}"?` : ''}
+        onConfirm={() => {
+          if (pendingStack) {
+            stackUnits(pendingStack.unit.id, pendingStack.overlappedUnit.id);
+            setPendingStack(null);
+          }
+        }}
+        onCancel={() => {
+          if (pendingStack) {
+            const { unit } = pendingStack;
+            const boundedX = Math.max(0, Math.min(unit.x, layout.width - unit.width));
+            const boundedY = Math.max(0, Math.min(unit.y, layout.height - unit.height));
+            moveUnit(unit.id, boundedX, boundedY);
+            setPendingStack(null);
+          }
+        }}
+        confirmText="Stack"
+        cancelText="Cancel"
+        confirmVariant="default"
       />
     </div>
   );
