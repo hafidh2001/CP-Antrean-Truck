@@ -11,6 +11,7 @@ import { isStorageUnit, isTextElement } from '@/functions/warehouseHelpers';
 import { cn } from '@/lib/utils';
 import useModal from '@/hooks/useModal';
 import { ConfirmationModal } from '@/components/confirmationModal';
+import { WAREHOUSE_CONSTANTS } from '@/constants/warehouse';
 
 
 export const WarehouseFloorPlan = () => {
@@ -51,10 +52,8 @@ export const WarehouseFloorPlan = () => {
     return <div>Loading...</div>;
   }
 
-  const { layout } = currentWarehouse;
-
   const snapToGrid = (value: number) => {
-    return Math.round(value / layout.gridSize) * layout.gridSize;
+    return Math.round(value / WAREHOUSE_CONSTANTS.GRID_SIZE) * WAREHOUSE_CONSTANTS.GRID_SIZE;
   };
 
   const handleDragStart = () => {
@@ -68,7 +67,7 @@ export const WarehouseFloorPlan = () => {
     const { active, delta } = event;
     const activeData = active.data.current as TAnyStorageUnit | undefined;
     
-    const unit = layout.storageUnits.find((u) => u.id === active.id || (activeData?.id && u.id === activeData.id));
+    const unit = currentWarehouse.storageUnits.find((u) => u.id === active.id || (activeData?.id && u.id === activeData.id));
     
     if (unit) {
       const newX = snapToGrid(unit.x + delta.x);
@@ -76,8 +75,8 @@ export const WarehouseFloorPlan = () => {
       
       // Keep within bounds
       if (isStorageUnit(unit)) {
-        const boundedX = Math.max(0, Math.min(newX, layout.width - unit.width));
-        const boundedY = Math.max(0, Math.min(newY, layout.height - unit.height));
+        const boundedX = Math.max(0, Math.min(newX, WAREHOUSE_CONSTANTS.WIDTH - unit.width));
+        const boundedY = Math.max(0, Math.min(newY, WAREHOUSE_CONSTANTS.HEIGHT - unit.height));
         
         // Check for overlap and offer stacking
         const overlappedUnit = checkOverlap(unit, boundedX, boundedY);
@@ -89,8 +88,8 @@ export const WarehouseFloorPlan = () => {
         }
       } else {
         // Text element - allow positioning up to the edge
-        const boundedX = Math.max(0, Math.min(newX, layout.width));
-        const boundedY = Math.max(0, Math.min(newY, layout.height));
+        const boundedX = Math.max(0, Math.min(newX, WAREHOUSE_CONSTANTS.WIDTH));
+        const boundedY = Math.max(0, Math.min(newY, WAREHOUSE_CONSTANTS.HEIGHT));
         moveUnit(unit.id, boundedX, boundedY);
       }
     }
@@ -159,7 +158,7 @@ export const WarehouseFloorPlan = () => {
     const width = Math.abs(drawingRect.endX - drawingRect.startX);
     const height = Math.abs(drawingRect.endY - drawingRect.startY);
     
-    if (width >= layout.gridSize && height >= layout.gridSize) {
+    if (width >= WAREHOUSE_CONSTANTS.GRID_SIZE && height >= WAREHOUSE_CONSTANTS.GRID_SIZE) {
       const newUnit: IStorageUnit = {
         id: Date.now(),
         type: ElementTypeEnum.STORAGE,
@@ -265,7 +264,7 @@ export const WarehouseFloorPlan = () => {
               linear-gradient(to right, #e5e5e5 1px, transparent 1px),
               linear-gradient(to bottom, #e5e5e5 1px, transparent 1px)
             `,
-            backgroundSize: `${layout.gridSize}px ${layout.gridSize}px`,
+            backgroundSize: `${WAREHOUSE_CONSTANTS.GRID_SIZE}px ${WAREHOUSE_CONSTANTS.GRID_SIZE}px`,
           }}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
@@ -365,8 +364,8 @@ export const WarehouseFloorPlan = () => {
         onCancel={() => {
           if (pendingStack) {
             const { unit } = pendingStack;
-            const boundedX = Math.max(0, Math.min(unit.x, layout.width - unit.width));
-            const boundedY = Math.max(0, Math.min(unit.y, layout.height - unit.height));
+            const boundedX = Math.max(0, Math.min(unit.x, WAREHOUSE_CONSTANTS.WIDTH - unit.width));
+            const boundedY = Math.max(0, Math.min(unit.y, WAREHOUSE_CONSTANTS.HEIGHT - unit.height));
             moveUnit(unit.id, boundedX, boundedY);
             setPendingStack(null);
           }

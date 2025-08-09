@@ -4,6 +4,7 @@ import { IStorageUnit, ITextElement } from '@/types/warehouseDetail';
 import { StorageTypeEnum } from '@/types';
 import { cn } from '@/lib/utils';
 import { StorageInfoModal } from './StorageInfoModal';
+import { WAREHOUSE_CONSTANTS } from '@/constants/warehouse';
 
 interface WarehouseViewFloorPlanProps {
   viewportWidth: number;
@@ -21,15 +22,13 @@ export const WarehouseViewFloorPlan = ({ viewportWidth, viewportHeight }: Wareho
     return <div>Loading...</div>;
   }
 
-  const { layout } = currentWarehouse;
-
   // Calculate scale to fit the warehouse in the viewport
   useEffect(() => {
-    const scaleX = viewportWidth / layout.width;
-    const scaleY = viewportHeight / layout.height;
+    const scaleX = viewportWidth / WAREHOUSE_CONSTANTS.WIDTH;
+    const scaleY = viewportHeight / WAREHOUSE_CONSTANTS.HEIGHT;
     const newScale = Math.min(scaleX, scaleY) * 0.95; // 0.95 for minimal padding
     setScale(newScale);
-  }, [viewportWidth, viewportHeight, layout.width, layout.height]);
+  }, [viewportWidth, viewportHeight]);
 
   const handleUnitClick = (unit: IStorageUnit) => {
     setSelectedUnit(unit);
@@ -67,8 +66,8 @@ export const WarehouseViewFloorPlan = ({ viewportWidth, viewportHeight }: Wareho
         ref={containerRef}
         className="relative bg-white"
         style={{
-          width: layout.width * scale,
-          height: layout.height * scale,
+          width: WAREHOUSE_CONSTANTS.WIDTH * scale,
+          height: WAREHOUSE_CONSTANTS.HEIGHT * scale,
         }}
       >
         {/* Storage Units */}

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Info, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { WAREHOUSE_CONSTANTS } from '@/constants/warehouse';
 
 export const WarehouseHelper = () => {
   // Always start expanded
@@ -43,6 +44,9 @@ export const WarehouseHelper = () => {
             <p><strong>T</strong> - Text tool (click to add text)</p>
             <p><strong>Click selected element</strong> to edit properties</p>
             <p><strong>Delete key</strong> to remove selected element</p>
+            <p className="mt-2 pt-2 border-t border-border">
+              <strong>Warehouse:</strong> {WAREHOUSE_CONSTANTS.WIDTH} × {WAREHOUSE_CONSTANTS.HEIGHT} | Grid: {WAREHOUSE_CONSTANTS.GRID_SIZE}px
+            </p>
           </div>
         </div>
       )}

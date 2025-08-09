@@ -6,13 +6,13 @@ import { ConfirmationModal } from '@/components/confirmationModal';
 
 export const WarehouseToolbar = () => {
   const multiStore = useMultiWarehouseStore();
-  const { toolMode, setToolMode, currentWarehouse, updateWarehouseLayout, saveWarehouseToStorage } = multiStore;
+  const { toolMode, setToolMode, currentWarehouse, updateWarehouse, saveWarehouseToStorage } = multiStore;
   const { isShown: isShownSave, toggle: toggleSave } = useModal();
   const { isShown: isShownClear, toggle: toggleClear } = useModal();
 
   const handleSaveConfirm = () => {
     if (currentWarehouse) {
-      saveWarehouseToStorage(currentWarehouse.id);
+      saveWarehouseToStorage();
       
       // Show success feedback
       const toast = document.createElement('div');
@@ -25,7 +25,7 @@ export const WarehouseToolbar = () => {
 
   const handleClearConfirm = () => {
     if (currentWarehouse) {
-      updateWarehouseLayout(currentWarehouse.id, {
+      updateWarehouse(currentWarehouse.id, {
         storageUnits: [],
       });
     }

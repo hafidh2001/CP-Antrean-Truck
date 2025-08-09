@@ -4,6 +4,7 @@ import { IStorageUnit, TResizeDirection } from '@/types/warehouseDetail';
 import { StorageTypeEnum } from '@/types';
 import { cn } from '@/lib/utils';
 import { useMultiWarehouseStore } from '@/store/multiWarehouseStore';
+import { WAREHOUSE_CONSTANTS } from '@/constants/warehouse';
 
 interface ResizableStorageUnitProps {
   unit: IStorageUnit;
@@ -22,7 +23,7 @@ export const ResizableStorageUnit = ({
   const [hoveredDirection, setHoveredDirection] = useState<TResizeDirection>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   
-  const gridSize = currentWarehouse?.layout.gridSize || 20;
+  const gridSize = WAREHOUSE_CONSTANTS.GRID_SIZE;
 
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: unit.id,
@@ -134,8 +135,8 @@ export const ResizableStorageUnit = ({
         }
         
         // Constrain to canvas bounds
-        newX = Math.max(0, Math.min(newX, currentWarehouse.layout.width - newWidth));
-        newY = Math.max(0, Math.min(newY, currentWarehouse.layout.height - newHeight));
+        newX = Math.max(0, Math.min(newX, WAREHOUSE_CONSTANTS.WIDTH - newWidth));
+        newY = Math.max(0, Math.min(newY, WAREHOUSE_CONSTANTS.HEIGHT - newHeight));
         
         // Update dimensions
         updateUnit(unit.id, {

@@ -36,22 +36,12 @@ export interface ITextElement extends IBaseStorageUnit {
 // Union type for all storage units
 export type TAnyStorageUnit = IStorageUnit | ITextElement;
 
-// Warehouse layout interface
-export interface IWarehouseLayout {
-  id: string;
-  name: string;
-  width: number;
-  height: number;
-  gridSize: number;
-  storageUnits: TAnyStorageUnit[];
-}
-
 // Warehouse interface
 export interface IWarehouse {
   id: number;
   name: string;
   description?: string;
-  layout: IWarehouseLayout;
+  storageUnits: TAnyStorageUnit[];
   createdAt: string;
   updatedAt: string;
 }

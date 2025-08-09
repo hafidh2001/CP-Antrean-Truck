@@ -2,50 +2,9 @@ import { create } from 'zustand';
 import { IWarehouse, IStorageUnit, ITextElement, TAnyStorageUnit, TToolMode } from '@/types/warehouseDetail';
 import { ElementTypeEnum, StorageTypeEnum } from '@/types';
 import { isStorageUnit, isTextElement } from '@/functions/warehouseHelpers';
-import warehouseData from '@/data/mockWarehouses.json';
 
-// Types for legacy data migration
-interface LegacyStorageUnit {
-  id: string | number;
-  name: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  type?: StorageTypeEnum;
-  stackLevel?: number;
-  rotation?: number;
-}
 
-interface LegacyTextElement {
-  id: string | number;
-  text?: string;
-  x: number;
-  y: number;
-  fontSize?: number;
-  fontFamily?: string;
-  rotation?: number;
-  color?: string;
-}
 
-interface LegacyLayout {
-  id: string;
-  name: string;
-  width: number;
-  height: number;
-  gridSize: number;
-  storageUnits?: (LegacyStorageUnit | TAnyStorageUnit)[];
-  textElements?: LegacyTextElement[];
-}
-
-interface LegacyWarehouse {
-  id: string | number;
-  name: string;
-  description?: string;
-  layout: LegacyLayout;
-  createdAt: string;
-  updatedAt: string;
-}
 
 interface MultiWarehouseStore {
   warehouses: IWarehouse[];
@@ -58,8 +17,8 @@ interface MultiWarehouseStore {
   addWarehouse: (name: string, description: string) => void;
   deleteWarehouse: (id: number) => void;
   setCurrentWarehouse: (id: number) => void;
-  updateWarehouseLayout: (warehouseId: number, updates: Partial<IWarehouse['layout']>) => void;
-  saveWarehouseToStorage: (warehouseId: number) => void;
+  updateWarehouse: (warehouseId: number, updates: Partial<IWarehouse>) => void;
+  saveWarehouseToStorage: () => void;
   saveAllWarehouses: () => void;
   
   // Unified storage unit operations
@@ -77,52 +36,52 @@ interface MultiWarehouseStore {
 }
 
 // Helper function to ensure data compatibility
-const migrateOldData = (data: LegacyWarehouse[]): IWarehouse[] => {
-  return data.map((warehouse: LegacyWarehouse) => {
-    // If warehouse has old structure with textElements
-    if (warehouse.layout && warehouse.layout.textElements) {
-      const storageUnits: TAnyStorageUnit[] = [];
-      
-      // Migrate old storageUnits
+const migrateOldData = (data: any[]): IWarehouse[] => {
+  return data.map((warehouse: any) => {
+    const warehouseId = typeof warehouse.id === 'string' ? parseInt(warehouse.id) || 1 : warehouse.id;
+    let storageUnits: TAnyStorageUnit[] = [];
+
+    // Handle old structure with layout
+    if (warehouse.layout) {
+      // Migrate old storageUnits from layout
       if (warehouse.layout.storageUnits) {
-        warehouse.layout.storageUnits.forEach((unit: LegacyStorageUnit | TAnyStorageUnit) => {
+        warehouse.layout.storageUnits.forEach((unit: any) => {
           if ('type' in unit && unit.type === ElementTypeEnum.STORAGE) {
-            // Already migrated
             storageUnits.push(unit as TAnyStorageUnit);
-            return;
+          } else {
+            // Legacy storage unit
+            storageUnits.push({
+              id: typeof unit.id === 'string' ? parseInt(unit.id) || Date.now() : unit.id,
+              type: ElementTypeEnum.STORAGE,
+              name: unit.name,
+              x: unit.x,
+              y: unit.y,
+              warehouseId: warehouseId,
+              width: unit.width,
+              height: unit.height,
+              typeStorage: unit.type === 'rack' ? StorageTypeEnum.RACK : StorageTypeEnum.WAREHOUSE,
+              stackLevel: unit.stackLevel || 0,
+              textStyling: {
+                fontSize: 16,
+                fontFamily: 'Arial, sans-serif',
+                rotation: unit.rotation || 0,
+                textColor: '#000000'
+              }
+            } as IStorageUnit);
           }
-          const legacyUnit = unit as LegacyStorageUnit;
-          storageUnits.push({
-            id: typeof legacyUnit.id === 'string' ? parseInt(legacyUnit.id) || Date.now() : legacyUnit.id,
-            type: ElementTypeEnum.STORAGE,
-            name: legacyUnit.name,
-            x: legacyUnit.x,
-            y: legacyUnit.y,
-            warehouseId: typeof warehouse.id === 'string' ? parseInt(warehouse.id) || 1 : warehouse.id,
-            width: legacyUnit.width,
-            height: legacyUnit.height,
-            typeStorage: legacyUnit.type === 'rack' ? StorageTypeEnum.RACK : StorageTypeEnum.WAREHOUSE,
-            stackLevel: legacyUnit.stackLevel || 0,
-            textStyling: {
-              fontSize: 16,
-              fontFamily: 'Arial, sans-serif',
-              rotation: legacyUnit.rotation || 0,
-              textColor: '#000000'
-            }
-          } as IStorageUnit);
         });
       }
       
-      // Migrate old textElements
+      // Migrate old textElements from layout
       if (warehouse.layout.textElements) {
-        warehouse.layout.textElements.forEach((element: LegacyTextElement) => {
+        warehouse.layout.textElements.forEach((element: any) => {
           storageUnits.push({
             id: typeof element.id === 'string' ? parseInt(element.id) || Date.now() : element.id,
             type: ElementTypeEnum.TEXT,
             name: element.text || 'Text',
             x: element.x,
             y: element.y,
-            warehouseId: typeof warehouse.id === 'string' ? parseInt(warehouse.id) || 1 : warehouse.id,
+            warehouseId: warehouseId,
             textStyling: {
               fontSize: element.fontSize || 16,
               fontFamily: element.fontFamily || 'Arial, sans-serif',
@@ -132,77 +91,16 @@ const migrateOldData = (data: LegacyWarehouse[]): IWarehouse[] => {
           } as ITextElement);
         });
       }
-      
-      return {
-        id: typeof warehouse.id === 'string' ? parseInt(warehouse.id) || 1 : warehouse.id,
-        name: warehouse.name,
-        description: warehouse.description,
-        layout: {
-          id: warehouse.layout.id,
-          name: warehouse.layout.name,
-          width: warehouse.layout.width,
-          height: warehouse.layout.height,
-          gridSize: warehouse.layout.gridSize,
-          storageUnits
-        },
-        createdAt: warehouse.createdAt,
-        updatedAt: warehouse.updatedAt
-      } as IWarehouse;
-    }
-
-    // Migrate existing storageUnits to add warehouseId if missing and update type
-    if (warehouse.layout?.storageUnits) {
-      const migratedUnits = warehouse.layout.storageUnits.map((unit: LegacyStorageUnit | TAnyStorageUnit) => {
-        if ('type' in unit && (unit.type === ElementTypeEnum.STORAGE || unit.type === ElementTypeEnum.TEXT)) {
-          // Already migrated unit
-          return unit;
-        }
-        const legacyUnit = unit as LegacyStorageUnit;
-        return {
-          ...legacyUnit,
-          id: typeof legacyUnit.id === 'string' ? parseInt(legacyUnit.id) || Date.now() : legacyUnit.id,
-          type: ElementTypeEnum.STORAGE,
-          warehouseId: typeof warehouse.id === 'string' ? parseInt(warehouse.id) || 1 : warehouse.id,
-          typeStorage: legacyUnit.type === 'rack' ? StorageTypeEnum.RACK : StorageTypeEnum.WAREHOUSE,
-          textStyling: {
-            fontSize: 16,
-            fontFamily: 'Arial, sans-serif',
-            rotation: 0,
-            textColor: '#000000'
-          }
-        } as TAnyStorageUnit;
-      });
-      
-      return {
-        id: typeof warehouse.id === 'string' ? parseInt(warehouse.id) || 1 : warehouse.id,
-        name: warehouse.name,
-        description: warehouse.description,
-        layout: {
-          id: warehouse.layout.id,
-          name: warehouse.layout.name,
-          width: warehouse.layout.width,
-          height: warehouse.layout.height,
-          gridSize: warehouse.layout.gridSize,
-          storageUnits: migratedUnits
-        },
-        createdAt: warehouse.createdAt,
-        updatedAt: warehouse.updatedAt
-      } as IWarehouse;
+    } else if (warehouse.storageUnits) {
+      // Already in new format
+      storageUnits = warehouse.storageUnits;
     }
     
-    // Return warehouse with proper ID type
     return {
-      id: typeof warehouse.id === 'string' ? parseInt(warehouse.id) || 1 : warehouse.id,
+      id: warehouseId,
       name: warehouse.name,
       description: warehouse.description,
-      layout: {
-        id: warehouse.layout.id,
-        name: warehouse.layout.name,
-        width: warehouse.layout.width,
-        height: warehouse.layout.height,
-        gridSize: warehouse.layout.gridSize,
-        storageUnits: warehouse.layout.storageUnits || []
-      },
+      storageUnits: storageUnits,
       createdAt: warehouse.createdAt,
       updatedAt: warehouse.updatedAt
     } as IWarehouse;
@@ -216,14 +114,24 @@ export const useMultiWarehouseStore = create<MultiWarehouseStore>((set, get) => 
   toolMode: 'select',
 
   loadWarehouses: () => {
-    // Load from localStorage if exists, otherwise use mock data
+    // Load from localStorage if exists
     const savedData = localStorage.getItem('allWarehouses');
     if (savedData) {
       const parsed = JSON.parse(savedData);
       const migrated = migrateOldData(Array.isArray(parsed) ? parsed : parsed.warehouses || []);
       set({ warehouses: migrated });
     } else {
-      set({ warehouses: warehouseData.warehouses as IWarehouse[] });
+      // Create default warehouse if none exists
+      const defaultWarehouse: IWarehouse = {
+        id: 1,
+        name: 'Gudang Utama',
+        description: 'Gudang utama perusahaan',
+        storageUnits: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      set({ warehouses: [defaultWarehouse] });
+      localStorage.setItem('allWarehouses', JSON.stringify([defaultWarehouse]));
     }
   },
 
@@ -236,14 +144,7 @@ export const useMultiWarehouseStore = create<MultiWarehouseStore>((set, get) => 
       id: maxId + 1,
       name,
       description,
-      layout: {
-        id: `layout-${Date.now()}`,
-        name: `Layout ${name}`,
-        width: window.innerWidth,
-        height: window.innerHeight,
-        gridSize: 20,
-        storageUnits: []
-      },
+      storageUnits: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -275,24 +176,15 @@ export const useMultiWarehouseStore = create<MultiWarehouseStore>((set, get) => 
   setCurrentWarehouse: (id) => {
     const warehouse = get().warehouses.find(w => w.id === id);
     if (warehouse) {
-      // Update layout dimensions to current viewport
-      const updatedWarehouse = {
-        ...warehouse,
-        layout: {
-          ...warehouse.layout,
-          width: window.innerWidth,
-          height: window.innerHeight,
-        }
-      };
-      set({ currentWarehouse: updatedWarehouse });
+      set({ currentWarehouse: warehouse, selectedUnit: null });
     }
   },
 
-  updateWarehouseLayout: (warehouseId, updates) => {
+  updateWarehouse: (warehouseId, updates) => {
     set((state) => {
       const warehouses = state.warehouses.map(w => 
         w.id === warehouseId 
-          ? { ...w, layout: { ...w.layout, ...updates }, updatedAt: new Date().toISOString() }
+          ? { ...w, ...updates, updatedAt: new Date().toISOString() }
           : w
       );
       
@@ -300,23 +192,16 @@ export const useMultiWarehouseStore = create<MultiWarehouseStore>((set, get) => 
         ? warehouses.find(w => w.id === warehouseId) || null
         : state.currentWarehouse;
       
+      // Save to localStorage
+      localStorage.setItem('allWarehouses', JSON.stringify(warehouses));
+      
       return { warehouses, currentWarehouse };
     });
   },
 
-  saveWarehouseToStorage: (warehouseId) => {
+  saveWarehouseToStorage: () => {
     const state = get();
-    const warehouse = state.warehouses.find(w => w.id === warehouseId);
-    if (warehouse && state.currentWarehouse) {
-      // Update the warehouse in the list
-      const updatedWarehouses = state.warehouses.map(w =>
-        w.id === warehouseId ? state.currentWarehouse! : w
-      );
-      
-      // Save to localStorage
-      localStorage.setItem('allWarehouses', JSON.stringify(updatedWarehouses));
-      set({ warehouses: updatedWarehouses });
-    }
+    localStorage.setItem('allWarehouses', JSON.stringify(state.warehouses));
   },
 
   saveAllWarehouses: () => {
@@ -325,151 +210,85 @@ export const useMultiWarehouseStore = create<MultiWarehouseStore>((set, get) => 
   },
 
   // Unified unit operations
-  addUnit: (unit) =>
-    set((state) => {
-      if (!state.currentWarehouse) return state;
-      
-      const updatedLayout = {
-        ...state.currentWarehouse.layout,
-        storageUnits: [...state.currentWarehouse.layout.storageUnits, unit],
-      };
-      
-      const updatedWarehouse = {
-        ...state.currentWarehouse,
-        layout: updatedLayout,
-        updatedAt: new Date().toISOString(),
-      };
-      
-      return { currentWarehouse: updatedWarehouse };
-    }),
+  addUnit: (unit) => {
+    const currentWarehouse = get().currentWarehouse;
+    if (!currentWarehouse) return;
+    
+    const updatedUnits = [...currentWarehouse.storageUnits, unit];
+    get().updateWarehouse(currentWarehouse.id, { storageUnits: updatedUnits });
+  },
 
-  updateUnit: (id, updates) =>
-    set((state) => {
-      if (!state.currentWarehouse) return state;
-      
-      const updatedLayout = {
-        ...state.currentWarehouse.layout,
-        storageUnits: state.currentWarehouse.layout.storageUnits.map((unit) =>
-          unit.id === id ? { ...unit, ...updates } as TAnyStorageUnit : unit
-        ) as TAnyStorageUnit[],
-      };
-      
-      const updatedWarehouse = {
-        ...state.currentWarehouse,
-        layout: updatedLayout,
-        updatedAt: new Date().toISOString(),
-      };
-      
-      return { currentWarehouse: updatedWarehouse };
-    }),
+  updateUnit: (id, updates) => {
+    const currentWarehouse = get().currentWarehouse;
+    if (!currentWarehouse) return;
+    
+    const updatedUnits = currentWarehouse.storageUnits.map(unit => 
+      unit.id === id ? { ...unit, ...updates } as TAnyStorageUnit : unit
+    );
+    get().updateWarehouse(currentWarehouse.id, { storageUnits: updatedUnits });
+  },
 
-  removeUnit: (id) =>
-    set((state) => {
-      if (!state.currentWarehouse) return state;
-      
-      const updatedLayout = {
-        ...state.currentWarehouse.layout,
-        storageUnits: state.currentWarehouse.layout.storageUnits.filter((unit) => unit.id !== id),
-      };
-      
-      const updatedWarehouse = {
-        ...state.currentWarehouse,
-        layout: updatedLayout,
-        updatedAt: new Date().toISOString(),
-      };
-      
-      return { 
-        currentWarehouse: updatedWarehouse,
-        selectedUnit: state.selectedUnit?.id === id ? null : state.selectedUnit
-      };
-    }),
+  removeUnit: (id) => {
+    const currentWarehouse = get().currentWarehouse;
+    if (!currentWarehouse) return;
+    
+    const updatedUnits = currentWarehouse.storageUnits.filter(unit => unit.id !== id);
+    get().updateWarehouse(currentWarehouse.id, { storageUnits: updatedUnits });
+    set({ selectedUnit: null });
+  },
 
   selectUnit: (unit) => set({ selectedUnit: unit }),
 
-  moveUnit: (id, x, y) =>
-    set((state) => {
-      if (!state.currentWarehouse) return state;
-      
-      const updatedLayout = {
-        ...state.currentWarehouse.layout,
-        storageUnits: state.currentWarehouse.layout.storageUnits.map((unit) =>
-          unit.id === id ? { ...unit, x, y } : unit
-        ),
-      };
-      
-      const updatedWarehouse = {
-        ...state.currentWarehouse,
-        layout: updatedLayout,
-        updatedAt: new Date().toISOString(),
-      };
-      
-      return { currentWarehouse: updatedWarehouse };
-    }),
+  moveUnit: (id, x, y) => {
+    get().updateUnit(id, { x, y });
+  },
 
   // Helper methods
   getStorageUnits: () => {
     const { currentWarehouse } = get();
     if (!currentWarehouse) return [];
-    return currentWarehouse.layout.storageUnits.filter(isStorageUnit);
+    return currentWarehouse.storageUnits.filter(isStorageUnit);
   },
 
   getTextElements: () => {
     const { currentWarehouse } = get();
     if (!currentWarehouse) return [];
-    return currentWarehouse.layout.storageUnits.filter(isTextElement);
+    return currentWarehouse.storageUnits.filter(isTextElement);
   },
 
   checkOverlap: (unit, newX, newY) => {
-    const state = get();
-    if (!state.currentWarehouse) return null;
-    
-    const storageUnits = state.currentWarehouse.layout.storageUnits.filter(isStorageUnit);
-    
+    const storageUnits = get().getStorageUnits();
     for (const other of storageUnits) {
       if (other.id === unit.id) continue;
       
-      const overlap = 
-        newX < other.x + other.width &&
-        newX + unit.width > other.x &&
-        newY < other.y + other.height &&
-        newY + unit.height > other.y;
-        
+      const overlap = !(
+        newX + unit.width <= other.x ||
+        newX >= other.x + other.width ||
+        newY + unit.height <= other.y ||
+        newY >= other.y + other.height
+      );
+      
       if (overlap) return other;
     }
     return null;
   },
 
-  stackUnits: (draggedId, targetId) =>
-    set((state) => {
-      if (!state.currentWarehouse) return state;
-      
-      const targetUnit = state.currentWarehouse.layout.storageUnits.find(
-        (u) => u.id === targetId && isStorageUnit(u)
-      ) as IStorageUnit | undefined;
-      
-      if (!targetUnit) return state;
-      
-      const updatedLayout = {
-        ...state.currentWarehouse.layout,
-        storageUnits: state.currentWarehouse.layout.storageUnits.map((unit) => {
-          if (unit.id === draggedId && isStorageUnit(unit)) {
-            return {
-              ...unit,
-              x: targetUnit.x,
-              y: targetUnit.y,
-              stackLevel: (targetUnit.stackLevel || 0) + 1,
-            };
-          }
-          return unit;
-        }),
-      };
-      
-      const updatedWarehouse = {
-        ...state.currentWarehouse,
-        layout: updatedLayout,
-        updatedAt: new Date().toISOString(),
-      };
-      
-      return { currentWarehouse: updatedWarehouse };
-    }),
+  stackUnits: (draggedId, targetId) => {
+    const currentWarehouse = get().currentWarehouse;
+    if (!currentWarehouse) return;
+    
+    const draggedUnit = currentWarehouse.storageUnits.find(u => u.id === draggedId);
+    const targetUnit = currentWarehouse.storageUnits.find(u => u.id === targetId);
+    
+    if (!draggedUnit || !targetUnit || !isStorageUnit(draggedUnit) || !isStorageUnit(targetUnit)) return;
+    
+    // Position dragged unit on top of target
+    const updates: Partial<IStorageUnit> = {
+      x: targetUnit.x,
+      y: targetUnit.y,
+      stackLevel: (targetUnit.stackLevel || 0) + 1
+    };
+    
+    get().updateUnit(draggedId, updates);
+  }
 }));

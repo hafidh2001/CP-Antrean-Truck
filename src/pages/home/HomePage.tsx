@@ -75,7 +75,7 @@ export default function HomePage() {
                     <div className="flex items-center justify-between mb-4">
                       <Warehouse className="h-8 w-8 text-primary" />
                       <span className="text-xs text-muted-foreground">
-                        {warehouse.layout.storageUnits.length} units
+                        {warehouse.storageUnits.length} units
                       </span>
                     </div>
                     <h3 className="text-lg font-semibold mb-2">{warehouse.name}</h3>
