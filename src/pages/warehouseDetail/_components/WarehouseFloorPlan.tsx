@@ -87,9 +87,10 @@ export const WarehouseFloorPlan = () => {
           moveUnit(unit.id, boundedX, boundedY);
         }
       } else {
-        // Text element - allow positioning up to the edge
-        const boundedX = Math.max(0, Math.min(newX, WAREHOUSE_CONSTANTS.WIDTH));
-        const boundedY = Math.max(0, Math.min(newY, WAREHOUSE_CONSTANTS.HEIGHT));
+        // Text element - consider approximate text height (fontSize + padding)
+        const textHeight = ((unit as ITextElement).textStyling?.fontSize || 16) + 10;
+        const boundedX = Math.max(0, Math.min(newX, WAREHOUSE_CONSTANTS.WIDTH - 50)); // 50px buffer for text width
+        const boundedY = Math.max(0, Math.min(newY, WAREHOUSE_CONSTANTS.HEIGHT - textHeight));
         moveUnit(unit.id, boundedX, boundedY);
       }
     }
@@ -104,15 +105,20 @@ export const WarehouseFloorPlan = () => {
     
     if (toolMode === 'text') {
       // Create text immediately on click
+      const fontSize = 16;
+      const textHeight = fontSize + 10;
+      const maxY = Math.min(y, WAREHOUSE_CONSTANTS.HEIGHT - textHeight);
+      const maxX = Math.min(x, WAREHOUSE_CONSTANTS.WIDTH - 50);
+      
       const newTextElement: ITextElement = {
         id: Date.now(),
         type: ElementTypeEnum.TEXT,
         name: 'New Text',
-        x: x,
-        y: y,
+        x: maxX,
+        y: maxY,
         warehouseId: currentWarehouse.id,
         textStyling: {
-          fontSize: 16,
+          fontSize: fontSize,
           fontFamily: 'Arial, sans-serif',
           rotation: 0,
           textColor: '#000000',
@@ -142,8 +148,12 @@ export const WarehouseFloorPlan = () => {
     if (!isDrawing || !drawingRect || toolMode !== 'rectangle') return;
     
     const rect = containerRef.current!.getBoundingClientRect();
-    const x = snapToGrid(e.clientX - rect.left);
-    const y = snapToGrid(e.clientY - rect.top);
+    const rawX = e.clientX - rect.left;
+    const rawY = e.clientY - rect.top;
+    
+    // Constrain to bounds
+    const x = snapToGrid(Math.max(0, Math.min(rawX, WAREHOUSE_CONSTANTS.WIDTH)));
+    const y = snapToGrid(Math.max(0, Math.min(rawY, WAREHOUSE_CONSTANTS.HEIGHT)));
     
     setDrawingRect({
       ...drawingRect,
@@ -249,17 +259,19 @@ export const WarehouseFloorPlan = () => {
   };
 
   return (
-    <div className="relative w-full h-full">
+    <div className="relative w-full h-full flex items-center justify-center overflow-auto p-4">
       <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
         <div 
           ref={containerRef}
           className={cn(
-            "relative w-full h-full border border-gray-200 overflow-hidden bg-gray-50",
+            "relative border border-gray-200 bg-gray-50",
             toolMode === 'select' ? "cursor-default" : 
             toolMode === 'text' ? "cursor-text" : 
             "cursor-crosshair"
           )}
           style={{
+            width: WAREHOUSE_CONSTANTS.WIDTH,
+            height: WAREHOUSE_CONSTANTS.HEIGHT,
             backgroundImage: `
               linear-gradient(to right, #e5e5e5 1px, transparent 1px),
               linear-gradient(to bottom, #e5e5e5 1px, transparent 1px)
