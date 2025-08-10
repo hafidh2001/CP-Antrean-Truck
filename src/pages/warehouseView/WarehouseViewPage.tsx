@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useMultiWarehouseStore } from '@/store/multiWarehouseStore';
 import { WarehouseViewFloorPlan } from './_components/WarehouseViewFloorPlan';
@@ -11,15 +11,16 @@ export default function WarehouseViewPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const mode = searchParams.get('mode') || 'desktop';
-  const { setCurrentWarehouse, currentWarehouse, loadWarehouses } = useMultiWarehouseStore();
+  const { loadWarehouseFromApi, currentWarehouse, isLoading, error } = useMultiWarehouseStore();
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
+  const loadingRef = useRef(false);
 
   useEffect(() => {
-    loadWarehouses();
-    if (warehouseId) {
-      setCurrentWarehouse(Number(warehouseId));
+    if (warehouseId && !loadingRef.current) {
+      loadingRef.current = true;
+      loadWarehouseFromApi(parseInt(warehouseId));
     }
-  }, [warehouseId, setCurrentWarehouse, loadWarehouses]);
+  }, [warehouseId]);
 
   useEffect(() => {
     const updateViewportSize = () => {
@@ -36,10 +37,34 @@ export default function WarehouseViewPage() {
     updateViewportSize();
   }, [mode]);
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading warehouse data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-500 mb-4">Error: {error}</p>
+          <Button onClick={() => warehouseId && loadWarehouseFromApi(parseInt(warehouseId))}>
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   if (!currentWarehouse) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Loading warehouse data...</p>
+        <p className="text-muted-foreground">Warehouse not found</p>
       </div>
     );
   }

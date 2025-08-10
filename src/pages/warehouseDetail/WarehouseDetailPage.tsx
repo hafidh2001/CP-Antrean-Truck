@@ -6,6 +6,7 @@ import { WarehouseHelper } from './_components/WarehouseHelper';
 import { useMultiWarehouseStore } from '@/store/multiWarehouseStore';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
+import { ROUTES } from '@/utils/routes';
 
 export default function WarehouseDetailPage() {
   const { warehouseId } = useParams<{ warehouseId: string }>();
@@ -21,7 +22,7 @@ export default function WarehouseDetailPage() {
   }, [warehouseId]);
 
   const handleBack = () => {
-    navigate('/');
+    navigate(ROUTES.base);
   };
 
   if (isLoading) {
