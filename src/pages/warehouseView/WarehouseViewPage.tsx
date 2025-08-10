@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useMultiWarehouseStore } from '@/store/multiWarehouseStore';
 import { WarehouseViewFloorPlan } from './_components/WarehouseViewFloorPlan';
-import { ChevronLeft, Monitor, Tablet } from 'lucide-react';
+import { ChevronLeft, Tablet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/utils/routes';
 
@@ -29,12 +29,21 @@ export default function WarehouseViewPage() {
         // iPad landscape dimensions
         setViewportSize({ width: 1024, height: 768 });
       } else {
-        // Desktop dimensions - adjusted height for better fit
-        setViewportSize({ width: 1200, height: 700 });
+        // Desktop responsive - full window size
+        setViewportSize({ 
+          width: window.innerWidth, 
+          height: window.innerHeight 
+        });
       }
     };
 
     updateViewportSize();
+    
+    // Add resize listener for desktop mode
+    if (mode === 'desktop') {
+      window.addEventListener('resize', updateViewportSize);
+      return () => window.removeEventListener('resize', updateViewportSize);
+    }
   }, [mode]);
 
   if (isLoading) {
@@ -69,6 +78,19 @@ export default function WarehouseViewPage() {
     );
   }
 
+  // Desktop mode: Full screen without padding
+  if (mode === 'desktop') {
+    return (
+      <div className="w-screen h-screen overflow-hidden bg-white">
+        <WarehouseViewFloorPlan 
+          viewportWidth={viewportSize.width}
+          viewportHeight={viewportSize.height}
+        />
+      </div>
+    );
+  }
+
+  // Tablet mode: With header and container
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Header */}
@@ -88,16 +110,12 @@ export default function WarehouseViewPage() {
               <div>
                 <h1 className="text-2xl font-bold">{currentWarehouse.name}</h1>
                 <p className="text-sm text-muted-foreground">
-                  View Mode • {mode === 'tablet' ? 'Tablet' : 'Desktop'} View
+                  View Mode • Tablet View
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {mode === 'tablet' ? (
-                <Tablet className="h-5 w-5 text-muted-foreground" />
-              ) : (
-                <Monitor className="h-5 w-5 text-muted-foreground" />
-              )}
+              <Tablet className="h-5 w-5 text-muted-foreground" />
             </div>
           </div>
         </div>

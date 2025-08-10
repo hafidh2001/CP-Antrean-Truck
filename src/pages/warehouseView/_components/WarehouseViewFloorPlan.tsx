@@ -40,7 +40,7 @@ export const WarehouseViewFloorPlan = ({ viewportWidth, viewportHeight }: Wareho
     const borderColor = unit.type_storage === StorageTypeEnum.WAREHOUSE ? 'border-blue-300' : 'border-yellow-300';
     
     return cn(
-      "absolute border-2 flex items-center justify-center cursor-pointer transition-all hover:opacity-80",
+      "absolute border-2 flex items-center justify-center cursor-pointer transition-all hover:opacity-80 rounded-lg",
       baseColor,
       borderColor
     );
