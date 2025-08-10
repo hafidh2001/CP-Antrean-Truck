@@ -6,20 +6,25 @@ import { ConfirmationModal } from '@/components/confirmationModal';
 
 export const WarehouseToolbar = () => {
   const multiStore = useMultiWarehouseStore();
-  const { toolMode, setToolMode, currentWarehouse, updateWarehouse, saveWarehouseToStorage } = multiStore;
+  const { toolMode, setToolMode, currentWarehouse, updateWarehouse, saveWarehouseToStorage, isSaving } = multiStore;
   const { isShown: isShownSave, toggle: toggleSave } = useModal();
   const { isShown: isShownClear, toggle: toggleClear } = useModal();
 
-  const handleSaveConfirm = () => {
+  const handleSaveConfirm = async () => {
     if (currentWarehouse) {
-      saveWarehouseToStorage();
+      const result = await saveWarehouseToStorage();
       
-      // Show success feedback
+      // Show feedback
       const toast = document.createElement('div');
-      toast.className = 'fixed top-20 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50';
-      toast.textContent = 'Layout saved successfully!';
+      if (result?.success) {
+        toast.className = 'fixed top-20 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50';
+        toast.textContent = result.message || 'Layout saved successfully!';
+      } else {
+        toast.className = 'fixed top-20 right-4 bg-red-500 text-white px-4 py-2 rounded shadow-lg z-50';
+        toast.textContent = result?.error || 'Failed to save layout';
+      }
       document.body.appendChild(toast);
-      setTimeout(() => toast.remove(), 2000);
+      setTimeout(() => toast.remove(), 3000);
     }
   };
 
@@ -64,9 +69,9 @@ export const WarehouseToolbar = () => {
             <Type className="h-4 w-4" />
           </Button>
         </div>
-        <Button onClick={() => toggleSave(true)} size="sm">
+        <Button onClick={() => toggleSave(true)} size="sm" disabled={isSaving}>
           <Save className="h-4 w-4 mr-2" />
-          Save
+          {isSaving ? 'Saving...' : 'Save'}
         </Button>
         <Button onClick={() => toggleClear(true)} variant="destructive" size="sm">
           <Trash2 className="h-4 w-4 mr-2" />

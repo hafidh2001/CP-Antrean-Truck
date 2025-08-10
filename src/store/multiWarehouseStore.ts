@@ -3,6 +3,7 @@ import { IWarehouse, IStorageUnit, ITextElement, TAnyStorageUnit, TToolMode } fr
 import { ElementTypeEnum, StorageTypeEnum } from '@/types';
 import { isStorageUnit, isTextElement } from '@/functions/warehouseHelpers';
 import mockData from '@/data/mock-data.json';
+import { warehouseApi } from '@/services/warehouseApi';
 
 
 
@@ -12,15 +13,20 @@ interface MultiWarehouseStore {
   currentWarehouse: IWarehouse | null;
   selectedUnit: TAnyStorageUnit | null;
   toolMode: TToolMode;
+  isLoading: boolean;
+  isSaving: boolean;
+  error: string | null;
   
   loadWarehouses: () => void;
+  loadWarehouseFromApi: (warehouseId: number) => Promise<void>;
   setToolMode: (mode: TToolMode) => void;
   addWarehouse: (name: string, description: string) => void;
   deleteWarehouse: (id: number) => void;
   setCurrentWarehouse: (id: number) => void;
   updateWarehouse: (warehouseId: number, updates: Partial<IWarehouse>) => void;
-  saveWarehouseToStorage: () => void;
+  saveWarehouseToStorage: () => Promise<{ success: boolean; message?: string; error?: string } | undefined>;
   saveAllWarehouses: () => void;
+  setError: (error: string | null) => void;
   
   // Unified storage unit operations
   addUnit: (unit: TAnyStorageUnit) => void;
@@ -109,19 +115,75 @@ export const useMultiWarehouseStore = create<MultiWarehouseStore>((set, get) => 
   currentWarehouse: null,
   selectedUnit: null,
   toolMode: 'select',
+  isLoading: false,
+  isSaving: false,
+  error: null,
 
   loadWarehouses: () => {
-    // Load from localStorage if exists
-    const savedData = localStorage.getItem('allWarehouses');
-    if (savedData) {
-      const parsed = JSON.parse(savedData);
-      const migrated = migrateOldData(Array.isArray(parsed) ? parsed : parsed.warehouses || []);
-      set({ warehouses: migrated });
-    } else {
-      // Use default warehouse with mock data
+    // For now, load a default warehouse list
+    // This can be replaced with API call to get warehouse list
+    const defaultWarehouse = migrateOldData([mockData])[0];
+    set({ warehouses: [defaultWarehouse] });
+  },
+
+  loadWarehouseFromApi: async (warehouseId: number) => {
+    set({ isLoading: true, error: null });
+    try {
+      const warehouseData = await warehouseApi.getWarehouseLocations(warehouseId);
+      
+      console.log('Warehouse data received:', warehouseData);
+      
+      // Ensure warehouseData has required properties
+      if (!warehouseData || typeof warehouseData !== 'object') {
+        throw new Error('Invalid warehouse data received');
+      }
+      
+      // Ensure storage_units is an array
+      const storageUnits = Array.isArray(warehouseData.storage_units) 
+        ? warehouseData.storage_units 
+        : [];
+      
+      // Generate temporary IDs for frontend use
+      const warehouseWithTempIds = {
+        ...warehouseData,
+        storage_units: storageUnits.map((unit, index) => ({
+          ...unit,
+          tempId: unit.id, // Store original ID
+          id: Date.now() + index // Generate temporary ID for frontend
+        }))
+      };
+      
+      set((state) => {
+        // Update or add warehouse to list
+        const existingIndex = state.warehouses.findIndex(w => w.id === warehouseId);
+        const updatedWarehouses = [...state.warehouses];
+        
+        if (existingIndex >= 0) {
+          updatedWarehouses[existingIndex] = warehouseWithTempIds;
+        } else {
+          updatedWarehouses.push(warehouseWithTempIds);
+        }
+        
+        return {
+          warehouses: updatedWarehouses,
+          currentWarehouse: warehouseWithTempIds,
+          isLoading: false,
+          error: null
+        };
+      });
+    } catch (error) {
+      console.error('Failed to load warehouse from API:', error);
+      set({ 
+        isLoading: false, 
+        error: error instanceof Error ? error.message : 'Failed to load warehouse'
+      });
+      
+      // Fallback to mock data
       const defaultWarehouse = migrateOldData([mockData])[0];
-      set({ warehouses: [defaultWarehouse] });
-      localStorage.setItem('allWarehouses', JSON.stringify([defaultWarehouse]));
+      set({ 
+        warehouses: [defaultWarehouse],
+        currentWarehouse: defaultWarehouse
+      });
     }
   },
 
@@ -139,8 +201,6 @@ export const useMultiWarehouseStore = create<MultiWarehouseStore>((set, get) => 
 
     set((state) => {
       const updatedWarehouses = [...state.warehouses, newWarehouse];
-      // Save to localStorage immediately
-      localStorage.setItem('allWarehouses', JSON.stringify(updatedWarehouses));
       return { warehouses: updatedWarehouses };
     });
   },
@@ -148,8 +208,6 @@ export const useMultiWarehouseStore = create<MultiWarehouseStore>((set, get) => 
   deleteWarehouse: (id) => {
     set((state) => {
       const updatedWarehouses = state.warehouses.filter(w => w.id !== id);
-      // Save to localStorage immediately
-      localStorage.setItem('allWarehouses', JSON.stringify(updatedWarehouses));
       
       // If the deleted warehouse was the current one, clear it
       const newCurrentWarehouse = state.currentWarehouse?.id === id ? null : state.currentWarehouse;
@@ -180,22 +238,59 @@ export const useMultiWarehouseStore = create<MultiWarehouseStore>((set, get) => 
         ? warehouses.find(w => w.id === warehouseId) || null
         : state.currentWarehouse;
       
-      // Save to localStorage
-      localStorage.setItem('allWarehouses', JSON.stringify(warehouses));
-      
       return { warehouses, currentWarehouse };
     });
   },
 
-  saveWarehouseToStorage: () => {
+  saveWarehouseToStorage: async () => {
     const state = get();
-    localStorage.setItem('allWarehouses', JSON.stringify(state.warehouses));
+    if (!state.currentWarehouse) {
+      console.error('No current warehouse to save');
+      return;
+    }
+    
+    set({ isSaving: true, error: null });
+    
+    try {
+      // Call API to save warehouse locations
+      const result = await warehouseApi.saveWarehouseLocations(
+        state.currentWarehouse.id,
+        state.currentWarehouse.storage_units
+      );
+      
+      if (result.success) {
+        // Reload data from API to get fresh IDs
+        await get().loadWarehouseFromApi(state.currentWarehouse.id);
+        
+        // Show success message (optional: you can emit an event or use a toast library)
+        console.log('Warehouse saved successfully:', result.message);
+        set({ isSaving: false });
+        
+        // Return success for UI feedback
+        return { success: true, message: result.message };
+      } else {
+        throw new Error(result.message || 'Failed to save warehouse');
+      }
+    } catch (error) {
+      console.error('Failed to save warehouse:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save warehouse';
+      set({ 
+        isSaving: false, 
+        error: errorMessage 
+      });
+      
+      // Return error for UI feedback
+      return { success: false, error: errorMessage };
+    }
   },
 
   saveAllWarehouses: () => {
-    const state = get();
-    localStorage.setItem('allWarehouses', JSON.stringify(state.warehouses));
+    // This function is deprecated when using API
+    // Each warehouse should be saved individually through API
+    console.warn('saveAllWarehouses is deprecated when using API');
   },
+  
+  setError: (error: string | null) => set({ error }),
 
   // Unified unit operations
   addUnit: (unit) => {

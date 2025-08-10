@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { WarehouseFloorPlan } from './_components/WarehouseFloorPlan';
 import { WarehouseToolbar } from './_components/WarehouseToolbar';
@@ -10,24 +10,50 @@ import { ArrowLeft } from 'lucide-react';
 export default function WarehouseDetailPage() {
   const { warehouseId } = useParams<{ warehouseId: string }>();
   const navigate = useNavigate();
-  const { loadWarehouses, setCurrentWarehouse, currentWarehouse } = useMultiWarehouseStore();
+  const { loadWarehouseFromApi, currentWarehouse, isLoading, error } = useMultiWarehouseStore();
+  const loadingRef = useRef(false);
 
   useEffect(() => {
-    loadWarehouses();
-  }, [loadWarehouses]);
-
-  useEffect(() => {
-    if (warehouseId) {
-      setCurrentWarehouse(parseInt(warehouseId));
+    if (warehouseId && !loadingRef.current) {
+      loadingRef.current = true;
+      loadWarehouseFromApi(parseInt(warehouseId));
     }
-  }, [warehouseId, setCurrentWarehouse]);
+  }, [warehouseId]);
 
   const handleBack = () => {
     navigate('/');
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Loading warehouse...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <p className="text-red-500 mb-4">Error: {error}</p>
+          <Button onClick={() => warehouseId && loadWarehouseFromApi(parseInt(warehouseId))}>
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   if (!currentWarehouse) {
-    return <div>Loading warehouse...</div>;
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <p>Warehouse not found</p>
+      </div>
+    );
   }
 
   return (
