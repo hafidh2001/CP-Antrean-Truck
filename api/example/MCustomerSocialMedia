@@ -1,0 +1,39 @@
+<?php
+
+class MCustomerSocialMedia extends ActiveRecord
+{
+
+	public function tableName()
+	{
+		return 'm_customer_social_media';
+	}
+
+	public function rules()
+	{
+		return array(
+			array('id_customer, id_sosmed, profile_id, created_time', 'required'),
+			array('id_customer, id_sosmed', 'numerical', 'integerOnly'=>true),
+			array('profile_id', 'length', 'max'=>256),
+		);
+	}
+
+	public function relations()
+	{
+		return array(
+			'idCustomer' => array(self::BELONGS_TO, 'MCustomer', 'id_customer'),
+			'idSosmed' => array(self::BELONGS_TO, 'MSosmed', 'id_sosmed'),
+		);
+	}
+
+	public function attributeLabels()
+	{
+		return array(
+			'id' => 'ID',
+			'id_customer' => 'Id Customer',
+			'id_sosmed' => 'Id Sosmed',
+			'profile_id' => 'Profile',
+			'created_time' => 'Created Time',
+		);
+	}
+
+}

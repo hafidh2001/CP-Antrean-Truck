@@ -1,0 +1,34 @@
+<?php
+
+class MHour extends ActiveRecord
+{
+
+	public function tableName()
+	{
+		return 'm_hour';
+	}
+
+	public function rules()
+	{
+		return array(
+			array('jam, sequence', 'required'),
+			array('sequence', 'numerical', 'integerOnly'=>true),
+			array('jam', 'length', 'max'=>10),
+		);
+	}
+
+	public function relations()
+	{
+		return array(
+		);
+	}
+
+	public function attributeLabels()
+	{
+		return array(
+			'jam' => 'Jam',
+			'sequence' => 'Sequence',
+		);
+	}
+
+}

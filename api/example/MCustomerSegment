@@ -1,0 +1,50 @@
+<?php
+
+class MCustomerSegment extends ActiveRecord
+{
+
+	public function tableName()
+	{
+		return 'm_customer_segment';
+	}
+
+	public function rules()
+	{
+		return array(
+			array('name, id_client', 'required'),
+			array('id_client', 'numerical', 'integerOnly'=>true),
+			array('name', 'length', 'max'=>256),
+		);
+	}
+
+	public function relations()
+	{
+		return array(
+			'idClient' => array(self::BELONGS_TO, 'MClient', 'id_client'),
+			'mCustomers' => array(self::HAS_MANY, 'MCustomer', 'id_segment'),
+// 			'tSalesTargetStores' => array(self::HAS_MANY, 'TSalesTargetStore', 'id_segment'),
+// 			'tSalesTargetSegments' => array(self::HAS_MANY, 'TSalesTargetSegment', 'id_customer_segment'),
+// 			'tSalesTargets' => array(self::HAS_MANY, 'TSalesTarget', 'id_customer_segment'),
+		);
+	}
+
+	public function attributeLabels()
+	{
+		return array(
+			'id' => 'ID',
+			'name' => 'Industri',
+			'id_client' => 'Client',
+		);
+	}
+
+   //list segment pelangan
+    public function listCustomerSegmentModel($client = null) {
+        
+        $query = "select id, name from m_customer_segment t
+                    where id_client = ".$client;
+        $sql = Yii::app()->db->createCommand($query);
+        $result = $sql->queryAll();
+        
+        return json_encode($result);
+    }
+}

@@ -1,0 +1,36 @@
+<?php
+
+class MMembershipClient extends ActiveRecord
+{
+
+	public function tableName()
+	{
+		return 'm_membership_client';
+	}
+
+	public function rules()
+	{
+		return array(
+			array('id_membership_type, id_client', 'required'),
+			array('id_membership_type, id_client', 'numerical', 'integerOnly'=>true),
+		);
+	}
+
+	public function relations()
+	{
+		return array(
+			'idClient' => array(self::BELONGS_TO, 'MClient', 'id_client'),
+			'idMembershipType' => array(self::BELONGS_TO, 'MMembershipType', 'id_membership_type'),
+		);
+	}
+
+	public function attributeLabels()
+	{
+		return array(
+			'id' => 'ID',
+			'id_membership_type' => 'Id Membership Type',
+			'id_client' => 'Id Client',
+		);
+	}
+
+}

@@ -1,0 +1,65 @@
+<?php
+
+class MCustomerGroup extends ActiveRecord
+{
+
+	public function tableName()
+	{
+		return 'm_customer_group';
+	}
+
+	public function rules()
+	{
+		return array(
+			array('name, id_client', 'required'),
+			array('id_client', 'numerical', 'integerOnly'=>true),
+			array('name, status', 'length', 'max'=>256),
+		);
+	}
+
+	public function relations()
+	{
+		return array(
+			'mCustomers' => array(self::HAS_MANY, 'MCustomer', 'id_customer_group'),
+			'mProductOutletCustomerGroups' => array(self::HAS_MANY, 'MProductOutletCustomerGroup', 'id_customer_group'),
+			'idClient' => array(self::BELONGS_TO, 'MClient', 'id_client'),
+		);
+	}
+
+	public function attributeLabels()
+	{
+		return array(
+			'id' => 'ID',
+			'name' => 'Name',
+			'id_client' => 'Id Client',
+			'status' => 'Status',
+		);
+	}
+	
+	public function getCustomerGroup($s = ''){
+	    $r = [];
+	    if($s == ''){
+	        return $r;
+	    }
+	    $c = Yii::app()->user->info['id_client'];
+	    $grps = MCustomerGroup::model()->findAllByAttributes(['id_client' => $c, 'status' => 'Active'], ['condition' => 'name ILIKE \'%'.$s.'%\''], ['LIMIT' => 4]);
+	    foreach($grps as $k => $v){
+	        $r[$v['id']] = $v['name'];
+	    }
+	    return $r;
+	}
+	
+	public function mapCustomerGroup($values){
+	    $w = implode(',', $values);
+	    $q = "SELECT id, name FROM m_customer_group WHERE id IN ($w)";
+
+	    $r = Yii::app()->db->createCommand($q)->queryAll();
+	    $res = [];
+	    foreach($r as $k => $v){
+	        $res[$v['id']] = $v['name'];
+	    }
+	    
+	    return $res;
+	}
+
+}

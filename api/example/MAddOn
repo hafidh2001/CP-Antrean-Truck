@@ -1,0 +1,40 @@
+<?php
+
+class MAddOn extends ActiveRecord
+{
+
+	public function tableName()
+	{
+		return 'm_add_on';
+	}
+
+	public function rules()
+	{
+		return array(
+			array('name, url', 'required'),
+			array('is_new_tab', 'numerical', 'integerOnly'=>true),
+			array('name, status, icon, title', 'length', 'max'=>256),
+		);
+	}
+
+	public function relations()
+	{
+		return array(
+			'mAddOnClients' => array(self::HAS_MANY, 'MAddOnClient', 'id_add_on'),
+		);
+	}
+
+	public function attributeLabels()
+	{
+		return array(
+			'id' => 'ID',
+			'name' => 'Name',
+			'status' => 'Status',
+			'url' => 'Url',
+			'icon' => 'Icon',
+			'title' => 'Title',
+			'is_new_tab' => 'Is New Tab',
+		);
+	}
+
+}
