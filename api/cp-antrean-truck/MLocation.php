@@ -42,10 +42,6 @@ class MLocation extends ActiveRecord
 		);
 	}
 
-	/**
-	 * Function 1: GET data location/storageUnit
-	 * Mengambil semua location berdasarkan warehouse_id dan transform data ke format frontend
-	 */
 	public static function getWarehouseLocations($params = [])
 	{
 		// Extract warehouse_id from params
@@ -127,11 +123,6 @@ class MLocation extends ActiveRecord
 		return $response;
 	}
 
-	/**
-	 * Function 2: POST storageUnit
-	 * Save warehouse locations dengan Full Replace Strategy
-	 * Menghapus semua locations lama dan insert yang baru
-	 */
 	public static function saveWarehouseLocations($params = [])
 	{
 		// Extract parameters from params
@@ -159,16 +150,41 @@ class MLocation extends ActiveRecord
 		// Mulai transaction
 		$transaction = Yii::app()->db->beginTransaction();
 		try {
-			// Step 1: Delete semua existing locations untuk warehouse ini
-			$deleteQuery = "DELETE FROM m_location WHERE warehouse_id = :warehouse_id";
-			$deleteCommand = Yii::app()->db->createCommand($deleteQuery);
-			$deleteCommand->bindParam(':warehouse_id', $warehouse_id, PDO::PARAM_INT);
-			$deletedCount = $deleteCommand->execute();
-
-			// Step 2: Insert semua locations baru
+			// Tracking results
+			$updatedCount = 0;
 			$insertedCount = 0;
+			$deletedCount = 0;
 			$errors = [];
+			
+			// 1. Get all existing locations from DB for this warehouse
+			$existingQuery = "SELECT id FROM m_location WHERE warehouse_id = :warehouse_id";
+			$existingIds = Yii::app()->db->createCommand($existingQuery)
+				->bindParam(':warehouse_id', $warehouse_id, PDO::PARAM_INT)
+				->queryColumn();
+			
+			// Create map of existing IDs (id => true)
+			$existingMap = array_flip($existingIds);
+			
+			// Collect frontend IDs that have valid IDs
+			$frontendIds = [];
+			foreach ($storage_units as $unit) {
+				if (isset($unit['id']) && is_numeric($unit['id']) && $unit['id'] > 0) {
+					$frontendIds[] = (int)$unit['id'];
+				}
+			}
+			
+			// 2. Delete units that exist in DB but not in frontend
+			$toDelete = array_diff($existingIds, $frontendIds);
+			if (!empty($toDelete)) {
+				$deleteQuery = "DELETE FROM m_location 
+								WHERE warehouse_id = :warehouse_id 
+								AND id IN (" . implode(',', $toDelete) . ")";
+				$deleteCommand = Yii::app()->db->createCommand($deleteQuery);
+				$deleteCommand->bindParam(':warehouse_id', $warehouse_id, PDO::PARAM_INT);
+				$deletedCount = $deleteCommand->execute();
+			}
 
+			// 3. Process each storage unit
 			foreach ($storage_units as $index => $unit) {
 				// Validasi data unit
 				if (!isset($unit['label']) || !isset($unit['x']) || !isset($unit['y'])) {
@@ -176,13 +192,13 @@ class MLocation extends ActiveRecord
 					continue;
 				}
 
-				// Siapkan data untuk insert
+				// Prepare common data
 				$type = isset($unit['type']) ? $unit['type'] : 'storage';
 				$label = $unit['label'];
 				$x = (float)$unit['x'];
 				$y = (float)$unit['y'];
 				
-				// Siapkan text_styling sebagai JSON
+				// Prepare text_styling as JSON
 				$text_styling = isset($unit['text_styling']) ? json_encode($unit['text_styling']) : json_encode([
 					'font_size' => 16,
 					'font_family' => 'Arial, sans-serif',
@@ -190,7 +206,7 @@ class MLocation extends ActiveRecord
 					'text_color' => '#000000'
 				]);
 
-				// Siapkan width, height, type_storage (null untuk text type)
+				// Prepare width, height, type_storage (null for text type)
 				$width = null;
 				$height = null;
 				$type_storage = null;
@@ -200,30 +216,65 @@ class MLocation extends ActiveRecord
 					$height = isset($unit['height']) ? (float)$unit['height'] : null;
 					$type_storage = isset($unit['type_storage']) ? $unit['type_storage'] : 'warehouse';
 				}
-
-				// Insert location baru
-				$insertQuery = "INSERT INTO m_location 
-								(warehouse_id, label, type, x, y, width, height, type_storage, text_styling)
-								VALUES 
-								(:warehouse_id, :label, :type, :x, :y, :width, :height, :type_storage, :text_styling)";
-
-				$command = Yii::app()->db->createCommand($insertQuery);
-				$command->bindParam(':warehouse_id', $warehouse_id, PDO::PARAM_INT);
-				$command->bindParam(':label', $label, PDO::PARAM_STR);
-				$command->bindParam(':type', $type, PDO::PARAM_STR);
-				$command->bindParam(':x', $x, PDO::PARAM_STR);
-				$command->bindParam(':y', $y, PDO::PARAM_STR);
-				$command->bindParam(':width', $width, PDO::PARAM_STR);
-				$command->bindParam(':height', $height, PDO::PARAM_STR);
-				$command->bindParam(':type_storage', $type_storage, PDO::PARAM_STR);
-				$command->bindParam(':text_styling', $text_styling, PDO::PARAM_STR);
 				
-				try {
-					if ($command->execute()) {
-						$insertedCount++;
+				// Check if unit has ID and exists in existing map
+				if (isset($unit['id']) && is_numeric($unit['id']) && isset($existingMap[(int)$unit['id']])) {
+					// UPDATE existing location
+					$updateQuery = "UPDATE m_location 
+									SET label = :label,
+										type = :type,
+										x = :x,
+										y = :y,
+										width = :width,
+										height = :height,
+										type_storage = :type_storage,
+										text_styling = :text_styling
+									WHERE id = :id AND warehouse_id = :warehouse_id";
+					
+					$command = Yii::app()->db->createCommand($updateQuery);
+					$command->bindParam(':id', $unit['id'], PDO::PARAM_INT);
+					$command->bindParam(':warehouse_id', $warehouse_id, PDO::PARAM_INT);
+					$command->bindParam(':label', $label, PDO::PARAM_STR);
+					$command->bindParam(':type', $type, PDO::PARAM_STR);
+					$command->bindParam(':x', $x, PDO::PARAM_STR);
+					$command->bindParam(':y', $y, PDO::PARAM_STR);
+					$command->bindParam(':width', $width, PDO::PARAM_STR);
+					$command->bindParam(':height', $height, PDO::PARAM_STR);
+					$command->bindParam(':type_storage', $type_storage, PDO::PARAM_STR);
+					$command->bindParam(':text_styling', $text_styling, PDO::PARAM_STR);
+					
+					try {
+						if ($command->execute()) {
+							$updatedCount++;
+						}
+					} catch (Exception $e) {
+						$errors[] = "Failed to update unit ID {$unit['id']}: " . $e->getMessage();
 					}
-				} catch (Exception $e) {
-					$errors[] = "Failed to insert unit '$label': " . $e->getMessage();
+				} else {
+					// INSERT new location (tanpa ID, biar auto_increment)
+					$insertQuery = "INSERT INTO m_location 
+									(warehouse_id, label, type, x, y, width, height, type_storage, text_styling)
+									VALUES 
+									(:warehouse_id, :label, :type, :x, :y, :width, :height, :type_storage, :text_styling)";
+					
+					$command = Yii::app()->db->createCommand($insertQuery);
+					$command->bindParam(':warehouse_id', $warehouse_id, PDO::PARAM_INT);
+					$command->bindParam(':label', $label, PDO::PARAM_STR);
+					$command->bindParam(':type', $type, PDO::PARAM_STR);
+					$command->bindParam(':x', $x, PDO::PARAM_STR);
+					$command->bindParam(':y', $y, PDO::PARAM_STR);
+					$command->bindParam(':width', $width, PDO::PARAM_STR);
+					$command->bindParam(':height', $height, PDO::PARAM_STR);
+					$command->bindParam(':type_storage', $type_storage, PDO::PARAM_STR);
+					$command->bindParam(':text_styling', $text_styling, PDO::PARAM_STR);
+					
+					try {
+						if ($command->execute()) {
+							$insertedCount++;
+						}
+					} catch (Exception $e) {
+						$errors[] = "Failed to insert unit '$label': " . $e->getMessage();
+					}
 				}
 			}
 
@@ -235,8 +286,9 @@ class MLocation extends ActiveRecord
 				'success' => true,
 				'message' => 'Warehouse locations saved successfully',
 				'results' => [
-					'deleted' => $deletedCount,
+					'updated' => $updatedCount,
 					'inserted' => $insertedCount,
+					'deleted' => $deletedCount,
 					'total_sent' => count($storage_units),
 					'errors' => $errors
 				]
@@ -263,14 +315,4 @@ class MLocation extends ActiveRecord
 		}
 	}
 
-	/**
-	 * Optional: Function untuk mendapatkan next available ID
-	 * Bisa digunakan di frontend jika perlu konsistensi ID
-	 */
-	public static function getNextLocationId()
-	{
-		$query = "SELECT COALESCE(MAX(id), 0) + 1 as next_id FROM m_location";
-		$result = Yii::app()->db->createCommand($query)->queryRow();
-		return ['next_id' => (int)$result['next_id']];
-	}
 }

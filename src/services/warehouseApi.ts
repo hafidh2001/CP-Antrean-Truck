@@ -102,26 +102,21 @@ export const warehouseApi = {
   },
 
   /**
-   * Save warehouse locations (Full Replace Strategy)
-   * This will delete all existing locations and insert new ones
+   * Save warehouse locations (Update/Insert Strategy)
+   * This will update existing, insert new, and delete removed units
    */
   async saveWarehouseLocations(
     warehouseId: number, 
     storageUnits: TAnyStorageUnit[]
   ): Promise<SaveLocationResponse> {
     try {
-      // Remove frontend IDs before sending to API
-      const unitsToSave = storageUnits.map(unit => {
-        const { id, ...unitWithoutId } = unit;
-        return unitWithoutId;
-      });
-
+      // Send units with their IDs (backend will handle new vs existing)
       const response = await apiClient.post('', createApiRequest(
         'saveWarehouseLocations',
         'MLocation',
         {
           warehouse_id: warehouseId,
-          storage_units: unitsToSave
+          storage_units: storageUnits
         }
       ));
 

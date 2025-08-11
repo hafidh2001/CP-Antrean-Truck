@@ -143,14 +143,10 @@ export const useMultiWarehouseStore = create<MultiWarehouseStore>((set, get) => 
         ? warehouseData.storage_units 
         : [];
       
-      // Generate temporary IDs for frontend use
-      const warehouseWithTempIds = {
+      // Prepare final warehouse data
+      const finalWarehouseData = {
         ...warehouseData,
-        storage_units: storageUnits.map((unit, index) => ({
-          ...unit,
-          tempId: unit.id, // Store original ID
-          id: Date.now() + index // Generate temporary ID for frontend
-        }))
+        storage_units: storageUnits
       };
       
       set((state) => {
@@ -159,14 +155,14 @@ export const useMultiWarehouseStore = create<MultiWarehouseStore>((set, get) => 
         const updatedWarehouses = [...state.warehouses];
         
         if (existingIndex >= 0) {
-          updatedWarehouses[existingIndex] = warehouseWithTempIds;
+          updatedWarehouses[existingIndex] = finalWarehouseData;
         } else {
-          updatedWarehouses.push(warehouseWithTempIds);
+          updatedWarehouses.push(finalWarehouseData);
         }
         
         return {
           warehouses: updatedWarehouses,
-          currentWarehouse: warehouseWithTempIds,
+          currentWarehouse: finalWarehouseData,
           isLoading: false,
           error: null
         };
