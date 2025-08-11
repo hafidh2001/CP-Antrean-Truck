@@ -42,13 +42,17 @@ class MLocation extends ActiveRecord
 		);
 	}
 
+	/**
+	 * Function 1: GET data location/storageUnit
+	 * Mengambil semua location berdasarkan warehouse_id dan transform data ke format frontend
+	 */
 	public static function getWarehouseLocations($params = [])
 	{
 		// Extract warehouse_id from params
 		$warehouse_id = isset($params['warehouse_id']) ? $params['warehouse_id'] : null;
 		
 		if (!$warehouse_id) {
-			return json_encode(['error' => 'warehouse_id is required']);
+			return ['error' => 'warehouse_id is required'];
 		}
 
 		// Query untuk mengambil data warehouse
@@ -62,7 +66,7 @@ class MLocation extends ActiveRecord
 			->queryRow();
 
 		if (!$warehouse) {
-			return json_encode(['error' => 'Warehouse not found']);
+			return ['error' => 'Warehouse not found'];
 		}
 
 		// Query untuk mengambil semua locations dari warehouse
@@ -123,6 +127,11 @@ class MLocation extends ActiveRecord
 		return $response;
 	}
 
+	/**
+	 * Function 2: POST storageUnit
+	 * Save warehouse locations dengan Full Replace Strategy
+	 * Menghapus semua locations lama dan insert yang baru
+	 */
 	public static function saveWarehouseLocations($params = [])
 	{
 		// Extract parameters from params
@@ -130,11 +139,11 @@ class MLocation extends ActiveRecord
 		$storage_units = isset($params['storage_units']) ? $params['storage_units'] : [];
 		
 		if (!$warehouse_id) {
-			return json_encode(['error' => 'warehouse_id is required']);
+			return ['error' => 'warehouse_id is required'];
 		}
 
 		if (!is_array($storage_units)) {
-			return json_encode(['error' => 'storage_units must be an array']);
+			return ['error' => 'storage_units must be an array'];
 		}
 
 		// Validasi warehouse exists
@@ -144,7 +153,7 @@ class MLocation extends ActiveRecord
 			->queryScalar();
 
 		if (!$warehouseExists) {
-			return json_encode(['error' => 'Warehouse not found']);
+			return ['error' => 'Warehouse not found'];
 		}
 
 		// Mulai transaction
@@ -254,4 +263,14 @@ class MLocation extends ActiveRecord
 		}
 	}
 
+	/**
+	 * Optional: Function untuk mendapatkan next available ID
+	 * Bisa digunakan di frontend jika perlu konsistensi ID
+	 */
+	public static function getNextLocationId()
+	{
+		$query = "SELECT COALESCE(MAX(id), 0) + 1 as next_id FROM m_location";
+		$result = Yii::app()->db->createCommand($query)->queryRow();
+		return ['next_id' => (int)$result['next_id']];
+	}
 }
