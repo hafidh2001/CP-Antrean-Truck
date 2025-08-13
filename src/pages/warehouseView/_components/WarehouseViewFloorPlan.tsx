@@ -36,8 +36,16 @@ export const WarehouseViewFloorPlan = ({ viewportWidth, viewportHeight }: Wareho
   };
 
   const getUnitStyle = (unit: IStorageUnit) => {
-    const baseColor = unit.type_storage === StorageTypeEnum.WAREHOUSE ? 'bg-blue-100' : 'bg-yellow-100';
-    const borderColor = unit.type_storage === StorageTypeEnum.WAREHOUSE ? 'border-blue-300' : 'border-yellow-300';
+    let baseColor = 'bg-blue-100';
+    let borderColor = 'border-blue-300';
+    
+    if (unit.type_storage === StorageTypeEnum.RACK) {
+      baseColor = 'bg-yellow-100';
+      borderColor = 'border-yellow-300';
+    } else if (unit.type_storage === StorageTypeEnum.ECERAN) {
+      baseColor = 'bg-green-100';
+      borderColor = 'border-green-300';
+    }
     
     return cn(
       "absolute border-2 flex items-center justify-center cursor-pointer transition-all hover:opacity-80 rounded-lg",

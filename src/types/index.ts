@@ -6,5 +6,6 @@ export enum ElementTypeEnum {
 
 export enum StorageTypeEnum {
   WAREHOUSE = 'warehouse',
-  RACK = 'rack'
+  RACK = 'rack',
+  ECERAN = 'eceran'
 }

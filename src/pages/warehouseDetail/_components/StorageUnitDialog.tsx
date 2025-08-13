@@ -130,6 +130,13 @@ export const StorageUnitDialog = ({ unit, open, onOpenChange, onUpdate, onDelete
                       Rack
                     </Label>
                   </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value={StorageTypeEnum.ECERAN} id="eceran" />
+                    <Label htmlFor="eceran" className="flex items-center gap-2 cursor-pointer">
+                      <Palette className="h-4 w-4 text-green-500" />
+                      Eceran
+                    </Label>
+                  </div>
                 </div>
               </RadioGroup>
             </div>

@@ -177,7 +177,11 @@ export const ResizableStorageUnit = ({
     cursor: getCursor(hoveredDirection),
   };
 
-  const unitColor = unit.type_storage === StorageTypeEnum.RACK ? 'bg-yellow-100 border-yellow-500' : 'bg-blue-100 border-blue-500';
+  const unitColor = unit.type_storage === StorageTypeEnum.RACK 
+    ? 'bg-yellow-100 border-yellow-500' 
+    : unit.type_storage === StorageTypeEnum.ECERAN
+    ? 'bg-green-100 border-green-500'
+    : 'bg-blue-100 border-blue-500';
 
   return (
     <div

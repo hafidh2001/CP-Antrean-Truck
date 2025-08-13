@@ -31,8 +31,11 @@ export const DraggableStorageUnit = ({ unit, onClick, onDoubleClick, isDraggable
   };
 
   // Determine background color based on typeStorage
-  const backgroundColor = unit.type_storage === StorageTypeEnum.RACK ? 'bg-yellow-100 border-yellow-300' : 
-                         'bg-blue-100 border-blue-300';
+  const backgroundColor = unit.type_storage === StorageTypeEnum.RACK 
+    ? 'bg-yellow-100 border-yellow-300' 
+    : unit.type_storage === StorageTypeEnum.ECERAN
+    ? 'bg-green-100 border-green-300'
+    : 'bg-blue-100 border-blue-300';
 
   return (
     <div
