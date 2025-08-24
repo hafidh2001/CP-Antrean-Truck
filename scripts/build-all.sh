@@ -2,6 +2,11 @@
 
 # Build script for all architectures
 
+# Load environment variables from .env file
+if [ -f ../.env ]; then
+    export $(cat ../.env | grep -v '^#' | xargs)
+fi
+
 IMAGE_NAME="hafidh2001/cp-antrean-truck"
 
 echo "Setting up Docker buildx..."
@@ -17,11 +22,12 @@ echo "Building Docker images for all architectures..."
 # Build for both platforms and push to registry
 docker buildx build \
   --platform linux/amd64,linux/arm64 \
+  --build-arg VITE_DECRYPT_SECRET_KEY="${VITE_DECRYPT_SECRET_KEY}" \
   -t ${IMAGE_NAME}:latest \
   -t ${IMAGE_NAME}:amd64 \
   -t ${IMAGE_NAME}:arm64 \
   --push \
-  .
+  ..
 
 if [ $? -eq 0 ]; then
   echo "✅ Successfully built and pushed multi-architecture images"

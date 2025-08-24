@@ -5,6 +5,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        # Pass environment variable during build
+        VITE_DECRYPT_SECRET_KEY: ${VITE_DECRYPT_SECRET_KEY}
     image: hafidh2001/cp-antrean-truck:latest
     container_name: cp-antrean-truck
     ports:

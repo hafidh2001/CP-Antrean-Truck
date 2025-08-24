@@ -24,8 +24,13 @@ export const useWarehouseDetailStore = create<WarehouseDetailStore>((set, get) =
       set({ decryptedData: decrypted });
       
       // Load warehouse data using decrypted info
+      // Convert warehouse_id to number if it's a string
+      const warehouseId = typeof decrypted.warehouse_id === 'string' 
+        ? parseInt(decrypted.warehouse_id, 10) 
+        : decrypted.warehouse_id;
+        
       const warehouseData = await warehouseApi.getWarehouseLocations(
-        decrypted.warehouse_id,
+        warehouseId,
         decrypted.user_token
       );
       

@@ -46,7 +46,7 @@ export const decryptAES = async (encryptedData: string): Promise<DecryptedData> 
     // Parse and validate decrypted data
     const data = JSON.parse(decryptedText);
     
-    if (!data.user_token || typeof data.warehouse_id !== 'number') {
+    if (!data.user_token || !data.warehouse_id) {
       throw new Error('Invalid decrypted data format');
     }
     
