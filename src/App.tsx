@@ -2,6 +2,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom';
 // import HomePage from '@/pages/home';
 import WarehouseDetailPage from '@/pages/warehouseDetail';
 import WarehouseViewPage from '@/pages/warehouseView';
+import DecryptPage from '@/pages/decrypt/DecryptPage';
 import { ROUTES } from '@/utils/routes';
 import { AppWrapper } from '@/components/layout/AppWrapper';
 
@@ -18,6 +19,10 @@ function App() {
         <Route 
           path={ROUTES.warehouseView(':warehouseId')} 
           element={<WarehouseViewPage />} 
+        />
+        <Route 
+          path={ROUTES.decrypt} 
+          element={<DecryptPage />} 
         />
         <Route 
           path="*" 
