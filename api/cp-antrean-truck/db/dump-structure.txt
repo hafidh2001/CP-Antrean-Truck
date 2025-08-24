@@ -1,0 +1,316 @@
+-- Adminer 4.8.1 PostgreSQL 17.4 (Ubuntu 17.4-1.pgdg22.04+2) dump
+
+DROP TABLE IF EXISTS "m_gate";
+DROP SEQUENCE IF EXISTS m_gate_id_seq;
+CREATE SEQUENCE m_gate_id_seq INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1;
+
+CREATE TABLE "public"."m_gate" (
+    "id" integer DEFAULT nextval('m_gate_id_seq') NOT NULL,
+    "code" character varying(256) NOT NULL,
+    "warehouse_id" integer NOT NULL,
+    "status" character varying(256) DEFAULT 'OPEN' NOT NULL,
+    CONSTRAINT "m_gate_pkey" PRIMARY KEY ("id")
+) WITH (oids = false);
+
+
+DROP TABLE IF EXISTS "m_goods";
+DROP SEQUENCE IF EXISTS m_goods_id_seq;
+CREATE SEQUENCE m_goods_id_seq INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1;
+
+CREATE TABLE "public"."m_goods" (
+    "id" integer DEFAULT nextval('m_goods_id_seq') NOT NULL,
+    "kode" character varying(256) NOT NULL,
+    "weight" double precision NOT NULL,
+    "smallest_unit" integer NOT NULL,
+    "id_sap" integer,
+    CONSTRAINT "m_goods_pkey" PRIMARY KEY ("id")
+) WITH (oids = false);
+
+
+DROP TABLE IF EXISTS "m_location";
+DROP SEQUENCE IF EXISTS m_location_id_seq;
+CREATE SEQUENCE m_location_id_seq INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1;
+
+CREATE TABLE "public"."m_location" (
+    "id" integer DEFAULT nextval('m_location_id_seq') NOT NULL,
+    "warehouse_id" integer NOT NULL,
+    "label" character varying(256) NOT NULL,
+    "type" character varying NOT NULL,
+    "x" double precision NOT NULL,
+    "y" double precision NOT NULL,
+    "width" double precision,
+    "height" double precision,
+    "type_storage" character varying,
+    "text_styling" jsonb NOT NULL,
+    CONSTRAINT "m_location_pkey" PRIMARY KEY ("id")
+) WITH (oids = false);
+
+
+DROP TABLE IF EXISTS "m_uom";
+DROP SEQUENCE IF EXISTS m_uom_id_seq;
+CREATE SEQUENCE m_uom_id_seq INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1;
+
+CREATE TABLE "public"."m_uom" (
+    "id" integer DEFAULT nextval('m_uom_id_seq') NOT NULL,
+    "unit" character varying(256) NOT NULL,
+    "conversion" integer NOT NULL,
+    "convert_to" integer,
+    CONSTRAINT "m_uom_pkey" PRIMARY KEY ("id")
+) WITH (oids = false);
+
+
+DROP TABLE IF EXISTS "m_warehouse";
+DROP SEQUENCE IF EXISTS m_warehouse_id_seq;
+CREATE SEQUENCE m_warehouse_id_seq INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1;
+
+CREATE TABLE "public"."m_warehouse" (
+    "id" integer DEFAULT nextval('m_warehouse_id_seq') NOT NULL,
+    "name" character varying(256) NOT NULL,
+    "status" character varying DEFAULT 'OPEN' NOT NULL,
+    "description" text,
+    "icon" character varying(256),
+    CONSTRAINT "m_warehouse_pkey" PRIMARY KEY ("id")
+) WITH (oids = false);
+
+
+DROP TABLE IF EXISTS "p_migration";
+CREATE TABLE "public"."p_migration" (
+    "version" character varying(180) NOT NULL,
+    "apply_time" integer,
+    CONSTRAINT "p_migration_pkey" PRIMARY KEY ("version")
+) WITH (oids = false);
+
+
+DROP TABLE IF EXISTS "p_role";
+DROP SEQUENCE IF EXISTS p_role_id_seq;
+CREATE SEQUENCE p_role_id_seq INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1;
+
+CREATE TABLE "public"."p_role" (
+    "id" integer DEFAULT nextval('p_role_id_seq') NOT NULL,
+    "role_name" character varying(255) NOT NULL,
+    "role_description" character varying(255) NOT NULL,
+    "menu_path" character varying(255),
+    "home_url" character varying(255),
+    "repo_path" character varying(255),
+    CONSTRAINT "p_role_pkey" PRIMARY KEY ("id")
+) WITH (oids = false);
+
+
+DROP TABLE IF EXISTS "p_user";
+DROP SEQUENCE IF EXISTS p_user_id_seq;
+CREATE SEQUENCE p_user_id_seq INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1;
+
+CREATE TABLE "public"."p_user" (
+    "id" integer DEFAULT nextval('p_user_id_seq') NOT NULL,
+    "email" character varying(255) NOT NULL,
+    "username" character varying(255) NOT NULL,
+    "password" character varying(255) NOT NULL,
+    "last_login" timestamp,
+    "is_deleted" boolean,
+    "user_token" character varying(255),
+    CONSTRAINT "p_user_pkey" PRIMARY KEY ("id")
+) WITH (oids = false);
+
+
+DROP TABLE IF EXISTS "p_user_role";
+DROP SEQUENCE IF EXISTS p_user_role_id_seq;
+CREATE SEQUENCE p_user_role_id_seq INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1;
+
+CREATE TABLE "public"."p_user_role" (
+    "id" integer DEFAULT nextval('p_user_role_id_seq') NOT NULL,
+    "user_id" integer NOT NULL,
+    "role_id" integer NOT NULL,
+    "is_default_role" character varying(255) DEFAULT 'No',
+    CONSTRAINT "p_user_role_pkey" PRIMARY KEY ("id")
+) WITH (oids = false);
+
+
+DROP TABLE IF EXISTS "t_antrean";
+DROP SEQUENCE IF EXISTS t_antrean_id_seq;
+CREATE SEQUENCE t_antrean_id_seq INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1;
+
+CREATE TABLE "public"."t_antrean" (
+    "id" integer DEFAULT nextval('t_antrean_id_seq') NOT NULL,
+    "nopol" character varying NOT NULL,
+    "created_time" timestamp NOT NULL,
+    "warehouse_id" integer NOT NULL,
+    "kerani_id" integer,
+    "assigned_kerani_time" timestamp,
+    "status" character varying(256) DEFAULT 'OPEN' NOT NULL,
+    "verifying_time" timestamp,
+    "verified_time" timestamp,
+    "closed_time" timestamp,
+    "mc_id" integer,
+    "admin_id" integer,
+    "warehouse_override_id" integer,
+    CONSTRAINT "t_antrean_pkey" PRIMARY KEY ("id")
+) WITH (oids = false);
+
+COMMENT ON COLUMN "public"."t_antrean"."status" IS 'OPEN; LOADING; VERIFIYING; VERIFIED; CLOSED;';
+
+
+DROP TABLE IF EXISTS "t_antrean_gate";
+DROP SEQUENCE IF EXISTS t_antrean_gate_id_seq;
+CREATE SEQUENCE t_antrean_gate_id_seq INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1;
+
+CREATE TABLE "public"."t_antrean_gate" (
+    "id" integer DEFAULT nextval('t_antrean_gate_id_seq') NOT NULL,
+    "antrean_id" integer NOT NULL,
+    "gate_id" integer NOT NULL,
+    CONSTRAINT "t_antrean_gate_pkey" PRIMARY KEY ("id")
+) WITH (oids = false);
+
+
+DROP TABLE IF EXISTS "t_antrean_rekomendasi_lokasi";
+DROP SEQUENCE IF EXISTS t_antrean_rekomendasi_lokasi_id_seq;
+CREATE SEQUENCE t_antrean_rekomendasi_lokasi_id_seq INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1;
+
+CREATE TABLE "public"."t_antrean_rekomendasi_lokasi" (
+    "id" integer DEFAULT nextval('t_antrean_rekomendasi_lokasi_id_seq') NOT NULL,
+    "antrean_id" integer NOT NULL,
+    "goods_id" integer NOT NULL,
+    "location_id" integer NOT NULL,
+    "qty" integer NOT NULL,
+    "uom_id" integer NOT NULL,
+    "location_override_id" integer,
+    "qty_override" integer,
+    CONSTRAINT "t_antrean_rekomendasi_lokasi_pkey" PRIMARY KEY ("id")
+) WITH (oids = false);
+
+
+DROP TABLE IF EXISTS "t_delivery_order";
+DROP SEQUENCE IF EXISTS t_delivery_order_id_seq;
+CREATE SEQUENCE t_delivery_order_id_seq INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1;
+
+CREATE TABLE "public"."t_delivery_order" (
+    "id" integer DEFAULT nextval('t_delivery_order_id_seq') NOT NULL,
+    "status" character varying(256) DEFAULT 'OPEN' NOT NULL,
+    "id_sap" integer NOT NULL,
+    "plant" character varying(256) NOT NULL,
+    "truck_no" character varying(256) NOT NULL,
+    "out_date" date NOT NULL,
+    "no_do" character varying(256) NOT NULL,
+    "delivery_date" date NOT NULL,
+    "sorg" character varying(256) NOT NULL,
+    "customer_id" character varying(256) NOT NULL,
+    "sold_to_party" character varying(256) NOT NULL,
+    "created_by" character varying(256) NOT NULL,
+    "created_date" date NOT NULL,
+    "shiptotext" character varying(256) NOT NULL,
+    "cust_name" character varying(256) NOT NULL,
+    "cust_city" character varying(256) NOT NULL,
+    "cust_street" character varying(256) NOT NULL,
+    "cust_strsuppl" character varying(256) NOT NULL,
+    "sap_client" character varying(256) NOT NULL,
+    "date_inserted" timestamp NOT NULL,
+    "synced_time" timestamp NOT NULL,
+    "jenis_truck" character varying(256),
+    CONSTRAINT "t_delivery_order_pkey" PRIMARY KEY ("id")
+) WITH (oids = false);
+
+COMMENT ON COLUMN "public"."t_delivery_order"."status" IS 'OPEN;PROCESSED;CLOSED;';
+
+
+DROP TABLE IF EXISTS "t_delivery_order_line";
+DROP SEQUENCE IF EXISTS t_delivery_order_line_id_seq;
+CREATE SEQUENCE t_delivery_order_line_id_seq INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1;
+
+CREATE TABLE "public"."t_delivery_order_line" (
+    "id" integer DEFAULT nextval('t_delivery_order_line_id_seq') NOT NULL,
+    "do_id" integer NOT NULL,
+    "goods_code" character varying(256) NOT NULL,
+    "seq_number" character varying(256) NOT NULL,
+    "qty_in_do" character varying(256) NOT NULL,
+    "uoe" character varying(256) NOT NULL,
+    "div_qty" character varying(256) NOT NULL,
+    "su" character varying(256),
+    "ref_doc" character varying(256),
+    "ref_itm" character varying(256),
+    "batch" character varying(256) NOT NULL,
+    CONSTRAINT "t_delivery_order_line_pkey" PRIMARY KEY ("id")
+) WITH (oids = false);
+
+
+DROP TABLE IF EXISTS "t_opnam";
+DROP SEQUENCE IF EXISTS t_opnam_id_seq;
+CREATE SEQUENCE t_opnam_id_seq INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1;
+
+CREATE TABLE "public"."t_opnam" (
+    "id" integer DEFAULT nextval('t_opnam_id_seq') NOT NULL,
+    "warehouse_id" integer NOT NULL,
+    "user_id" integer NOT NULL,
+    "created_time" timestamp NOT NULL,
+    "unlocked_time" timestamp,
+    "finished_time" timestamp,
+    CONSTRAINT "t_opnam_pkey" PRIMARY KEY ("id")
+) WITH (oids = false);
+
+
+DROP TABLE IF EXISTS "t_stock";
+DROP SEQUENCE IF EXISTS t_stock_id_seq;
+CREATE SEQUENCE t_stock_id_seq INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1;
+
+CREATE TABLE "public"."t_stock" (
+    "id" integer DEFAULT nextval('t_stock_id_seq') NOT NULL,
+    "location_id" integer NOT NULL,
+    "goods_id" integer NOT NULL,
+    "qty" integer NOT NULL,
+    "uom_id" integer NOT NULL,
+    "status" character varying(256) DEFAULT 'ACTIVE' NOT NULL,
+    "created_by" integer NOT NULL,
+    "opnam_id" integer NOT NULL,
+    "production_date" date,
+    CONSTRAINT "t_stock_pkey" PRIMARY KEY ("id")
+) WITH (oids = false);
+
+
+DROP TABLE IF EXISTS "x_endpoint_config";
+DROP SEQUENCE IF EXISTS x_endpoint_config_id_seq;
+CREATE SEQUENCE x_endpoint_config_id_seq INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1;
+
+CREATE TABLE "public"."x_endpoint_config" (
+    "id" integer DEFAULT nextval('x_endpoint_config_id_seq') NOT NULL,
+    "label" character varying(256),
+    "endpoint" character varying(256),
+    CONSTRAINT "x_endpoint_config_pkey" PRIMARY KEY ("id")
+) WITH (oids = false);
+
+
+ALTER TABLE ONLY "public"."m_gate" ADD CONSTRAINT "m_gate_warehouse_id_fkey" FOREIGN KEY (warehouse_id) REFERENCES m_warehouse(id) NOT DEFERRABLE;
+
+ALTER TABLE ONLY "public"."m_goods" ADD CONSTRAINT "m_goods_smallest_unit_fkey" FOREIGN KEY (smallest_unit) REFERENCES m_uom(id) NOT DEFERRABLE;
+
+ALTER TABLE ONLY "public"."m_location" ADD CONSTRAINT "m_location_warehouse_id_fkey" FOREIGN KEY (warehouse_id) REFERENCES m_warehouse(id) NOT DEFERRABLE;
+
+ALTER TABLE ONLY "public"."m_uom" ADD CONSTRAINT "m_uom_convert_to_fkey" FOREIGN KEY (convert_to) REFERENCES m_uom(id) NOT DEFERRABLE;
+
+ALTER TABLE ONLY "public"."p_user_role" ADD CONSTRAINT "p_role_has_p_user" FOREIGN KEY (role_id) REFERENCES p_role(id) NOT DEFERRABLE;
+ALTER TABLE ONLY "public"."p_user_role" ADD CONSTRAINT "p_user_has_p_role" FOREIGN KEY (user_id) REFERENCES p_user(id) NOT DEFERRABLE;
+
+ALTER TABLE ONLY "public"."t_antrean" ADD CONSTRAINT "t_antrean_admin_id_fkey" FOREIGN KEY (admin_id) REFERENCES p_user(id) NOT DEFERRABLE;
+ALTER TABLE ONLY "public"."t_antrean" ADD CONSTRAINT "t_antrean_kerani_id_fkey" FOREIGN KEY (kerani_id) REFERENCES p_user(id) NOT DEFERRABLE;
+ALTER TABLE ONLY "public"."t_antrean" ADD CONSTRAINT "t_antrean_mc_id_fkey" FOREIGN KEY (mc_id) REFERENCES p_user(id) NOT DEFERRABLE;
+ALTER TABLE ONLY "public"."t_antrean" ADD CONSTRAINT "t_antrean_warehouse_id_fkey" FOREIGN KEY (warehouse_id) REFERENCES m_warehouse(id) NOT DEFERRABLE;
+ALTER TABLE ONLY "public"."t_antrean" ADD CONSTRAINT "t_antrean_warehouse_override_id_fkey" FOREIGN KEY (warehouse_override_id) REFERENCES m_warehouse(id) NOT DEFERRABLE;
+
+ALTER TABLE ONLY "public"."t_antrean_gate" ADD CONSTRAINT "t_antrean_gate_antrean_id_fkey" FOREIGN KEY (antrean_id) REFERENCES t_antrean(id) NOT DEFERRABLE;
+ALTER TABLE ONLY "public"."t_antrean_gate" ADD CONSTRAINT "t_antrean_gate_gate_id_fkey" FOREIGN KEY (gate_id) REFERENCES m_gate(id) NOT DEFERRABLE;
+
+ALTER TABLE ONLY "public"."t_antrean_rekomendasi_lokasi" ADD CONSTRAINT "t_antrean_rekomendasi_lokasi_antrean_id_fkey" FOREIGN KEY (antrean_id) REFERENCES t_antrean(id) NOT DEFERRABLE;
+ALTER TABLE ONLY "public"."t_antrean_rekomendasi_lokasi" ADD CONSTRAINT "t_antrean_rekomendasi_lokasi_goods_id_fkey" FOREIGN KEY (goods_id) REFERENCES m_goods(id) NOT DEFERRABLE;
+ALTER TABLE ONLY "public"."t_antrean_rekomendasi_lokasi" ADD CONSTRAINT "t_antrean_rekomendasi_lokasi_location_id_fkey" FOREIGN KEY (location_id) REFERENCES m_location(id) NOT DEFERRABLE;
+ALTER TABLE ONLY "public"."t_antrean_rekomendasi_lokasi" ADD CONSTRAINT "t_antrean_rekomendasi_lokasi_location_override_id_fkey" FOREIGN KEY (location_override_id) REFERENCES m_location(id) NOT DEFERRABLE;
+ALTER TABLE ONLY "public"."t_antrean_rekomendasi_lokasi" ADD CONSTRAINT "t_antrean_rekomendasi_lokasi_uom_id_fkey" FOREIGN KEY (uom_id) REFERENCES m_uom(id) NOT DEFERRABLE;
+
+ALTER TABLE ONLY "public"."t_delivery_order_line" ADD CONSTRAINT "t_delivery_order_line_do_id_fkey" FOREIGN KEY (do_id) REFERENCES t_delivery_order(id) NOT DEFERRABLE;
+
+ALTER TABLE ONLY "public"."t_opnam" ADD CONSTRAINT "t_opnam_user_id_fkey" FOREIGN KEY (user_id) REFERENCES p_user(id) NOT DEFERRABLE;
+ALTER TABLE ONLY "public"."t_opnam" ADD CONSTRAINT "t_opnam_warehouse_id_fkey" FOREIGN KEY (warehouse_id) REFERENCES m_warehouse(id) NOT DEFERRABLE;
+
+ALTER TABLE ONLY "public"."t_stock" ADD CONSTRAINT "t_stock_created_by_fkey" FOREIGN KEY (created_by) REFERENCES p_user(id) NOT DEFERRABLE;
+ALTER TABLE ONLY "public"."t_stock" ADD CONSTRAINT "t_stock_goods_id_fkey" FOREIGN KEY (goods_id) REFERENCES m_goods(id) NOT DEFERRABLE;
+ALTER TABLE ONLY "public"."t_stock" ADD CONSTRAINT "t_stock_location_id_fkey" FOREIGN KEY (location_id) REFERENCES m_location(id) NOT DEFERRABLE;
+ALTER TABLE ONLY "public"."t_stock" ADD CONSTRAINT "t_stock_opnam_id_fkey" FOREIGN KEY (opnam_id) REFERENCES t_opnam(id) NOT DEFERRABLE;
+ALTER TABLE ONLY "public"."t_stock" ADD CONSTRAINT "t_stock_uom_id_fkey" FOREIGN KEY (uom_id) REFERENCES m_uom(id) NOT DEFERRABLE;
+
+-- 2025-08-24 14:44:15.886362+02

@@ -16,7 +16,8 @@ api/cp-antrean-truck/
 ├── builder/                    # Generated code dari Plansys
 │   ├── controller-builder/     # Controllers untuk berbagai role
 │   └── model-builder/          # Model dengan API functions
-├── db/                         # Database schema documentation
+├── db/                         # Database structure
+│   └── dump-structure.txt      # SQL dump structure dari database
 └── readme.md
 ```
 
