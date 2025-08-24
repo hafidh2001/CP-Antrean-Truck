@@ -1,69 +1,40 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle } from 'lucide-react';
-import { IWarehouse } from '@/types/home';
+import type { IWarehouse } from '@/types/home';
 
 interface DeleteWarehouseDialogProps {
-  warehouse: IWarehouse | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  warehouse: IWarehouse | null;
   onConfirm: () => void;
 }
 
-export const DeleteWarehouseDialog = ({ 
-  warehouse, 
-  open, 
-  onOpenChange, 
-  onConfirm 
-}: DeleteWarehouseDialogProps) => {
-  
-  if (!warehouse) return null;
-
-  const hasStorageUnits = warehouse.storage_units.length > 0;
-
-  const handleConfirm = () => {
-    onConfirm();
-    onOpenChange(false);
-  };
-
+export function DeleteWarehouseDialog({
+  open,
+  onOpenChange,
+  warehouse,
+  onConfirm,
+}: DeleteWarehouseDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-destructive">
-            <AlertTriangle className="h-5 w-5" />
-            Hapus Gudang
-          </DialogTitle>
+          <DialogTitle>Delete Warehouse</DialogTitle>
         </DialogHeader>
-        
-        <div className="space-y-4">
-          <p className="text-sm">
-            Apakah Anda yakin ingin menghapus <strong>{warehouse.name}</strong>?
-          </p>
-          
-          {hasStorageUnits && (
-            <div className="bg-amber-50 border border-amber-200 rounded-md p-3">
-              <p className="text-sm text-amber-800">
-                <strong>Perhatian:</strong> Gudang ini memiliki {warehouse.storage_units.length} storage unit
-                yang akan ikut terhapus.
-              </p>
-            </div>
-          )}
-          
-          <p className="text-sm text-muted-foreground">
-            Tindakan ini tidak dapat dibatalkan.
+        <div className="py-4">
+          <p className="text-sm text-gray-600">
+            Are you sure you want to delete "{warehouse?.name}"? This action cannot be undone.
           </p>
         </div>
-
-        <div className="flex justify-end gap-2 mt-6">
+        <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Batal
+            Cancel
           </Button>
-          <Button variant="destructive" onClick={handleConfirm}>
-            Hapus Gudang
+          <Button onClick={onConfirm} className="bg-red-600 hover:bg-red-700 text-white">
+            Delete
           </Button>
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
-};
+}

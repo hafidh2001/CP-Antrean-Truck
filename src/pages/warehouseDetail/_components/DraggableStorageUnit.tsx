@@ -3,7 +3,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { IStorageUnit } from '@/types/warehouseDetail';
 import { StorageTypeEnum } from '@/types';
 import { cn } from '@/lib/utils';
-import { useMultiWarehouseStore } from '@/store/multiWarehouseStore';
+import { useWarehouseDetailStore } from '@/store/warehouseDetailStore';
 
 interface DraggableStorageUnitProps {
   unit: IStorageUnit;
@@ -13,7 +13,7 @@ interface DraggableStorageUnitProps {
 }
 
 export const DraggableStorageUnit = ({ unit, onClick, onDoubleClick, isDraggable = true }: DraggableStorageUnitProps) => {
-  const { selectedUnit } = useMultiWarehouseStore();
+  const { selectedUnit } = useWarehouseDetailStore();
   const isSelected = selectedUnit?.id === unit.id;
   
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({

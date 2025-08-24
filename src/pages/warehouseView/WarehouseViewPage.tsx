@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { useMultiWarehouseStore } from '@/store/multiWarehouseStore';
+import { useWarehouseViewStore } from '@/store/warehouseViewStore';
 import { WarehouseViewFloorPlan } from './_components/WarehouseViewFloorPlan';
 import { ChevronLeft, Tablet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,16 +11,23 @@ export default function WarehouseViewPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const mode = searchParams.get('mode') || 'desktop';
-  const { loadWarehouseFromApi, currentWarehouse, isLoading, error } = useMultiWarehouseStore();
+  const { loadWarehouse, currentWarehouse, isLoading, error, reset } = useWarehouseViewStore();
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
   const loadingRef = useRef(false);
 
   useEffect(() => {
     if (warehouseId && !loadingRef.current) {
       loadingRef.current = true;
-      loadWarehouseFromApi(parseInt(warehouseId));
+      loadWarehouse(parseInt(warehouseId));
     }
-  }, [warehouseId]);
+  }, [warehouseId, loadWarehouse]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      reset();
+    };
+  }, [reset]);
 
   useEffect(() => {
     const updateViewportSize = () => {
@@ -62,7 +69,7 @@ export default function WarehouseViewPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-500 mb-4">Error: {error}</p>
-          <Button onClick={() => warehouseId && loadWarehouseFromApi(parseInt(warehouseId))}>
+          <Button onClick={() => warehouseId && loadWarehouse(parseInt(warehouseId))}>
             Retry
           </Button>
         </div>

@@ -24,6 +24,17 @@ cd CP-Antrean-Truck
 npm install
 ```
 
+3. Create .env file from example:
+```bash
+cp .env.example .env
+```
+
+4. **REQUIRED**: Update the decrypt secret key in .env:
+```
+VITE_DECRYPT_SECRET_KEY=your_secret_key_here
+```
+⚠️ **Important**: The application will not work without this environment variable. Make sure it matches the secret key used by your PHP backend.
+
 ## Available Scripts
 
 ### Development
@@ -50,72 +61,30 @@ npm run lint
 ```
 Runs TypeScript compiler in no-emit mode to check for type errors.
 
-## Routes Documentation
+## Usage
 
-### URL Structure
+### Warehouse Management
+The application provides two modes for warehouse interaction:
 
-| Page | URL Pattern | Example | Description |
-|------|-------------|---------|-------------|
-| Home | `/` | `/` | Homepage dengan daftar warehouse |
-| Warehouse Detail | `/warehouse/:warehouseId` | `/warehouse/1` | Detail warehouse untuk editing |
-| Warehouse View - Desktop | `/warehouse/:warehouseId/view?mode=desktop` | `/warehouse/1/view?mode=desktop` | View warehouse - desktop mode |
-| Warehouse View - Tablet | `/warehouse/:warehouseId/view?mode=tablet` | `/warehouse/1/view?mode=tablet` | View warehouse - tablet mode |
-| Decrypt | `/decrypt?key={encrypted}` | `/decrypt?key=3xrOkZST...` | Decrypt AES-256-CBC encrypted data |
+1. **Edit Mode** - Requires encrypted authentication
+   - URL: `/warehouse?key={encrypted_data}`
+   - Full CRUD operations on warehouse layout
+   
+2. **View Mode** - Public read-only access
+   - URL: `/warehouse/:id/view?mode=desktop|tablet`
+   - Display warehouse layout without editing
 
-### Implementation Details
+### Authentication
+Edit mode requires encrypted data containing user credentials. The data is decrypted using AES-256-CBC encryption with the configured secret key.
 
-#### Routes Class (`src/utils/routes.ts`)
-```typescript
-export class ROUTES {
-  static get base() { return `/` as const; }
-  static get warehouse() { return `/warehouse` as const; }
-  
-  static warehouseDetail(warehouseId: string): string {
-    return `${this.warehouse}/${warehouseId}` as const;
-  }
-  
-  static warehouseView(warehouseId: string): string {
-    return `${this.warehouse}/${warehouseId}/view` as const;
-  }
-}
-```
+## Architecture
 
-#### Navigation Usage
-```typescript
-// Navigate to detail page
-navigate(ROUTES.warehouseDetail(String(warehouse.id)));
+The application follows a modular architecture with separate stores per page:
+- **warehouseDetailStore** - Manages authenticated editing operations
+- **warehouseViewStore** - Handles read-only warehouse display
 
-// Navigate to view page - desktop
-navigate(`${ROUTES.warehouseView(String(warehouse.id))}?mode=desktop`);
+This separation ensures clear boundaries between authenticated and public access, following microservice principles.
 
-// Navigate to view page - tablet  
-navigate(`${ROUTES.warehouseView(String(warehouse.id))}?mode=tablet`);
-```
+## Development
 
-## Decrypt Page Guide
-
-### Overview
-Halaman decrypt digunakan untuk mendekripsi data yang dienkripsi oleh PHP backend menggunakan AES-256-CBC.
-
-### URL Format
-```
-/decrypt?key={encrypted_data}
-```
-
-### Example URL
-```
-http://localhost:3000/decrypt?key=3xrOkZSTzZ4/P5cOyvKhFY/RwSoj1q8EKRJzR6opgGPdoTEkJAHq/f86y5lt0r9CMoWYLlPNM6hP/ljKz+6CrQ==
-```
-
-### Features
-1. **Automatic Decryption**: Otomatis decrypt saat halaman dibuka
-2. **Professional UI**: Clean design dengan gradient background
-3. **JSON Display**: Menampilkan hasil decrypt dalam format JSON
-4. **Copy to Clipboard**: Fitur copy untuk user token
-5. **Error Handling**: Menampilkan pesan error jika decrypt gagal
-
-### Technical Details
-- **Algorithm**: AES-256-CBC
-- **Key Derivation**: SHA-256
-- **IV**: 16 bytes (included in encrypted data)
-- **Secret Key**: Configured for testing environment
+See [PROJECT_STANDARDS.md](./PROJECT_STANDARDS.md) for coding standards and project structure guidelines.

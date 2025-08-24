@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { DndContext, DragEndEvent, useSensor, useSensors, PointerSensor } from '@dnd-kit/core';
-import { useMultiWarehouseStore } from '@/store/multiWarehouseStore';
+import { useWarehouseDetailStore } from '@/store/warehouseDetailStore';
 import { ResizableStorageUnit } from './ResizableStorageUnit';
 import { DraggableTextElement } from './DraggableTextElement';
 import { StorageUnitDialog } from './StorageUnitDialog';
@@ -26,7 +26,7 @@ export const WarehouseFloorPlan = () => {
     toolMode,
     getStorageUnits,
     getTextElements
-  } = useMultiWarehouseStore();
+  } = useWarehouseDetailStore();
   
   const [dialogOpen, setDialogOpen] = useState(false);
   const [textDialogOpen, setTextDialogOpen] = useState(false);
@@ -196,7 +196,7 @@ export const WarehouseFloorPlan = () => {
 
   // Keyboard shortcuts
   useEffect(() => {
-    const store = useMultiWarehouseStore.getState();
+    const store = useWarehouseDetailStore.getState();
     
     const handleKeyDown = (e: KeyboardEvent) => {
       // Tool shortcuts

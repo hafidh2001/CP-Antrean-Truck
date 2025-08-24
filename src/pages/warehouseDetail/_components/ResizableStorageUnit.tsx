@@ -3,7 +3,7 @@ import { useDraggable } from '@dnd-kit/core';
 import { IStorageUnit, TResizeDirection } from '@/types/warehouseDetail';
 import { StorageTypeEnum } from '@/types';
 import { cn } from '@/lib/utils';
-import { useMultiWarehouseStore } from '@/store/multiWarehouseStore';
+import { useWarehouseDetailStore } from '@/store/warehouseDetailStore';
 import { WAREHOUSE_CONSTANTS } from '@/constants/warehouse';
 
 interface ResizableStorageUnitProps {
@@ -17,7 +17,7 @@ export const ResizableStorageUnit = ({
   onClick,
   isDraggable = true,
 }: ResizableStorageUnitProps) => {
-  const { updateUnit, currentWarehouse } = useMultiWarehouseStore();
+  const { updateUnit, currentWarehouse } = useWarehouseDetailStore();
   const [isResizing, setIsResizing] = useState(false);
   const [, setResizeDirection] = useState<TResizeDirection>(null);
   const [hoveredDirection, setHoveredDirection] = useState<TResizeDirection>(null);

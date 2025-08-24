@@ -5,11 +5,7 @@ import { Shield, AlertCircle, CheckCircle, Copy, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
-
-interface DecryptedData {
-  user_token: string;
-  warehouse_id: number;
-}
+import type { DecryptedData } from '@/types/warehouseDetail/store';
 
 export default function DecryptPage() {
   const [searchParams] = useSearchParams();
@@ -30,7 +26,11 @@ export default function DecryptPage() {
 
   const decryptData = async (encrypted: string) => {
     try {
-      const secretKey = "alfafukidialdio";
+      const secretKey = import.meta.env.VITE_DECRYPT_SECRET_KEY;
+      
+      if (!secretKey) {
+        throw new Error('VITE_DECRYPT_SECRET_KEY is not configured in environment variables');
+      }
       
       // Don't decode if manually input, only decode if from URL
       let decodedString = encrypted;

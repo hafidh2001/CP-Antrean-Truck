@@ -4,7 +4,6 @@ import { IWarehouse, TAnyStorageUnit } from '@/types/warehouseDetail';
 // API Configuration
 const API_URL = 'https://hachi.kamz-kun.id/cp_fifo/index.php?r=Api';
 const API_TOKEN = 'dctfvgybefvgyabdfhwuvjlnsd';
-const USER_TOKEN = 'dNS1f.f4HKgIXqH9GDs9F150nhSbK';
 
 // Create axios instance with default config
 const apiClient = axios.create({
@@ -35,25 +34,26 @@ interface SaveLocationResponse {
 }
 
 // Helper to create API request body
-const createApiRequest = (functionName: string, model: string, params: any) => ({
+const createApiRequest = (functionName: string, model: string, params: any, userToken: string) => ({
   function: functionName,
   mode: 'function',
   model: model,
   params: params,
   token: API_TOKEN,
-  user_token: USER_TOKEN,
+  user_token: userToken,
 });
 
 export const warehouseApi = {
   /**
    * Get warehouse with all locations/storage units
    */
-  async getWarehouseLocations(warehouseId: number): Promise<IWarehouse> {
+  async getWarehouseLocations(warehouseId: number, userToken: string): Promise<IWarehouse> {
     try {
       const response = await apiClient.post('', createApiRequest(
         'getWarehouseLocations',
         'MLocation',
-        { warehouse_id: warehouseId }
+        { warehouse_id: warehouseId },
+        userToken
       ));
 
       console.log('API Response:', response.data);
@@ -107,7 +107,8 @@ export const warehouseApi = {
    */
   async saveWarehouseLocations(
     warehouseId: number, 
-    storageUnits: TAnyStorageUnit[]
+    storageUnits: TAnyStorageUnit[],
+    userToken: string
   ): Promise<SaveLocationResponse> {
     try {
       // Send units with their IDs (backend will handle new vs existing)
@@ -117,7 +118,8 @@ export const warehouseApi = {
         {
           warehouse_id: warehouseId,
           storage_units: storageUnits
-        }
+        },
+        userToken
       ));
 
       // Parse the response - handle double encoding issue
@@ -147,12 +149,13 @@ export const warehouseApi = {
   /**
    * Get list of warehouses (for future use)
    */
-  async getWarehouseList(): Promise<IWarehouse[]> {
+  async getWarehouseList(userToken: string): Promise<IWarehouse[]> {
     try {
       const response = await apiClient.post('', createApiRequest(
         'getWarehouseList',
         'MWarehouse',
-        {}
+        {},
+        userToken
       ));
 
       if (response.data.error) {

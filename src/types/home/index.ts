@@ -1,7 +1,6 @@
-// Home module reusable types
+// Types for home module
 export interface IWarehouse {
   id: number;
   name: string;
   description?: string;
-  storage_units: Array<unknown>; // Simplified for home module
 }

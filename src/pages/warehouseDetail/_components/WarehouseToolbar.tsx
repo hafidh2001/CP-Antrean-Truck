@@ -1,18 +1,18 @@
 import { Button } from '@/components/ui/button';
-import { useMultiWarehouseStore } from '@/store/multiWarehouseStore';
+import { useWarehouseDetailStore } from '@/store/warehouseDetailStore';
 import { Save, Trash2, Type, Square, MousePointer } from 'lucide-react';
 import useModal from '@/hooks/useModal';
 import { ConfirmationModal } from '@/components/confirmationModal';
 
 export const WarehouseToolbar = () => {
-  const multiStore = useMultiWarehouseStore();
-  const { toolMode, setToolMode, currentWarehouse, updateWarehouse, saveWarehouseToStorage, isSaving } = multiStore;
+  const store = useWarehouseDetailStore();
+  const { toolMode, setToolMode, currentWarehouse, saveWarehouse, isSaving } = store;
   const { isShown: isShownSave, toggle: toggleSave } = useModal();
   const { isShown: isShownClear, toggle: toggleClear } = useModal();
 
   const handleSaveConfirm = async () => {
     if (currentWarehouse) {
-      const result = await saveWarehouseToStorage();
+      const result = await saveWarehouse();
       
       // Show feedback
       const toast = document.createElement('div');
@@ -30,8 +30,9 @@ export const WarehouseToolbar = () => {
 
   const handleClearConfirm = () => {
     if (currentWarehouse) {
-      updateWarehouse(currentWarehouse.id, {
-        storage_units: [],
+      // Clear all storage units by removing them
+      currentWarehouse.storage_units.forEach(unit => {
+        store.removeUnit(unit.id);
       });
     }
   };

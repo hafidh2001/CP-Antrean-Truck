@@ -11,8 +11,8 @@ export class ROUTES {
     return `/decrypt` as const;
   }
   
-  static warehouseDetail(warehouseId: string): string {
-    return `${this.warehouse}/${warehouseId}` as const;
+  static warehouseDetail() {
+    return `${this.warehouse}` as const;
   }
   
   static warehouseView(warehouseId: string): string {

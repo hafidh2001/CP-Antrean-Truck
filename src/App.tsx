@@ -13,7 +13,7 @@ function App() {
         <Routes>
         {/* <Route path={ROUTES.base} element={<HomePage />} /> */}
         <Route 
-          path={ROUTES.warehouseDetail(':warehouseId')} 
+          path={ROUTES.warehouseDetail()} 
           element={<WarehouseDetailPage />} 
         />
         <Route 

@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
-import { useMultiWarehouseStore } from '@/store/multiWarehouseStore';
+import { useWarehouseViewStore } from '@/store/warehouseViewStore';
 import { IStorageUnit, ITextElement } from '@/types/warehouseDetail';
-import { StorageTypeEnum } from '@/types';
+import { ElementTypeEnum, StorageTypeEnum } from '@/types';
+import { isStorageUnit } from '@/functions/warehouseHelpers';
 import { cn } from '@/lib/utils';
 import { StorageInfoModal } from './StorageInfoModal';
 import { WAREHOUSE_CONSTANTS } from '@/constants/warehouse';
@@ -12,7 +13,7 @@ interface WarehouseViewFloorPlanProps {
 }
 
 export const WarehouseViewFloorPlan = ({ viewportWidth, viewportHeight }: WarehouseViewFloorPlanProps) => {
-  const { currentWarehouse, getStorageUnits, getTextElements } = useMultiWarehouseStore();
+  const { currentWarehouse } = useWarehouseViewStore();
   const [selectedUnit, setSelectedUnit] = useState<IStorageUnit | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -21,6 +22,17 @@ export const WarehouseViewFloorPlan = ({ viewportWidth, viewportHeight }: Wareho
   if (!currentWarehouse) {
     return <div>Loading...</div>;
   }
+
+  // Helper methods to get specific unit types
+  const getStorageUnits = (): IStorageUnit[] => {
+    return currentWarehouse.storage_units.filter(isStorageUnit);
+  };
+
+  const getTextElements = (): ITextElement[] => {
+    return currentWarehouse.storage_units.filter(
+      unit => unit.type === ElementTypeEnum.TEXT
+    ) as ITextElement[];
+  };
 
   // Calculate scale to fit the warehouse in the viewport
   useEffect(() => {

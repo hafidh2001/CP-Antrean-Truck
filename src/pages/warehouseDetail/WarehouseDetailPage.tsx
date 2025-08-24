@@ -1,25 +1,57 @@
 import { useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { WarehouseFloorPlan } from './_components/WarehouseFloorPlan';
 import { WarehouseToolbar } from './_components/WarehouseToolbar';
 import { WarehouseHelper } from './_components/WarehouseHelper';
-import { useMultiWarehouseStore } from '@/store/multiWarehouseStore';
+import { useWarehouseDetailStore } from '@/store/warehouseDetailStore';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { ROUTES } from '@/utils/routes';
 
 export default function WarehouseDetailPage() {
-  const { warehouseId } = useParams<{ warehouseId: string }>();
   const navigate = useNavigate();
-  const { loadWarehouseFromApi, currentWarehouse, isLoading, error } = useMultiWarehouseStore();
+  const location = useLocation();
+  const { 
+    initializeFromEncryptedData, 
+    currentWarehouse, 
+    isLoading, 
+    error,
+    reset 
+  } = useWarehouseDetailStore();
   const loadingRef = useRef(false);
 
   useEffect(() => {
-    if (warehouseId && !loadingRef.current) {
-      loadingRef.current = true;
-      loadWarehouseFromApi(parseInt(warehouseId));
-    }
-  }, [warehouseId]);
+    const loadWarehouse = async () => {
+      if (!loadingRef.current) {
+        loadingRef.current = true;
+        
+        // Get encrypted data from URL query params
+        const searchParams = new URLSearchParams(location.search);
+        const encryptedData = searchParams.get('key');
+        
+        if (!encryptedData) {
+          navigate(ROUTES.base);
+          return;
+        }
+        
+        try {
+          await initializeFromEncryptedData(encryptedData);
+        } catch (error) {
+          console.error('Failed to decrypt or load warehouse:', error);
+          navigate(ROUTES.base);
+        }
+      }
+    };
+    
+    loadWarehouse();
+  }, [location.search, navigate, initializeFromEncryptedData]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      reset();
+    };
+  }, [reset]);
 
   const handleBack = () => {
     navigate(ROUTES.base);
@@ -41,7 +73,13 @@ export default function WarehouseDetailPage() {
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
           <p className="text-red-500 mb-4">Error: {error}</p>
-          <Button onClick={() => warehouseId && loadWarehouseFromApi(parseInt(warehouseId))}>
+          <Button onClick={async () => {
+            const searchParams = new URLSearchParams(location.search);
+            const encryptedData = searchParams.get('key');
+            if (encryptedData) {
+              initializeFromEncryptedData(encryptedData);
+            }
+          }}>
             Retry
           </Button>
         </div>
