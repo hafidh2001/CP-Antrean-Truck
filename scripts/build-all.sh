@@ -2,9 +2,16 @@
 
 # Build script for all architectures
 
+# Get the script directory and project root
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+# Change to project root directory
+cd "$PROJECT_ROOT"
+
 # Load environment variables from .env file
-if [ -f ../.env ]; then
-    export $(cat ../.env | grep -v '^#' | xargs)
+if [ -f .env ]; then
+    export $(cat .env | grep -v '^#' | xargs)
 fi
 
 IMAGE_NAME="hafidh2001/cp-antrean-truck"
@@ -18,6 +25,7 @@ docker buildx create --name multiarch-builder --use 2>/dev/null || docker buildx
 docker buildx inspect --bootstrap
 
 echo "Building Docker images for all architectures..."
+echo "Using VITE_DECRYPT_SECRET_KEY: ${VITE_DECRYPT_SECRET_KEY:0:4}****" # Show first 4 chars for verification
 
 # Build for both platforms and push to registry
 docker buildx build \
@@ -27,7 +35,7 @@ docker buildx build \
   -t ${IMAGE_NAME}:amd64 \
   -t ${IMAGE_NAME}:arm64 \
   --push \
-  ..
+  .
 
 if [ $? -eq 0 ]; then
   echo "✅ Successfully built and pushed multi-architecture images"
