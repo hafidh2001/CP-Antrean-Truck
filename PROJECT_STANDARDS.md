@@ -4,22 +4,37 @@
 
 ```
 src/
-├── pages/                    # Page components (one folder per route)
-│   ├── warehouseDetail/     # Edit mode page
-│   │   ├── WarehouseDetailPage.tsx
-│   │   └── _components/     # Page-specific components
-│   └── warehouseView/       # View mode page
-│       ├── WarehouseViewPage.tsx
-│       └── _components/     # Page-specific components
-├── store/                   # Zustand stores (one per page/module)
+├── pages/                    # Page components organized by role
+│   ├── admin/               # Admin role pages
+│   │   ├── warehouseDetail/ # Edit mode page
+│   │   │   ├── WarehouseDetailPage.tsx
+│   │   │   └── _components/ # Page-specific components
+│   │   └── warehouseView/   # View mode page
+│   │       ├── WarehouseViewPage.tsx
+│   │       └── _components/ # Page-specific components
+│   ├── krani/               # Krani role pages
+│   │   └── antreanTruck/    # Truck queue page
+│   │       ├── AntreanTruckPage.tsx
+│   │       └── _components/ # Page-specific components
+│   └── home/                # Shared/public pages
+│       └── HomePage.tsx
+├── store/                   # Zustand stores (one per module)
 │   ├── warehouseDetailStore.ts
-│   └── warehouseViewStore.ts
+│   ├── warehouseViewStore.ts
+│   ├── antreanTruckStore.ts
+│   └── homeStore.ts
 ├── types/                   # TypeScript types (organized by module)
 │   ├── warehouseDetail/     # Types for detail module
 │   │   ├── index.ts        # Main types (IWarehouse, IStorageUnit, etc.)
 │   │   └── store.ts        # Store-specific types
-│   └── warehouseView/       # Types for view module
-│       └── index.ts        # Store interface only
+│   ├── warehouseView/       # Types for view module
+│   │   └── index.ts        # Store interface only
+│   ├── antreanTruck/        # Types for antrean truck module
+│   │   ├── index.ts        # Main types (IAntrean, IAntreanCard)
+│   │   └── store.ts        # Store interface
+│   └── home/                # Types for home module
+│       ├── index.ts        # Main types (IWarehouse)
+│       └── store.ts        # Store interface
 ├── services/                # API services (shared across modules)
 │   └── warehouseApi.ts
 ├── functions/               # Business logic functions (shared)
@@ -192,3 +207,52 @@ import { decryptAES } from '@/utils/decrypt';
 - Keep related code together (by feature/module)
 - Shared code goes in appropriate shared folders
 - Page-specific code stays in page folders
+
+## 7. Module Naming Convention
+
+### Page Organization by Role
+Pages are organized under role directories, but module naming follows functionality:
+
+```
+/pages/[role]/[moduleName]/
+```
+
+Examples:
+- `/pages/admin/warehouseDetail/` → Module: warehouseDetail
+- `/pages/admin/warehouseView/` → Module: warehouseView  
+- `/pages/krani/antreanTruck/` → Module: antreanTruck
+
+### Store and Types Naming
+Store and types use the module name, NOT the role name:
+
+```
+/store/[moduleName]Store.ts
+/types/[moduleName]/
+```
+
+Examples:
+- `/store/antreanTruckStore.ts` (NOT kraniStore.ts)
+- `/types/antreanTruck/` (NOT /types/krani/)
+
+### URL Routing
+URLs should NOT include role names:
+
+```typescript
+// ✅ Good
+static get antreanTruck() {
+  return `/antrean-truck` as const;
+}
+
+// ❌ Bad
+static get antreanTruck() {
+  return `/krani/antrean-truck` as const;
+}
+```
+
+### Import Examples
+```typescript
+// Importing from antreanTruck module (under krani role)
+import { AntreanTruckPage } from '@/pages/krani/antreanTruck';
+import { useAntreanTruckStore } from '@/store/antreanTruckStore';
+import type { IAntreanCard } from '@/types/antreanTruck';
+```

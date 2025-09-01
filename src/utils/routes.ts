@@ -18,4 +18,8 @@ export class ROUTES {
   static warehouseView(warehouseId: string): string {
     return `${this.warehouse}/${warehouseId}/view` as const;
   }
+  
+  static get antreanTruck() {
+    return `/antrean-truck` as const;
+  }
 }
