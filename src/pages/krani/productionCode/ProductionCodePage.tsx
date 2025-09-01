@@ -40,8 +40,7 @@ export function ProductionCodePage() {
   }, [nopol, loadProductionCodes, reset]);
 
   const handleCardClick = (code: IProductionCodeCard) => {
-    // TODO: Navigate to detail entry page
-    console.log('Selected production code:', code);
+    navigate(ROUTES.productionCodeEntry(nopol || '', code.id.toString()));
   };
 
   const handleBack = () => {

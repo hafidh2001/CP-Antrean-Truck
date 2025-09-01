@@ -26,4 +26,8 @@ export class ROUTES {
   static productionCode(nopol: string): string {
     return `/production-code/${nopol}` as const;
   }
+  
+  static productionCodeEntry(nopol: string, id: string): string {
+    return `/production-code-entry/${nopol}/${id}` as const;
+  }
 }

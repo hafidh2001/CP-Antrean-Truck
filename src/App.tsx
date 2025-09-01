@@ -5,6 +5,7 @@ import WarehouseViewPage from '@/pages/admin/warehouseView';
 import DecryptPage from '@/pages/decrypt/DecryptPage';
 import AntreanTruckPage from '@/pages/krani/antreanTruck';
 import ProductionCodePage from '@/pages/krani/productionCode';
+import ProductionCodeEntryPage from '@/pages/krani/productionCodeEntry';
 import { ROUTES } from '@/utils/routes';
 import { AppWrapper } from '@/components/layout/AppWrapper';
 
@@ -33,6 +34,10 @@ function App() {
         <Route 
           path={ROUTES.productionCode(':nopol')} 
           element={<ProductionCodePage />} 
+        />
+        <Route 
+          path={ROUTES.productionCodeEntry(':nopol', ':id')} 
+          element={<ProductionCodeEntryPage />} 
         />
         <Route 
           path="*" 
