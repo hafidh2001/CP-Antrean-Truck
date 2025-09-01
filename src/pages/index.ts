@@ -7,3 +7,4 @@ export const WarehouseDetailPage = lazyLoad(() => import('./admin/warehouseDetai
 export const WarehouseViewPage = lazyLoad(() => import('./admin/warehouseView/WarehouseViewPage'));
 export const DecryptPage = lazyLoad(() => import('./decrypt/DecryptPage'));
 export const AntreanTruckPage = lazyLoad(() => import('./krani/antreanTruck/AntreanTruckPage'));
+export const ProductionCodePage = lazyLoad(() => import('./krani/productionCode/ProductionCodePage'));

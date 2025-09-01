@@ -22,4 +22,8 @@ export class ROUTES {
   static get antreanTruck() {
     return `/antrean-truck` as const;
   }
+  
+  static productionCode(nopol: string): string {
+    return `/production-code/${nopol}` as const;
+  }
 }
