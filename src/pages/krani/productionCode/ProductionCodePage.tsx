@@ -52,18 +52,21 @@ export function ProductionCodePage() {
       <div className="max-w-md w-full h-screen bg-white flex flex-col">
         {/* Header - Fixed */}
         <div className="bg-white border-b border-gray-200 flex-shrink-0">
-          {/* Back Button and Title */}
-          <div className="flex items-center p-6">
+          {/* Back Button Row */}
+          <div className="flex items-center pl-2 pb-2">
             <Button
               variant="ghost"
-              size="icon"
               onClick={handleBack}
-              className="mr-3"
+              className="flex items-center gap-2"
             >
               <ArrowLeft className="h-5 w-5" />
+              <span>Back</span>
             </Button>
-            
-            <div className="flex-1 flex items-center gap-3">
+          </div>
+          
+          {/* Title and Info */}
+          <div className="px-6 pb-4">
+            <div className="flex items-center gap-3">
               <div className="p-3 bg-blue-100 rounded-lg">
                 <Truck className="h-8 w-8 text-blue-600" />
               </div>
