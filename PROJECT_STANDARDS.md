@@ -13,8 +13,14 @@ src/
 │   │       ├── WarehouseViewPage.tsx
 │   │       └── _components/ # Page-specific components
 │   ├── krani/               # Krani role pages
-│   │   └── antreanTruck/    # Truck queue page
-│   │       ├── AntreanTruckPage.tsx
+│   │   ├── antreanTruck/    # Truck queue page
+│   │   │   ├── AntreanTruckPage.tsx
+│   │   │   └── _components/ # Page-specific components
+│   │   ├── productionCode/  # Production code list page
+│   │   │   ├── ProductionCodePage.tsx
+│   │   │   └── _components/ # Page-specific components
+│   │   └── productionCodeEntry/ # Production code entry page
+│   │       ├── ProductionCodeEntryPage.tsx
 │   │       └── _components/ # Page-specific components
 │   └── home/                # Shared/public pages
 │       └── HomePage.tsx
@@ -22,6 +28,7 @@ src/
 │   ├── warehouseDetailStore.ts
 │   ├── warehouseViewStore.ts
 │   ├── antreanTruckStore.ts
+│   ├── productionCodeStore.ts
 │   └── homeStore.ts
 ├── types/                   # TypeScript types (organized by module)
 │   ├── warehouseDetail/     # Types for detail module
@@ -32,6 +39,11 @@ src/
 │   ├── antreanTruck/        # Types for antrean truck module
 │   │   ├── index.ts        # Main types (IAntrean, IAntreanCard)
 │   │   └── store.ts        # Store interface
+│   ├── productionCode/      # Types for production code module
+│   │   ├── index.ts        # Main types (IProductionCode, IQuantityItem)
+│   │   └── store.ts        # Store interface
+│   ├── productionCodeEntry/ # Types for production code entry module
+│   │   └── index.ts        # Main types (IJebolan, IProductionCodeEntry)
 │   └── home/                # Types for home module
 │       ├── index.ts        # Main types (IWarehouse)
 │       └── store.ts        # Store interface
@@ -256,3 +268,37 @@ import { AntreanTruckPage } from '@/pages/krani/antreanTruck';
 import { useAntreanTruckStore } from '@/store/antreanTruckStore';
 import type { IAntreanCard } from '@/types/antreanTruck';
 ```
+
+## 8. Data Flow and localStorage Management
+
+### Mock Data Structure
+All mock data is centralized in `/data/krani-mock-data.json` containing:
+- `antreanTruck`: List of trucks in queue
+- `productionCodes`: Production codes by nopol (license plate)
+
+### localStorage Keys Convention
+```
+antrean-truck-data              # List of trucks in queue
+production-codes-{nopol}        # Production codes for specific truck
+production-code-entry-{nopol}-{id}  # Entry data for specific production code
+```
+
+### Data Flow
+1. **Initial Load**: Mock data is loaded into localStorage if not present
+2. **AntreanTruck Page**: Reads from `antrean-truck-data`
+3. **ProductionCode Page**: Reads from `production-codes-{nopol}`
+4. **ProductionCodeEntry Page**: 
+   - Reads production code data from `production-codes-{nopol}`
+   - Saves entry data to `production-code-entry-{nopol}-{id}`
+   - Updates completed_entries in parent data
+
+### Store Responsibilities
+- **antreanTruckStore**: Manages truck queue list
+- **productionCodeStore**: Manages production codes for a specific truck
+- Both stores handle localStorage initialization and persistence
+
+### Best Practices for localStorage
+- Always initialize with mock data if localStorage is empty
+- Use consistent key naming convention
+- Update parent data when child data changes
+- Clear data appropriately on logout/reset

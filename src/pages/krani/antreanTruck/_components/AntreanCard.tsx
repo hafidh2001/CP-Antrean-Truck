@@ -22,7 +22,7 @@ export function AntreanCard({ antrean, onClick }: AntreanCardProps) {
     return { date: formattedDate, time: formattedTime };
   };
 
-  const { date, time } = formatDateTime(antrean.created_time);
+  const { date, time } = formatDateTime(antrean.created_at);
 
   return (
     <Card 
@@ -46,7 +46,7 @@ export function AntreanCard({ antrean, onClick }: AntreanCardProps) {
           </div>
           
           <div className="text-sm font-semibold text-gray-700">
-            {antrean.goodsCount} Jenis Barang
+            {antrean.jenis_barang} Jenis Barang
           </div>
         </div>
       </CardContent>

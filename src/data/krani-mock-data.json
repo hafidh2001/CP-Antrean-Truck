@@ -1,0 +1,366 @@
+{
+  "antreanTruck": [
+    {
+      "id": 1,
+      "nopol": "B1234ABC",
+      "created_at": "2024-01-09T08:00:00Z",
+      "jenis_barang": 10
+    },
+    {
+      "id": 2,
+      "nopol": "D5678XYZ",
+      "created_at": "2024-01-09T08:15:00Z",
+      "jenis_barang": 7
+    },
+    {
+      "id": 3,
+      "nopol": "F9012DEF",
+      "created_at": "2024-01-09T08:30:00Z",
+      "jenis_barang": 12
+    },
+    {
+      "id": 4,
+      "nopol": "B3456GHI",
+      "created_at": "2024-01-09T08:45:00Z",
+      "jenis_barang": 5
+    },
+    {
+      "id": 5,
+      "nopol": "D7890JKL",
+      "created_at": "2024-01-09T09:00:00Z",
+      "jenis_barang": 8
+    },
+    {
+      "id": 6,
+      "nopol": "B9876MNO",
+      "created_at": "2024-01-09T09:15:00Z",
+      "jenis_barang": 6
+    },
+    {
+      "id": 7,
+      "nopol": "F2345PQR",
+      "created_at": "2024-01-09T09:30:00Z",
+      "jenis_barang": 9
+    },
+    {
+      "id": 8,
+      "nopol": "D4567STU",
+      "created_at": "2024-01-09T09:45:00Z",
+      "jenis_barang": 11
+    },
+    {
+      "id": 9,
+      "nopol": "B6789VWX",
+      "created_at": "2024-01-09T10:00:00Z",
+      "jenis_barang": 4
+    },
+    {
+      "id": 10,
+      "nopol": "F8901YZA",
+      "created_at": "2024-01-09T10:15:00Z",
+      "jenis_barang": 7
+    }
+  ],
+  "productionCodes": {
+    "B1234ABC": {
+      "nopol": "B1234ABC",
+      "goodsCount": 10,
+      "productionCodes": [
+        {
+          "id": 1,
+          "goods_code": "512BG",
+          "goods_name": "Semen Portland",
+          "do_no": "DO-001-AAA",
+          "quantities": [
+            { "quantity": 10, "uom": "pallet" },
+            { "quantity": 5, "uom": "box" }
+          ],
+          "total_entries": 10,
+          "completed_entries": 0
+        },
+        {
+          "id": 2,
+          "goods_code": "324KJ",
+          "goods_name": "Besi Beton",
+          "do_no": "DO-001-AAA",
+          "quantities": [
+            { "quantity": 5, "uom": "box" }
+          ],
+          "total_entries": 5,
+          "completed_entries": 0
+        },
+        {
+          "id": 3,
+          "goods_code": "789LM",
+          "goods_name": "Cat Tembok",
+          "do_no": "DO-001-AAB",
+          "quantities": [
+            { "quantity": 15, "uom": "pk-box" },
+            { "quantity": 3, "uom": "pallet" }
+          ],
+          "total_entries": 8,
+          "completed_entries": 0
+        },
+        {
+          "id": 4,
+          "goods_code": "456NP",
+          "goods_name": "Pasir Halus",
+          "do_no": "DO-001-AAB",
+          "quantities": [
+            { "quantity": 20, "uom": "sack" },
+            { "quantity": 8, "uom": "box" }
+          ],
+          "total_entries": 15,
+          "completed_entries": 0
+        }
+      ]
+    },
+    "D5678XYZ": {
+      "nopol": "D5678XYZ",
+      "goodsCount": 7,
+      "productionCodes": [
+        {
+          "id": 5,
+          "goods_code": "156AB",
+          "goods_name": "Keramik Lantai",
+          "do_no": "DO-002-BBB",
+          "quantities": [
+            { "quantity": 20, "uom": "box" },
+            { "quantity": 2, "uom": "pallet" }
+          ],
+          "total_entries": 15,
+          "completed_entries": 0
+        },
+        {
+          "id": 6,
+          "goods_code": "234CD",
+          "goods_name": "Pipa PVC",
+          "do_no": "DO-002-BBB",
+          "quantities": [
+            { "quantity": 8, "uom": "staple" }
+          ],
+          "total_entries": 5,
+          "completed_entries": 0
+        },
+        {
+          "id": 7,
+          "goods_code": "890EF",
+          "goods_name": "Batu Bata",
+          "do_no": "DO-002-BBC",
+          "quantities": [
+            { "quantity": 12, "uom": "pb-sack" },
+            { "quantity": 5, "uom": "pallet" }
+          ],
+          "total_entries": 10,
+          "completed_entries": 0
+        }
+      ]
+    },
+    "F9012DEF": {
+      "nopol": "F9012DEF",
+      "goodsCount": 12,
+      "productionCodes": [
+        {
+          "id": 8,
+          "goods_code": "901EF",
+          "goods_name": "Pasir Halus",
+          "do_no": "DO-003-CCC",
+          "quantities": [
+            { "quantity": 30, "uom": "sack" }
+          ],
+          "total_entries": 20,
+          "completed_entries": 0
+        },
+        {
+          "id": 9,
+          "goods_code": "345GH",
+          "goods_name": "Batu Bata",
+          "do_no": "DO-003-CCC",
+          "quantities": [
+            { "quantity": 12, "uom": "pb-sack" },
+            { "quantity": 4, "uom": "box" }
+          ],
+          "total_entries": 12,
+          "completed_entries": 0
+        },
+        {
+          "id": 10,
+          "goods_code": "678IJ",
+          "goods_name": "Genteng",
+          "do_no": "DO-003-CCD",
+          "quantities": [
+            { "quantity": 25, "uom": "pb-box" },
+            { "quantity": 10, "uom": "staple" }
+          ],
+          "total_entries": 10,
+          "completed_entries": 0
+        },
+        {
+          "id": 11,
+          "goods_code": "123KL",
+          "goods_name": "Seng Gelombang",
+          "do_no": "DO-003-CCD",
+          "quantities": [
+            { "quantity": 15, "uom": "pk-sack" },
+            { "quantity": 3, "uom": "pallet" }
+          ],
+          "total_entries": 8,
+          "completed_entries": 0
+        }
+      ]
+    },
+    "B3456GHI": {
+      "nopol": "B3456GHI",
+      "goodsCount": 5,
+      "productionCodes": [
+        {
+          "id": 12,
+          "goods_code": "777XY",
+          "goods_name": "Kabel Listrik",
+          "do_no": "DO-004-DDD",
+          "quantities": [
+            { "quantity": 10, "uom": "roll" }
+          ],
+          "total_entries": 10,
+          "completed_entries": 0
+        },
+        {
+          "id": 13,
+          "goods_code": "888ZA",
+          "goods_name": "Lampu LED",
+          "do_no": "DO-004-DDD",
+          "quantities": [
+            { "quantity": 20, "uom": "box" }
+          ],
+          "total_entries": 20,
+          "completed_entries": 0
+        }
+      ]
+    },
+    "D7890JKL": {
+      "nopol": "D7890JKL",
+      "goodsCount": 8,
+      "productionCodes": [
+        {
+          "id": 14,
+          "goods_code": "999BC",
+          "goods_name": "Triplek",
+          "do_no": "DO-005-EEE",
+          "quantities": [
+            { "quantity": 15, "uom": "lembar" }
+          ],
+          "total_entries": 15,
+          "completed_entries": 0
+        },
+        {
+          "id": 15,
+          "goods_code": "111DE",
+          "goods_name": "Paku",
+          "do_no": "DO-005-EEE",
+          "quantities": [
+            { "quantity": 5, "uom": "box" },
+            { "quantity": 2, "uom": "pallet" }
+          ],
+          "total_entries": 5,
+          "completed_entries": 0
+        }
+      ]
+    },
+    "B9876MNO": {
+      "nopol": "B9876MNO",
+      "goodsCount": 6,
+      "productionCodes": [
+        {
+          "id": 16,
+          "goods_code": "222FG",
+          "goods_name": "Kerikil",
+          "do_no": "DO-006-FFF",
+          "quantities": [
+            { "quantity": 25, "uom": "sack" }
+          ],
+          "total_entries": 25,
+          "completed_entries": 0
+        },
+        {
+          "id": 17,
+          "goods_code": "333HI",
+          "goods_name": "Aspal",
+          "do_no": "DO-006-FFF",
+          "quantities": [
+            { "quantity": 10, "uom": "drum" }
+          ],
+          "total_entries": 10,
+          "completed_entries": 0
+        }
+      ]
+    },
+    "F2345PQR": {
+      "nopol": "F2345PQR",
+      "goodsCount": 9,
+      "productionCodes": [
+        {
+          "id": 18,
+          "goods_code": "444JK",
+          "goods_name": "Kayu Jati",
+          "do_no": "DO-007-GGG",
+          "quantities": [
+            { "quantity": 30, "uom": "batang" }
+          ],
+          "total_entries": 30,
+          "completed_entries": 0
+        }
+      ]
+    },
+    "D4567STU": {
+      "nopol": "D4567STU",
+      "goodsCount": 11,
+      "productionCodes": [
+        {
+          "id": 19,
+          "goods_code": "555LM",
+          "goods_name": "Baja Ringan",
+          "do_no": "DO-008-HHH",
+          "quantities": [
+            { "quantity": 50, "uom": "batang" }
+          ],
+          "total_entries": 50,
+          "completed_entries": 0
+        }
+      ]
+    },
+    "B6789VWX": {
+      "nopol": "B6789VWX",
+      "goodsCount": 4,
+      "productionCodes": [
+        {
+          "id": 20,
+          "goods_code": "666NO",
+          "goods_name": "Gypsum",
+          "do_no": "DO-009-III",
+          "quantities": [
+            { "quantity": 15, "uom": "lembar" }
+          ],
+          "total_entries": 15,
+          "completed_entries": 0
+        }
+      ]
+    },
+    "F8901YZA": {
+      "nopol": "F8901YZA",
+      "goodsCount": 7,
+      "productionCodes": [
+        {
+          "id": 21,
+          "goods_code": "777PQ",
+          "goods_name": "Kaca",
+          "do_no": "DO-010-JJJ",
+          "quantities": [
+            { "quantity": 20, "uom": "lembar" }
+          ],
+          "total_entries": 20,
+          "completed_entries": 0
+        }
+      ]
+    }
+  }
+}

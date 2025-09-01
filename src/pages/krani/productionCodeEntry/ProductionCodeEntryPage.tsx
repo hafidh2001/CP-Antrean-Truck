@@ -23,37 +23,40 @@ export function ProductionCodeEntryPage() {
       const storageKey = `production-code-entry-${nopol}-${id}`;
       const savedEntry = localStorage.getItem(storageKey);
       
-      // Mock production code data - in real app this would come from store
-      const mockProductionCode: IProductionCodeCard = {
-        id: parseInt(id),
-        goods_code: "512BG",
-        goods_name: "Semen Portland",
-        do_no: "DO-001-AAA",
-        quantities: [
-          { quantity: 10, uom: "pallet" },
-          { quantity: 5, uom: "box" }
-        ],
-        total_entries: 5,
-        completed_entries: 0,
-        isCompleted: false,
-        progress_percentage: 0
-      };
+      // Get production code data from localStorage
+      const productionDataKey = `production-codes-${nopol}`;
+      const productionData = localStorage.getItem(productionDataKey);
       
-      setProductionCodeData(mockProductionCode);
+      let productionCodeCard: IProductionCodeCard | null = null;
+      
+      if (productionData) {
+        const parsed = JSON.parse(productionData);
+        const productionCode = parsed.productionCodes.find((code: any) => code.id === parseInt(id));
+        
+        if (productionCode) {
+          productionCodeCard = {
+            ...productionCode,
+            isCompleted: productionCode.completed_entries === productionCode.total_entries,
+            progress_percentage: Math.round((productionCode.completed_entries / productionCode.total_entries) * 100)
+          };
+          
+          setProductionCodeData(productionCodeCard);
+        }
+      }
       
       if (savedEntry) {
         const parsed = JSON.parse(savedEntry);
         setEntryData(parsed);
         // Clear jebolan input when loading
         setJebolainInput('');
-      } else {
+      } else if (productionCodeCard) {
         setEntryData({
           productionCodeId: parseInt(id),
-          goods_code: mockProductionCode.goods_code,
-          goods_name: mockProductionCode.goods_name || '',
-          do_no: mockProductionCode.do_no,
-          quantities: mockProductionCode.quantities,
-          total_entries: mockProductionCode.total_entries,
+          goods_code: productionCodeCard.goods_code,
+          goods_name: productionCodeCard.goods_name || '',
+          do_no: productionCodeCard.do_no,
+          quantities: productionCodeCard.quantities,
+          total_entries: productionCodeCard.total_entries,
           completed_entries: 0,
           jebolan: null,
           productionCodes: []
