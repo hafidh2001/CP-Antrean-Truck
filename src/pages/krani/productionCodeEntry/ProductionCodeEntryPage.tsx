@@ -15,6 +15,7 @@ export function ProductionCodeEntryPage() {
   const [entryData, setEntryData] = useState<IProductionCodeEntryData | null>(null);
   const [jebolainInput, setJebolainInput] = useState('');
   const [productionCodeInput, setProductionCodeInput] = useState('');
+  const [isEditingJebolan, setIsEditingJebolan] = useState(false);
 
   useEffect(() => {
     // Load production code data and entry data from localStorage
@@ -41,7 +42,10 @@ export function ProductionCodeEntryPage() {
       setProductionCodeData(mockProductionCode);
       
       if (savedEntry) {
-        setEntryData(JSON.parse(savedEntry));
+        const parsed = JSON.parse(savedEntry);
+        setEntryData(parsed);
+        // Clear jebolan input when loading
+        setJebolainInput('');
       } else {
         setEntryData({
           productionCodeId: parseInt(id),
@@ -54,6 +58,7 @@ export function ProductionCodeEntryPage() {
           jebolan: null,
           productionCodes: []
         });
+        setJebolainInput('');
       }
     }
   }, [nopol, id]);
@@ -65,26 +70,60 @@ export function ProductionCodeEntryPage() {
     }
   };
 
-  const handleAddJebolan = () => {
-    if (!jebolainInput.trim() || !entryData) return;
+  const handleJebolanSubmit = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && entryData) {
+      e.preventDefault();
+      
+      // Allow empty jebolan (remove it)
+      if (!jebolainInput.trim()) {
+        const updatedData = {
+          ...entryData,
+          jebolan: null
+        };
+        
+        setEntryData(updatedData);
+        saveToStorage(updatedData);
+        setJebolainInput('');
+        setIsEditingJebolan(false);
+        (e.target as HTMLInputElement).blur();
+        return;
+      }
+      
+      const quantity = parseInt(jebolainInput);
+      if (isNaN(quantity) || quantity <= 0) return;
+      
+      const newJebolan: IJebolan = {
+        id: Date.now().toString(),
+        quantity,
+        timestamp: new Date().toISOString()
+      };
+      
+      const updatedData = {
+        ...entryData,
+        jebolan: newJebolan
+      };
+      
+      setEntryData(updatedData);
+      saveToStorage(updatedData);
+      setJebolainInput('');
+      setIsEditingJebolan(false);
+      
+      // Remove focus from input
+      (e.target as HTMLInputElement).blur();
+    }
+  };
+
+  const handleJebolanClick = () => {
+    setJebolainInput(entryData?.jebolan?.quantity.toString() || '');
+    setIsEditingJebolan(true);
+  };
+
+  const handleJebolanBlur = () => {
+    if (!isEditingJebolan) return;
     
-    const quantity = parseInt(jebolainInput);
-    if (isNaN(quantity) || quantity <= 0) return;
-    
-    const newJebolan: IJebolan = {
-      id: Date.now().toString(),
-      quantity,
-      timestamp: new Date().toISOString()
-    };
-    
-    const updatedData = {
-      ...entryData,
-      jebolan: newJebolan
-    };
-    
-    setEntryData(updatedData);
-    saveToStorage(updatedData);
+    // Reset input if user clicks away without saving
     setJebolainInput('');
+    setIsEditingJebolan(false);
   };
 
   const handleAddProductionCode = () => {
@@ -107,17 +146,6 @@ export function ProductionCodeEntryPage() {
     setProductionCodeInput('');
   };
 
-  const handleDeleteJebolan = () => {
-    if (!entryData) return;
-    
-    const updatedData = {
-      ...entryData,
-      jebolan: null
-    };
-    
-    setEntryData(updatedData);
-    saveToStorage(updatedData);
-  };
 
   const handleDeleteProductionCode = (codeId: string) => {
     if (!entryData) return;
@@ -145,7 +173,6 @@ export function ProductionCodeEntryPage() {
   }
 
   const isCompleted = entryData.completed_entries === entryData.total_entries;
-  const canAddJebolan = !entryData.jebolan;
   const canAddProductionCode = entryData.productionCodes.length < entryData.total_entries;
 
   return (
@@ -209,41 +236,26 @@ export function ProductionCodeEntryPage() {
           <div>
             <h3 className="text-lg font-semibold text-gray-800 mb-3">Jebolan</h3>
             
-            {/* Jebolan Form */}
-            <div className="flex gap-2 mb-3">
+            {/* Jebolan Input/Display */}
+            {!entryData.jebolan || isEditingJebolan ? (
               <Input
                 type="number"
-                placeholder="Jumlah jebolan"
+                placeholder="Jumlah jebolan (opsional)"
                 value={jebolainInput}
                 onChange={(e) => setJebolainInput(e.target.value)}
-                className="flex-1"
-                disabled={!canAddJebolan}
+                onKeyDown={handleJebolanSubmit}
+                onBlur={handleJebolanBlur}
+                className="w-full"
+                autoFocus={isEditingJebolan}
               />
-              <Button
-                onClick={handleAddJebolan}
-                disabled={!canAddJebolan || !jebolainInput.trim()}
-                className="px-6"
+            ) : (
+              <Card 
+                className="border-gray-300 cursor-pointer hover:bg-gray-50"
+                onClick={handleJebolanClick}
               >
-                Add
-              </Button>
-            </div>
-            
-            {/* Jebolan List */}
-            {entryData.jebolan && (
-              <Card className="border-gray-300">
-                <CardContent className="p-2">
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm text-gray-900">
-                      {entryData.jebolan.quantity}
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleDeleteJebolan}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50 h-7 w-7 p-0"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
+                <CardContent className="p-3">
+                  <div className="text-sm text-gray-900">
+                    {entryData.jebolan.quantity}
                   </div>
                 </CardContent>
               </Card>
@@ -257,7 +269,7 @@ export function ProductionCodeEntryPage() {
             {/* Production Code Form */}
             <div className="flex gap-2 mb-3">
               <Input
-                type="text"
+                type="number"
                 placeholder="Kode produksi"
                 value={productionCodeInput}
                 onChange={(e) => setProductionCodeInput(e.target.value)}
