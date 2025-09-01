@@ -16,14 +16,14 @@ export function AntreanTruckPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="max-w-md mx-auto bg-white min-h-screen flex flex-col">
-        {/* Header */}
-        <div className="bg-white border-b border-gray-200 p-4 text-center">
+    <div className="h-screen bg-gray-100 flex items-center justify-center">
+      <div className="max-w-md w-full h-screen bg-white flex flex-col">
+        {/* Header - Fixed */}
+        <div className="bg-white border-b border-gray-200 p-4 text-center flex-shrink-0">
           <h1 className="text-xl font-semibold text-gray-800">Antrian Krani</h1>
         </div>
 
-        {/* Scrollable Content */}
+        {/* Scrollable Content - Takes remaining height */}
         <div className="flex-1 overflow-y-auto p-4">
           {isLoading ? (
             <div className="text-center py-8">
