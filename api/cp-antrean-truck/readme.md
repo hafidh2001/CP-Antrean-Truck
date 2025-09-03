@@ -143,8 +143,10 @@ Semua API menggunakan URL yang sama dengan POST method. Yang membedakan adalah `
 ## General Information
 
 ### Naming Convention
-- **Model**: Prefix `M` untuk master data (MLocation, MWarehouse)
-- **Transaction**: Prefix `T` untuk transaksi (TStock, TDeliveryOrder)
+- **Model**: Nama model mengikuti nama tabel database dengan format PascalCase
+  - Prefix `M` untuk master data (MLocation → m_location, MWarehouse → m_warehouse)
+  - Prefix `T` untuk transaksi (TStock → t_stock, TDeliveryOrder → t_delivery_order)
+  - Model `TAntrean` merujuk pada tabel `t_antrean`
 - **Controller**: Suffix `Controller`
 
 ### Save Logic (Update/Insert Strategy)
