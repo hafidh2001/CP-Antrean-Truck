@@ -38,6 +38,55 @@ class TOpnam extends ActiveRecord
 		);
 	}
 	
+	
+	public static function postFinishOpnam($params){
+	    $warehouse_id = isset($params['warehouse_id']) ? $params['warehouse_id'] : null;
+	    $user_id = isset($params['user_id']) ? $params['user_id'] : null;
+	    $opnam_id = isset($params['opnam_id']) ? $params['opnam_id'] : null;
+	    
+	    if($warehouse_id==null || $user_id==null || $opnam_id==null){
+	        $response = [
+    			'status' => false,
+    			'message' => "Invalid Parameter!"
+		    ];
+
+		    return $response;
+	    }
+	    
+	    
+	    $opnam = TOpnam::model()->findByAttributes([
+	        'warehouse_id' => $warehouse_id,
+	        'user_id' => $user_id,
+	        'id' => $opnam_id
+	        ]);
+	        
+        if($opnam){
+            $opnam->finished_time = date('Y-m-d H:i:s');
+            
+            if($opnam->save()){
+                return [
+        			'status' => true,
+        			'message' => "Opname Finished",
+        			'data' => $opnam
+    		    ];
+            }else{
+              return [
+        			'status' => false,
+        			'message' => "Failed to Finish",
+        			'data' => $opnam
+    		    ];  
+            }
+            
+        }else{
+            return [
+    			'status' => false,
+    			'message' => "Opnam not found!",
+    			'data' => $opnam
+		    ];
+        }
+	    
+	}
+	
 	public static function getActiveOpnam($params){
 	    
 	    $warehouse_id = isset($params['warehouse_id']) ? $params['warehouse_id'] : null;
@@ -63,11 +112,26 @@ class TOpnam extends ActiveRecord
 			
 		
 		if($opnam){
-	        $response = [
-    			'status' => true,
-    			'message' => "Active Opnam Found!",
-    			'data' => $opnam
-		    ];
+		    $opnam2 = TOpnam::model()->findByAttributes(['id' => $opnam["id"]]);
+		    
+		    if(is_null($opnam2->unlocked_time)){
+		        $opnam2->unlocked_time = date('Y-m-d H:i:s');
+		    }
+    	        
+	        if($opnam2->save()){
+	            $response = [
+        			'status' => true,
+        			'message' => "Active Opnam Found!",
+        			'data' => $opnam
+    		    ];
+	            
+	        }else{
+	            $response = [
+        			'status' => false,
+        			'message' => "Failed to start opnam!",
+        			'data' => $opnam
+    		    ];
+    	   }
 
 		    return $response;
 	    }else{

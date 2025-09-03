@@ -14,6 +14,7 @@ class TStock extends ActiveRecord
 			array('location_id, goods_id, qty, uom_id, created_by, opnam_id', 'required'),
 			array('location_id, goods_id, qty, uom_id, created_by, opnam_id', 'numerical', 'integerOnly'=>true),
 			array('status', 'length', 'max'=>256),
+			array('production_date', 'safe'),
 		);
 	}
 
@@ -39,8 +40,12 @@ class TStock extends ActiveRecord
 			'status' => 'Status',
 			'created_by' => 'Created By',
 			'opnam_id' => 'Opnam',
+			'production_date' => 'Production Date',
 		);
 	}
+	
+	
+	
 	
 	
 	public static function addStock($params){
@@ -53,6 +58,7 @@ class TStock extends ActiveRecord
         $md->status = 'Active';
         $md->created_by = 2;
         $md->opnam_id = $params['opnam_id'];
+        $md->production_date = $params['production_date'];
         
         if($md->save()){
             return ['status' => true, 'returnId' => $md->id];

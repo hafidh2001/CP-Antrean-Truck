@@ -12,9 +12,9 @@ class MGoods extends ActiveRecord
 	{
 		return array(
 			array('kode, weight, smallest_unit', 'required'),
-			array('smallest_unit', 'numerical', 'integerOnly'=>true),
+			array('smallest_unit, id_sap', 'numerical', 'integerOnly'=>true),
 			array('weight', 'numerical'),
-			array('kode', 'length', 'max'=>256),
+			array('kode, alias', 'length', 'max'=>256),
 		);
 	}
 
@@ -22,6 +22,8 @@ class MGoods extends ActiveRecord
 	{
 		return array(
 			'tStocks' => array(self::HAS_MANY, 'TStock', 'goods_id'),
+			'smallestUnit' => array(self::BELONGS_TO, 'MUom', 'smallest_unit'),
+			'tAntreanRekomendasiLokasis' => array(self::HAS_MANY, 'TAntreanRekomendasiLokasi', 'goods_id'),
 		);
 	}
 
@@ -32,6 +34,8 @@ class MGoods extends ActiveRecord
 			'kode' => 'Kode',
 			'weight' => 'Weight',
 			'smallest_unit' => 'Smallest Unit',
+			'id_sap' => 'Id Sap',
+			'alias' => 'Alias',
 		);
 	}
 	
@@ -41,5 +45,6 @@ class MGoods extends ActiveRecord
 	  
 	  return array_column($res, 'attributes');
 	}
+
 
 }
