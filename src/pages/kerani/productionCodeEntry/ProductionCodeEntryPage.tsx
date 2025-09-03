@@ -86,20 +86,27 @@ export function ProductionCodeEntryPage() {
     validateAndLoadData();
   }, [antreanId, goodsId]);
 
-  const reloadData = async () => {
+  const reloadJebolan = async () => {
     const session = await sessionService.getSession();
     if (session?.user_token && antreanId && goodsId) {
       try {
-        const [jebolanData, kodeProduksiData] = await Promise.all([
-          productionCodeEntryApi.getJebolan(antreanId, goodsId, session.user_token),
-          productionCodeEntryApi.getKodeProduksi(antreanId, goodsId, session.user_token)
-        ]);
-        
+        const jebolanData = await productionCodeEntryApi.getJebolan(antreanId, goodsId, session.user_token);
         setJebolan(jebolanData);
+      } catch (error) {
+        console.error('Failed to reload jebolan:', error);
+      }
+    }
+  };
+
+  const reloadKodeProduksi = async () => {
+    const session = await sessionService.getSession();
+    if (session?.user_token && antreanId && goodsId) {
+      try {
+        const kodeProduksiData = await productionCodeEntryApi.getKodeProduksi(antreanId, goodsId, session.user_token);
         setKodeProduksi(kodeProduksiData.kode_produksi);
         setCompletedEntries(kodeProduksiData.completed_entries);
         
-        // Update production code data
+        // Update production code data progress
         if (productionCodeData) {
           setProductionCodeData({
             ...productionCodeData,
@@ -109,7 +116,7 @@ export function ProductionCodeEntryPage() {
           });
         }
       } catch (error) {
-        console.error('Failed to reload data:', error);
+        console.error('Failed to reload kode produksi:', error);
       }
     }
   };
@@ -129,6 +136,17 @@ export function ProductionCodeEntryPage() {
       try {
         const jebolanIdToEdit = editingJebolanId || (jebolan.length > 0 ? jebolan[0].id : undefined);
         
+        // Update UI immediately with optimistic update
+        const optimisticJebolan = jebolanIdToEdit 
+          ? jebolan.map(j => j.id === jebolanIdToEdit ? { ...j, qty: quantity } : j)
+          : [...jebolan, { id: Date.now(), qty: quantity }];
+        setJebolan(optimisticJebolan);
+        
+        setJebolainInput('');
+        setIsEditingJebolan(false);
+        setEditingJebolanId(null);
+        (e.target as HTMLInputElement).blur();
+        
         await productionCodeEntryApi.saveJebolan(
           antreanId,
           goodsId,
@@ -137,13 +155,8 @@ export function ProductionCodeEntryPage() {
           jebolanIdToEdit
         );
         
-        setJebolainInput('');
-        setIsEditingJebolan(false);
-        setEditingJebolanId(null);
-        (e.target as HTMLInputElement).blur();
-        
-        // Reload data
-        await reloadData();
+        // Reload only jebolan data to get real IDs from server
+        await reloadJebolan();
       } catch (error) {
         console.error('Failed to save jebolan:', error);
       } finally {
@@ -197,8 +210,8 @@ export function ProductionCodeEntryPage() {
       
       setProductionCodeInput('');
       
-      // Reload data
-      await reloadData();
+      // Reload only kode produksi data
+      await reloadKodeProduksi();
     } catch (error) {
       console.error('Failed to add production code:', error);
       if (error instanceof Error && error.message === 'Kode produksi already exists') {
@@ -222,8 +235,8 @@ export function ProductionCodeEntryPage() {
         session.user_token
       );
       
-      // Reload data
-      await reloadData();
+      // Reload only kode produksi data
+      await reloadKodeProduksi();
     } catch (error) {
       console.error('Failed to delete production code:', error);
     } finally {
