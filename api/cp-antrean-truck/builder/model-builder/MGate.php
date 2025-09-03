@@ -34,4 +34,47 @@ class MGate extends ActiveRecord
 		);
 	}
 
+	/**
+	 * Get list of gates
+	 * @param array $params
+	 * @return array
+	 */
+	public static function getGateOptions($params = [])
+	{
+		$user_token = isset($params['user_token']) ? $params['user_token'] : null;
+		
+		// Validate user_token exists (for authentication)
+		$userQuery = "SELECT id FROM p_user WHERE user_token = :user_token LIMIT 1";
+		$userCommand = Yii::app()->db->createCommand($userQuery);
+		$userCommand->bindValue(':user_token', $user_token, PDO::PARAM_STR);
+		$user = $userCommand->queryRow();
+		
+		if (!$user) {
+			return ['error' => 'Invalid user token'];
+		}
+		
+		// Get all active gates
+		$query = "SELECT 
+			id,
+			code
+		FROM m_gate
+		WHERE status = 'OPEN'
+		ORDER BY code ASC";
+		
+		$command = Yii::app()->db->createCommand($query);
+		$rows = $command->queryAll();
+		
+		$gates = array();
+		foreach ($rows as $row) {
+			$gates[] = array(
+				'id' => (int)$row['id'],
+				'code' => $row['code']
+			);
+		}
+		
+		return array(
+			'gates' => $gates
+		);
+	}
+
 }

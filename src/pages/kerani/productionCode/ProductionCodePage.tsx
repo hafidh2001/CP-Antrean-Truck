@@ -12,8 +12,10 @@ import {
 } from '@/components/ui/select';
 import { ROUTES } from '@/utils/routes';
 import type { IProductionCodeCard } from '@/types/productionCode';
+import type { IGateOption } from '@/types/gate';
 import { sessionService } from '@/services/sessionService';
 import { productionCodeApi } from '@/services/productionCodeApi';
+import { gateApi } from '@/services/gateApi';
 
 export function ProductionCodePage() {
   const navigate = useNavigate();
@@ -24,9 +26,9 @@ export function ProductionCodePage() {
   const [nopol, setNopol] = useState<string>('');
   const [jenisBarang, setJenisBarang] = useState<number>(0);
   const [productionCodes, setProductionCodes] = useState<IProductionCodeCard[]>([]);
-  const [error, setError] = useState<string | null>(null);
   const [selectedGate1, setSelectedGate1] = useState<string | null>(null);
   const [selectedGate2, setSelectedGate2] = useState<string | null>(null);
+  const [gateOptions, setGateOptions] = useState<IGateOption[]>([]);
 
   useEffect(() => {
     const validateAndLoadData = async () => {
@@ -37,25 +39,34 @@ export function ProductionCodePage() {
       
       if (isValid && antreanId && session?.user_token) {
         setIsLoading(true);
-        setError(null);
         
         try {
-          const data = await productionCodeApi.getProductionCodes(antreanId, session.user_token);
+          // Fetch production codes first (critical data)
+          const productionData = await productionCodeApi.getProductionCodes(antreanId, session.user_token);
           
-          setNopol(data.nopol);
-          setJenisBarang(data.jenis_barang);
+          // Set production code data
+          setNopol(productionData.nopol);
+          setJenisBarang(productionData.jenis_barang);
           
           // Transform API data to match frontend interface
-          const transformedCodes: IProductionCodeCard[] = data.productionCodes.map(code => ({
+          const transformedCodes: IProductionCodeCard[] = productionData.productionCodes.map(code => ({
             ...code,
             isCompleted: code.completed_entries === code.total_entries,
             progress_percentage: Math.round((code.completed_entries / code.total_entries) * 100)
           }));
           
           setProductionCodes(transformedCodes);
+          
+          // Try to fetch gate options (non-critical, don't fail if it errors)
+          try {
+            const gates = await gateApi.getGateOptions(session.user_token);
+            setGateOptions(gates);
+          } catch (gateError) {
+            console.error('Failed to load gate options:', gateError);
+            // Continue without gate options
+          }
         } catch (error) {
           console.error('Failed to load production codes:', error);
-          setError(error instanceof Error ? error.message : 'Failed to load data');
         } finally {
           setIsLoading(false);
         }
@@ -137,9 +148,11 @@ export function ProductionCodePage() {
                 <SelectValue placeholder="Pilih Gate 1" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="gate-a">Gate A</SelectItem>
-                <SelectItem value="gate-b">Gate B</SelectItem>
-                <SelectItem value="gate-c">Gate C</SelectItem>
+                {gateOptions.map((gate) => (
+                  <SelectItem key={gate.id} value={gate.id.toString()}>
+                    {gate.code}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             
@@ -148,9 +161,11 @@ export function ProductionCodePage() {
                 <SelectValue placeholder="Pilih Gate 2" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="gate-d">Gate D</SelectItem>
-                <SelectItem value="gate-e">Gate E</SelectItem>
-                <SelectItem value="gate-f">Gate F</SelectItem>
+                {gateOptions.map((gate) => (
+                  <SelectItem key={gate.id} value={gate.id.toString()}>
+                    {gate.code}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
