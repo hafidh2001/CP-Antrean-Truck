@@ -361,3 +361,112 @@ header("Location: " .$endpoint.'page-name?key='.$enc);
 - If no token is provided, redirect to base route
 - If decryption fails, show error message
 - URL encoding issues: Spaces are automatically converted back to '+' characters
+
+## 10. API Integration and Loading State Standards
+
+### Store State Management
+All stores that perform API calls must include these standard states:
+```typescript
+interface StandardApiStore {
+  isLoading: boolean;      // Always start with true for pages with API calls
+  error: string | null;    // Error message if API fails
+  hasInitialized: boolean; // Prevents double fetching
+}
+```
+
+### Page Component Pattern
+Pages using API calls must follow this pattern to prevent double fetching and loading race conditions:
+
+```typescript
+export function SomePage() {
+  const { data, isLoading, error, hasInitialized, loadDataFromApi, reset } = useStore();
+
+  useEffect(() => {
+    const loadData = async () => {
+      if (!hasInitialized) {
+        // Get encrypted data from URL query params
+        const searchParams = new URLSearchParams(location.search);
+        const encryptedData = searchParams.get('key');
+        
+        if (!encryptedData) {
+          navigate(ROUTES.base);
+          return;
+        }
+        
+        await loadDataFromApi(encryptedData);
+      }
+    };
+    
+    loadData();
+  }, [hasInitialized, location.search, navigate]); // ❌ Do NOT include API functions in dependencies
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => reset();
+  }, [reset]);
+
+  // Early returns for loading and error states
+  if (isLoading) {
+    return <LoadingComponent />;
+  }
+
+  if (error) {
+    return <ErrorComponent error={error} />;
+  }
+
+  return <MainComponent data={data} />;
+}
+```
+
+### Simple Rules for API Integration:
+1. **Simple guard**: Only check `hasInitialized` in store function
+2. **Empty dependency array**: Use `[]` in useEffect, no other dependencies  
+3. **Early returns**: Use if/return pattern in page components
+4. **Cleanup**: Call `reset()` on unmount
+
+### Import Management Rules:
+1. **Only import what you use**: Remove any unused imports immediately
+2. **No unused hooks**: Don't import `useRef`, `useState`, etc. if not actually used
+3. **Clean imports after refactoring**: When changing patterns (e.g., ref → store state), remove old imports
+4. **TypeScript warnings**: Always fix "declared but never read" warnings
+5. **Import ordering**: Follow the established import order pattern
+
+### Store Implementation Pattern:
+```typescript
+export const useModuleStore = create<ModuleStore>((set, get) => ({
+  data: [],
+  isLoading: false,
+  error: null,
+  hasInitialized: false,
+
+  loadDataFromApi: async (encryptedData: string) => {
+    if (get().hasInitialized) return;
+
+    set({ isLoading: true, error: null });
+    
+    try {
+      const decrypted = await decryptAES<DecryptData>(encryptedData);
+      const data = await api.getData(decrypted.user_token);
+      
+      set({ 
+        data, 
+        isLoading: false,
+        hasInitialized: true
+      });
+    } catch (error) {
+      set({
+        data: [],
+        isLoading: false,
+        error: error.message,
+        hasInitialized: true
+      });
+    }
+  },
+
+  reset: () => set({
+    data: [],
+    isLoading: false,
+    error: null,
+    hasInitialized: false
+  })
+}));

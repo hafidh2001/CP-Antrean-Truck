@@ -8,37 +8,34 @@ export const useAntreanTruckStore = create<AntreanTruckStore>((set) => ({
   antreanList: [],
   isLoading: false,
   error: null,
+  hasInitialized: false,
 
   loadAntreanListFromApi: async (encryptedData: string) => {
     set({ isLoading: true, error: null });
     
     try {
-      // Decrypt to get user_token
       const decrypted = await decryptAES<AntreanTruckDecryptData>(encryptedData);
-      
-      // Fetch data from API using user_token
-      const antreanList = await antreanTruckApi.getAntreanTruck(
-        decrypted.user_token
-      );
+      const antreanList = await antreanTruckApi.getAntreanTruck(decrypted.user_token);
       
       set({ 
         antreanList, 
         isLoading: false,
-        error: null
+        hasInitialized: true
       });
     } catch (error) {
-      console.error('Failed to load antrean truck list:', error);
       set({
+        antreanList: [],
         isLoading: false,
-        error: error instanceof Error ? error.message : 'Failed to load data'
+        error: error instanceof Error ? error.message : 'Failed to load data',
+        hasInitialized: true
       });
-      throw error;
     }
   },
 
   reset: () => set({
     antreanList: [],
     isLoading: false,
-    error: null
+    error: null,
+    hasInitialized: false
   })
 }));

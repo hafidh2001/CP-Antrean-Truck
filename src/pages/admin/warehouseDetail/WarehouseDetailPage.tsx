@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { WarehouseFloorPlan } from './_components/WarehouseFloorPlan';
 import { WarehouseToolbar } from './_components/WarehouseToolbar';
@@ -18,33 +18,20 @@ export default function WarehouseDetailPage() {
     error,
     reset 
   } = useWarehouseDetailStore();
-  const loadingRef = useRef(false);
 
   useEffect(() => {
-    const loadWarehouse = async () => {
-      if (!loadingRef.current) {
-        loadingRef.current = true;
-        
-        // Get encrypted data from URL query params
-        const searchParams = new URLSearchParams(location.search);
-        const encryptedData = searchParams.get('key');
-        
-        if (!encryptedData) {
-          navigate(ROUTES.base);
-          return;
-        }
-        
-        try {
-          await initializeFromEncryptedData(encryptedData);
-        } catch (error) {
-          console.error('Failed to decrypt or load warehouse:', error);
-          navigate(ROUTES.base);
-        }
-      }
-    };
+    const searchParams = new URLSearchParams(location.search);
+    const encryptedData = searchParams.get('key');
     
-    loadWarehouse();
-  }, [location.search, navigate, initializeFromEncryptedData]);
+    if (!encryptedData) {
+      navigate(ROUTES.base);
+      return;
+    }
+    
+    initializeFromEncryptedData(encryptedData).catch(() => {
+      navigate(ROUTES.base);
+    });
+  }, []);
 
   // Cleanup on unmount
   useEffect(() => {

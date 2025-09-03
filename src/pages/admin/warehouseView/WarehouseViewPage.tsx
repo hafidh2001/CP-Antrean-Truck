@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useWarehouseViewStore } from '@/store/warehouseViewStore';
 import { WarehouseViewFloorPlan } from './_components/WarehouseViewFloorPlan';
@@ -13,14 +13,12 @@ export default function WarehouseViewPage() {
   const mode = searchParams.get('mode') || 'desktop';
   const { loadWarehouse, currentWarehouse, isLoading, error, reset } = useWarehouseViewStore();
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
-  const loadingRef = useRef(false);
 
   useEffect(() => {
-    if (warehouseId && !loadingRef.current) {
-      loadingRef.current = true;
+    if (warehouseId) {
       loadWarehouse(parseInt(warehouseId));
     }
-  }, [warehouseId, loadWarehouse]);
+  }, []);
 
   // Cleanup on unmount
   useEffect(() => {

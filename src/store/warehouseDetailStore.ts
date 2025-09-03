@@ -14,8 +14,11 @@ export const useWarehouseDetailStore = create<WarehouseDetailStore>((set, get) =
   isSaving: false,
   error: null,
   decryptedData: null,
+  hasInitialized: false,
 
   initializeFromEncryptedData: async (encryptedData: string) => {
+    if (get().hasInitialized) return;
+
     set({ isLoading: true, error: null });
     
     try {
@@ -37,13 +40,15 @@ export const useWarehouseDetailStore = create<WarehouseDetailStore>((set, get) =
       set({
         currentWarehouse: warehouseData,
         isLoading: false,
-        error: null
+        error: null,
+        hasInitialized: true
       });
     } catch (error) {
       console.error('Failed to initialize warehouse:', error);
       set({
         isLoading: false,
-        error: error instanceof Error ? error.message : 'Failed to load warehouse'
+        error: error instanceof Error ? error.message : 'Failed to load warehouse',
+        hasInitialized: true
       });
       throw error;
     }
@@ -197,6 +202,7 @@ export const useWarehouseDetailStore = create<WarehouseDetailStore>((set, get) =
     isLoading: false,
     isSaving: false,
     error: null,
-    decryptedData: null
+    decryptedData: null,
+    hasInitialized: false
   })
 }));

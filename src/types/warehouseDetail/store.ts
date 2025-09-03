@@ -10,6 +10,7 @@ export interface WarehouseDetailStore {
   isSaving: boolean;
   error: string | null;
   decryptedData: DecryptedData | null;
+  hasInitialized: boolean;
   
   // Initialize and load warehouse from encrypted data
   initializeFromEncryptedData: (encryptedData: string) => Promise<void>;
