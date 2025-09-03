@@ -53,14 +53,24 @@ class TAntrean extends ActiveRecord
 	public static function getAntreanTruck($params = [])
 	{
 		// Extract parameters from params
-		$warehouse_id = isset($params['warehouse_id']) ? $params['warehouse_id'] : null;
-		$status = isset($params['status']) ? $params['status'] : 'OPEN';
+		$user_token = isset($params['user_token']) ? $params['user_token'] : null;
+		$status = isset($params['status']) ? $params['status'] : null;
 		
-		if (!$warehouse_id) {
-			return ['error' => 'warehouse_id is required'];
+		if (!$user_token) {
+			return ['error' => 'user_token is required'];
 		}
 
-		// Query untuk mengambil data antrean truck
+		// Validate user_token exists (for authentication)
+		$userQuery = "SELECT id FROM p_user WHERE user_token = :user_token LIMIT 1";
+		$user = Yii::app()->db->createCommand($userQuery)
+			->bindParam(':user_token', $user_token, PDO::PARAM_STR)
+			->queryRow();
+
+		if (!$user) {
+			return ['error' => 'Invalid user_token'];
+		}
+
+		// Query untuk mengambil semua data antrean truck (tidak filter berdasarkan kerani)
 		$query = "SELECT 
 					id,
 					nopol,
@@ -69,15 +79,22 @@ class TAntrean extends ActiveRecord
 					kerani_id,
 					status,
 					warehouse_override_id
-				FROM t_antrean
-				WHERE warehouse_id = :warehouse_id
-				AND status = :status
-				ORDER BY created_time ASC";
+				FROM t_antrean";
 		
-		$antreanList = Yii::app()->db->createCommand($query)
-			->bindParam(':warehouse_id', $warehouse_id, PDO::PARAM_INT)
-			->bindParam(':status', $status, PDO::PARAM_STR)
-			->queryAll();
+		// Add status filter only if status is provided
+		if ($status !== null) {
+			$query .= " WHERE status = :status";
+		}
+		
+		$query .= " ORDER BY created_time ASC";
+		
+		$command = Yii::app()->db->createCommand($query);
+		
+		if ($status !== null) {
+			$command->bindParam(':status', $status, PDO::PARAM_STR);
+		}
+		
+		$antreanList = $command->queryAll();
 
 		// Transform data ke format frontend
 		$result = [];
