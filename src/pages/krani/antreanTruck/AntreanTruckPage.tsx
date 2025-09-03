@@ -1,16 +1,49 @@
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAntreanTruckStore } from '@/store/antreanTruckStore';
 import { AntreanCard } from './_components/AntreanCard';
 import type { IAntreanCard } from '@/types/antreanTruck';
+import { ROUTES } from '@/utils/routes';
 
 export function AntreanTruckPage() {
   const navigate = useNavigate();
-  const { antreanList, isLoading, loadAntreanList } = useAntreanTruckStore();
+  const location = useLocation();
+  const { antreanList, isLoading, error, loadAntreanListFromApi, reset } = useAntreanTruckStore();
+  const loadingRef = useRef(false);
 
   useEffect(() => {
-    loadAntreanList();
-  }, [loadAntreanList]);
+    const loadData = async () => {
+      if (!loadingRef.current) {
+        loadingRef.current = true;
+        
+        // Get encrypted data from URL query params
+        const searchParams = new URLSearchParams(location.search);
+        const encryptedData = searchParams.get('key');
+        
+        if (!encryptedData) {
+          // No token provided, redirect to base
+          navigate(ROUTES.base);
+          return;
+        }
+        
+        try {
+          await loadAntreanListFromApi(encryptedData);
+        } catch (error) {
+          console.error('Failed to load from API:', error);
+          // Don't navigate away on error, show error message
+        }
+      }
+    };
+    
+    loadData();
+  }, [location.search, loadAntreanListFromApi, navigate]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      reset();
+    };
+  }, [reset]);
 
   const handleCardClick = (antrean: IAntreanCard) => {
     navigate(`/production-code/${antrean.nopol}`);
@@ -29,6 +62,10 @@ export function AntreanTruckPage() {
           {isLoading ? (
             <div className="text-center py-8">
               <div className="text-gray-500">Memuat data antrean...</div>
+            </div>
+          ) : error ? (
+            <div className="text-center py-8">
+              <div className="text-red-500">Error: {error}</div>
             </div>
           ) : antreanList.length === 0 ? (
             <div className="text-center py-8">

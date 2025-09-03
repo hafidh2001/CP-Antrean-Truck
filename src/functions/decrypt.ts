@@ -1,6 +1,4 @@
-import { DecryptedData } from '@/types/warehouseDetail/store';
-
-export const decryptAES = async (encryptedData: string): Promise<DecryptedData> => {
+export const decryptAES = async <T = any>(encryptedData: string): Promise<T> => {
   const secretKey = import.meta.env.VITE_DECRYPT_SECRET_KEY;
   
   if (!secretKey) {
@@ -43,14 +41,10 @@ export const decryptAES = async (encryptedData: string): Promise<DecryptedData> 
     const decoder = new TextDecoder();
     const decryptedText = decoder.decode(decryptedBuffer);
     
-    // Parse and validate decrypted data
+    // Parse JSON and return as specified type
     const data = JSON.parse(decryptedText);
     
-    if (!data.user_token || !data.warehouse_id) {
-      throw new Error('Invalid decrypted data format');
-    }
-    
-    return data as DecryptedData;
+    return data as T;
   } catch (error) {
     console.error('Decryption error:', error);
     throw new Error('Failed to decrypt data');

@@ -1,44 +1,39 @@
 import { create } from 'zustand';
 import type { AntreanTruckStore } from '@/types/antreanTruck/store';
-import type { IAntreanCard } from '@/types/antreanTruck';
-import kraniMockData from '@/data/krani-mock-data.json';
-
-const STORAGE_KEY = 'antrean-truck-data';
-const MOCK_DATA_VERSION = 'v3'; // Increment this when mock data changes
-const VERSION_KEY = 'antrean-truck-data-version';
-
-// Initialize localStorage with mock data - always in dev mode
-const initializeStorage = () => {
-  const isDev = import.meta.env.DEV;
-  const currentVersion = localStorage.getItem(VERSION_KEY);
-  
-  // In dev mode, always use latest mock data
-  if (isDev || currentVersion !== MOCK_DATA_VERSION) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(kraniMockData.antreanTruck));
-    localStorage.setItem(VERSION_KEY, MOCK_DATA_VERSION);
-  }
-};
-
-// Get data from localStorage
-const getStoredData = (): IAntreanCard[] => {
-  initializeStorage();
-  const stored = localStorage.getItem(STORAGE_KEY);
-  return stored ? JSON.parse(stored) : [];
-};
+import type { AntreanTruckDecryptData } from '@/types/antreanTruck';
+import { antreanTruckApi } from '@/services/antreanTruckApi';
+import { decryptAES } from '@/functions/decrypt';
 
 export const useAntreanTruckStore = create<AntreanTruckStore>((set) => ({
   antreanList: [],
   isLoading: false,
   error: null,
 
-  loadAntreanList: () => {
+  loadAntreanListFromApi: async (encryptedData: string) => {
     set({ isLoading: true, error: null });
     
-    // Simulate loading from localStorage
-    setTimeout(() => {
-      const antreanCards = getStoredData();
-      set({ antreanList: antreanCards, isLoading: false });
-    }, 300);
+    try {
+      // Decrypt to get user_token
+      const decrypted = await decryptAES<AntreanTruckDecryptData>(encryptedData);
+      
+      // Fetch data from API using user_token
+      const antreanList = await antreanTruckApi.getAntreanTruck(
+        decrypted.user_token
+      );
+      
+      set({ 
+        antreanList, 
+        isLoading: false,
+        error: null
+      });
+    } catch (error) {
+      console.error('Failed to load antrean truck list:', error);
+      set({
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'Failed to load data'
+      });
+      throw error;
+    }
   },
 
   reset: () => set({

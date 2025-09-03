@@ -11,3 +11,7 @@ export interface IAntreanCard {
   created_at: string;
   jenis_barang: number;
 }
+
+export interface AntreanTruckDecryptData {
+  user_token: string;
+}

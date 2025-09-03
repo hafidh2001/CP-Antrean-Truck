@@ -43,6 +43,12 @@ export interface IWarehouse {
   storage_units: TAnyStorageUnit[];
 }
 
+// Decrypt data for warehouse module
+export interface WarehouseDecryptData {
+  user_token: string;
+  warehouse_id: number | string;
+}
+
 // Drawing rect interface for floor plan
 export interface IDrawingRect {
   startX: number;

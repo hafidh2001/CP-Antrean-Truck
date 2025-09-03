@@ -5,7 +5,7 @@ import { Shield, AlertCircle, CheckCircle, Copy, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
-import type { DecryptedData } from '@/types/warehouseDetail/store';
+import { decryptAES } from '@/functions/decrypt';
 
 export default function DecryptPage() {
   const [searchParams] = useSearchParams();
@@ -13,7 +13,7 @@ export default function DecryptPage() {
   // Fix URL encoding issue where + becomes space
   const fixedEncryptedData = encryptedDataFromUrl ? encryptedDataFromUrl.replace(/ /g, '+') : '';
   const [encryptedData, setEncryptedData] = useState(fixedEncryptedData);
-  const [decryptedData, setDecryptedData] = useState<DecryptedData | null>(null);
+  const [decryptedData, setDecryptedData] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -89,7 +89,7 @@ export default function DecryptPage() {
       const decryptedString = decoder.decode(decryptedBuffer);
       
       // Parse JSON
-      const data = JSON.parse(decryptedString) as DecryptedData;
+      const data = JSON.parse(decryptedString);
       setDecryptedData(data);
       setError(null);
     } catch (err) {

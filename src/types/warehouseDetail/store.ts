@@ -1,9 +1,6 @@
-import { IWarehouse, TAnyStorageUnit, TToolMode } from './index';
+import { IWarehouse, TAnyStorageUnit, TToolMode, WarehouseDecryptData } from './index';
 
-export interface DecryptedData {
-  user_token: string;
-  warehouse_id: number | string;
-}
+export interface DecryptedData extends WarehouseDecryptData {}
 
 export interface WarehouseDetailStore {
   currentWarehouse: IWarehouse | null;

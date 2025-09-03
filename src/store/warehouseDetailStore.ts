@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { ITextElement, TAnyStorageUnit } from '@/types/warehouseDetail';
+import { ITextElement, TAnyStorageUnit, WarehouseDecryptData } from '@/types/warehouseDetail';
 import type { WarehouseDetailStore } from '@/types/warehouseDetail/store';
 import { ElementTypeEnum } from '@/types';
 import { isStorageUnit } from '@/functions/warehouseHelpers';
@@ -20,7 +20,7 @@ export const useWarehouseDetailStore = create<WarehouseDetailStore>((set, get) =
     
     try {
       // Decrypt to get warehouse_id and user_token
-      const decrypted = await decryptAES(encryptedData);
+      const decrypted = await decryptAES<WarehouseDecryptData>(encryptedData);
       set({ decryptedData: decrypted });
       
       // Load warehouse data using decrypted info

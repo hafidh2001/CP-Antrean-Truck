@@ -302,3 +302,62 @@ production-code-entry-{nopol}-{id}  # Entry data for specific production code
 - Use consistent key naming convention
 - Update parent data when child data changes
 - Clear data appropriately on logout/reset
+
+## 9. Authentication & Encryption
+
+### Encrypted Token Usage
+All authenticated pages require an encrypted token passed as a URL query parameter:
+```
+/page-name?key={encrypted_token}
+```
+
+### Token Structure
+The encrypted token contains a JSON object with:
+```typescript
+{
+  user_token: string;      // User authentication token
+  warehouse_id?: number;   // Warehouse ID (optional for some endpoints)
+}
+```
+
+### Decryption Process
+1. **Algorithm**: AES-256-CBC
+2. **Key Derivation**: SHA-256 hash of secret key
+3. **Format**: Base64 encoded (IV + Ciphertext)
+4. **Implementation**: `/src/functions/decrypt.ts`
+
+### Environment Configuration
+```bash
+VITE_DECRYPT_SECRET_KEY=your_secret_key_here
+```
+⚠️ **Important**: Must match the backend PHP secret key
+
+### Usage Example
+```typescript
+// In store or page component
+import { decryptAES } from '@/functions/decrypt';
+
+const encryptedData = searchParams.get('key');
+const decrypted = await decryptAES(encryptedData);
+
+// Access decrypted data
+const warehouseId = decrypted.warehouse_id;
+const userToken = decrypted.user_token;
+```
+
+### Backend Token Generation (PHP)
+```php
+// ReController.php
+$res = [
+    'user_token' => $user_token,
+    'warehouse_id' => $id
+];
+$plain = json_encode($res);
+$enc = Self::encryptAES($plain);
+header("Location: " .$endpoint.'page-name?key='.$enc);
+```
+
+### Error Handling
+- If no token is provided, redirect to base route
+- If decryption fails, show error message
+- URL encoding issues: Spaces are automatically converted back to '+' characters

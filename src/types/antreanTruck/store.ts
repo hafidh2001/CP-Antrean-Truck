@@ -5,6 +5,6 @@ export interface AntreanTruckStore {
   isLoading: boolean;
   error: string | null;
   
-  loadAntreanList: () => void;
+  loadAntreanListFromApi: (encryptedData: string) => Promise<void>;
   reset: () => void;
 }
