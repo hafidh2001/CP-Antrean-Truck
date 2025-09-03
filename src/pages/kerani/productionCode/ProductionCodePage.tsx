@@ -16,6 +16,7 @@ import type { IGateOption } from '@/types/gate';
 import { sessionService } from '@/services/sessionService';
 import { productionCodeApi } from '@/services/productionCodeApi';
 import { gateApi } from '@/services/gateApi';
+import { showToast } from '@/utils/toast';
 
 export function ProductionCodePage() {
   const navigate = useNavigate();
@@ -26,9 +27,10 @@ export function ProductionCodePage() {
   const [nopol, setNopol] = useState<string>('');
   const [jenisBarang, setJenisBarang] = useState<number>(0);
   const [productionCodes, setProductionCodes] = useState<IProductionCodeCard[]>([]);
-  const [selectedGate1, setSelectedGate1] = useState<string | null>(null);
-  const [selectedGate2, setSelectedGate2] = useState<string | null>(null);
+  const [selectedGate1, setSelectedGate1] = useState<string>("");
+  const [selectedGate2, setSelectedGate2] = useState<string>("");
   const [gateOptions, setGateOptions] = useState<IGateOption[]>([]);
+  const [isUpdatingGate, setIsUpdatingGate] = useState(false);
 
   useEffect(() => {
     const validateAndLoadData = async () => {
@@ -57,10 +59,29 @@ export function ProductionCodePage() {
           
           setProductionCodes(transformedCodes);
           
-          // Try to fetch gate options (non-critical, don't fail if it errors)
+          // Load current antrean gates and gate options
           try {
-            const gates = await gateApi.getGateOptions(session.user_token);
+            const [gates, antreanGates] = await Promise.all([
+              gateApi.getGateOptions(session.user_token),
+              productionCodeApi.getAntreanGates(antreanId, session.user_token)
+            ]);
+            
             setGateOptions(gates);
+            
+            // Set current gate selections based on array position
+            // If response is null, undefined, or empty array, gates remain empty
+            if (antreanGates.gates && Array.isArray(antreanGates.gates) && antreanGates.gates.length > 0) {
+              // First item in array = Gate 1
+              const gate1Value = antreanGates.gates[0].gate_id.toString();
+              setSelectedGate1(gate1Value);
+              
+              // Second item in array = Gate 2 (if exists)
+              if (antreanGates.gates.length >= 2) {
+                const gate2Value = antreanGates.gates[1].gate_id.toString();
+                setSelectedGate2(gate2Value);
+              }
+            }
+            // Else: gates remain empty (default state)
           } catch (gateError) {
             // Continue without gate options
           }
@@ -78,6 +99,39 @@ export function ProductionCodePage() {
   const handleCardClick = (code: IProductionCodeCard) => {
     if (antreanId) {
       navigate(ROUTES.productionCodeEntry(antreanId, code.id.toString()));
+    }
+  };
+
+  const handleGateChange = async (gateId: string | null, position: 1 | 2) => {
+    if (isUpdatingGate || !antreanId) return;
+    
+    const session = await sessionService.getSession();
+    if (!session?.user_token) return;
+    
+    setIsUpdatingGate(true);
+    
+    try {
+      if (gateId === 'empty' && position === 2) {
+        // Delete gate 2 only
+        setSelectedGate2("");
+        await productionCodeApi.deleteAntreanGate(antreanId, session.user_token);
+        showToast('Gate 2 berhasil dihapus', 'success');
+      } else if (gateId && gateId !== 'empty') {
+        // Set gate
+        await productionCodeApi.setAntreanGate(antreanId, parseInt(gateId), position, session.user_token);
+        showToast(`Gate ${position} berhasil diatur`, 'success');
+      }
+    } catch (error) {
+      showToast(`Gagal mengatur gate ${position}`, 'error');
+      
+      // Revert selection
+      if (position === 1) {
+        setSelectedGate1(selectedGate1);
+      } else {
+        setSelectedGate2(selectedGate2);
+      }
+    } finally {
+      setIsUpdatingGate(false);
     }
   };
 
@@ -144,7 +198,18 @@ export function ProductionCodePage() {
           
           {/* Gate Filters */}
           <div className="px-6 pb-4 flex gap-3">
-            <Select value={selectedGate1 || undefined} onValueChange={setSelectedGate1}>
+            <Select 
+              value={selectedGate1} 
+              onValueChange={(value) => {
+                setSelectedGate1(value);
+                handleGateChange(value, 1);
+                // If gate 1 changes and it's the same as gate 2, clear gate 2
+                if (value === selectedGate2) {
+                  setSelectedGate2("");
+                }
+              }}
+              disabled={isUpdatingGate}
+            >
               <SelectTrigger className="flex-1">
                 <SelectValue placeholder="Pilih Gate 1" />
               </SelectTrigger>
@@ -157,16 +222,35 @@ export function ProductionCodePage() {
               </SelectContent>
             </Select>
             
-            <Select value={selectedGate2 || undefined} onValueChange={setSelectedGate2}>
+            <Select 
+              key={`gate2-${selectedGate1}`} // Force re-render when gate1 changes
+              value={selectedGate2} 
+              onValueChange={(value) => {
+                if (value === 'empty') {
+                  setSelectedGate2("");
+                  handleGateChange('empty', 2);
+                } else {
+                  setSelectedGate2(value);
+                  handleGateChange(value, 2);
+                }
+              }}
+              disabled={isUpdatingGate || !selectedGate1}
+            >
               <SelectTrigger className="flex-1">
                 <SelectValue placeholder="Pilih Gate 2" />
               </SelectTrigger>
               <SelectContent>
-                {gateOptions.map((gate) => (
-                  <SelectItem key={gate.id} value={gate.id.toString()}>
-                    {gate.code}
-                  </SelectItem>
-                ))}
+                <SelectItem value="empty">Kosongkan Gate 2</SelectItem>
+                {gateOptions
+                  .filter(gate => {
+                    if (!selectedGate1) return true;
+                    return gate.id.toString() !== selectedGate1;
+                  })
+                  .map((gate) => (
+                    <SelectItem key={`gate2-option-${gate.id}`} value={gate.id.toString()}>
+                      {gate.code}
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </div>

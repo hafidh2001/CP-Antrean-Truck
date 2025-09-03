@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { IProductionCodeCard, IQuantityItem } from '@/types/productionCode';
+import { IQuantityItem } from '@/types/productionCode';
 
 // API Configuration
 const API_URL = 'https://hachi.kamz-kun.id/cp_fifo/index.php?r=Api';
@@ -35,6 +35,20 @@ interface ApiProductionCodeResponse {
     total_entries: number;
     completed_entries: number;
   }>;
+}
+
+interface AntreanGateResponse {
+  gates: Array<{
+    id: number;
+    gate_id: number;
+    gate_code: string;
+  }>;
+  error?: string;
+}
+
+interface GateActionResponse {
+  success: boolean;
+  error?: string;
 }
 
 export const productionCodeApi = {
@@ -79,6 +93,86 @@ export const productionCodeApi = {
       }
 
       return data as ApiProductionCodeResponse;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Get antrean gates
+   */
+  async getAntreanGates(antreanId: string, userToken: string): Promise<AntreanGateResponse> {
+    try {
+      const response = await apiClient.post('', createApiRequest(
+        'getAntreanGate',
+        'TAntreanGate',
+        { 
+          user_token: userToken,
+          antrean_id: parseInt(antreanId)
+        },
+        userToken
+      ));
+
+      const data = response.data;
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      return data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Set antrean gate
+   */
+  async setAntreanGate(antreanId: string, gateId: number, position: number, userToken: string): Promise<GateActionResponse> {
+    try {
+      const response = await apiClient.post('', createApiRequest(
+        'setAntreanGate',
+        'TAntreanGate',
+        { 
+          user_token: userToken,
+          antrean_id: parseInt(antreanId),
+          gate_id: gateId,
+          position: position
+        },
+        userToken
+      ));
+
+      const data = response.data;
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      return data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Delete antrean gate 2 (only gate 2 can be deleted)
+   */
+  async deleteAntreanGate(antreanId: string, userToken: string): Promise<GateActionResponse> {
+    try {
+      const response = await apiClient.post('', createApiRequest(
+        'deleteAntreanGate',
+        'TAntreanGate',
+        { 
+          user_token: userToken,
+          antrean_id: parseInt(antreanId)
+        },
+        userToken
+      ));
+
+      const data = response.data;
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      return data;
     } catch (error) {
       throw error;
     }
