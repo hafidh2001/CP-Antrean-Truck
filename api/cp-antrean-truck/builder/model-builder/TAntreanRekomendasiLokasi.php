@@ -158,12 +158,22 @@ class TAntreanRekomendasiLokasi extends ActiveRecord
 				}
 			}
 			
+			// Get completed entries count from t_antrean_kode_produksi
+			$completedQuery = "SELECT COUNT(*) as completed_count 
+				FROM t_antrean_kode_produksi 
+				WHERE antrean_id = :antrean_id AND goods_id = :goods_id";
+			$completedCommand = Yii::app()->db->createCommand($completedQuery);
+			$completedCommand->bindValue(':antrean_id', $antrean_id, PDO::PARAM_INT);
+			$completedCommand->bindValue(':goods_id', $row['goods_id'], PDO::PARAM_INT);
+			$completedResult = $completedCommand->queryRow();
+			$completed_entries = (int)$completedResult['completed_count'];
+			
 			$result['productionCodes'][] = array(
 				'id' => (int)$row['goods_id'],
 				'goods_code' => $row['goods_code'],
 				'quantities' => $quantities,
 				'total_entries' => $total_entries,
-				'completed_entries' => 0 // This should come from another table if tracking completion
+				'completed_entries' => $completed_entries
 			);
 		}
 		

@@ -62,11 +62,10 @@ export function ProductionCodePage() {
             const gates = await gateApi.getGateOptions(session.user_token);
             setGateOptions(gates);
           } catch (gateError) {
-            console.error('Failed to load gate options:', gateError);
             // Continue without gate options
           }
         } catch (error) {
-          console.error('Failed to load production codes:', error);
+          // Failed to load production codes
         } finally {
           setIsLoading(false);
         }
