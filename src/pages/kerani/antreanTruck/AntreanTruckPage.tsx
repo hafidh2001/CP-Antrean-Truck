@@ -42,7 +42,7 @@ export function AntreanTruckPage() {
   }, [reset]);
 
   const handleCardClick = (antrean: IAntreanCard) => {
-    navigate(`/production-code/${antrean.nopol}`);
+    navigate(`/production-code/${antrean.id}`);
   };
 
   if (isLoading) {

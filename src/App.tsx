@@ -32,11 +32,11 @@ function App() {
           element={<AntreanTruckPage />} 
         />
         <Route 
-          path={ROUTES.productionCode(':nopol')} 
+          path={ROUTES.productionCode(':antreanId')} 
           element={<ProductionCodePage />} 
         />
         <Route 
-          path={ROUTES.productionCodeEntry(':nopol', ':id')} 
+          path={ROUTES.productionCodeEntry(':antreanId', ':kodeProduksiId')} 
           element={<ProductionCodeEntryPage />} 
         />
         <Route 

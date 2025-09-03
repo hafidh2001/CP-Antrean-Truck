@@ -23,11 +23,11 @@ export class ROUTES {
     return `/antrean-truck` as const;
   }
   
-  static productionCode(nopol: string): string {
-    return `/production-code/${nopol}` as const;
+  static productionCode(antreanId: string): string {
+    return `/production-code/${antreanId}` as const;
   }
   
-  static productionCodeEntry(nopol: string, id: string): string {
-    return `/production-code-entry/${nopol}/${id}` as const;
+  static productionCodeEntry(antreanId: string, kodeProduksiId: string): string {
+    return `/production-code-entry/${antreanId}/${kodeProduksiId}` as const;
   }
 }

@@ -23,16 +23,16 @@ export function ProductionCodeCard({ code, onClick }: ProductionCodeCardProps) {
             {code.goods_code}
           </div>
           
-          {/* DO Number */}
+          {/* Goods Name */}
           <div className="text-sm text-gray-700">
-            {code.do_no}
+            {code.goods_name}
           </div>
           
           {/* Quantity Info */}
           <div className="text-sm text-gray-600">
             {code.quantities.map((q, index) => (
               <span key={index}>
-                {q.quantity} {q.uom}
+                {q.amount} {q.unit}
                 {index < code.quantities.length - 1 && ', '}
               </span>
             ))}

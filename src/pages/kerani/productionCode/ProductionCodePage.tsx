@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useProductionCodeStore } from '@/store/productionCodeStore';
 import { ProductionCodeCard } from './_components/ProductionCodeCard';
 import { ArrowLeft, Truck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -14,44 +13,60 @@ import {
 import { ROUTES } from '@/utils/routes';
 import type { IProductionCodeCard } from '@/types/productionCode';
 import { sessionService } from '@/services/sessionService';
+import { productionCodeApi } from '@/services/productionCodeApi';
 
 export function ProductionCodePage() {
   const navigate = useNavigate();
-  const { nopol } = useParams<{ nopol: string }>();
+  const { antreanId } = useParams<{ antreanId: string }>();
   const [isValidating, setIsValidating] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
-  const { 
-    productionCodes, 
-    goodsCount,
-    isLoading, 
-    loadProductionCodes,
-    selectedGate1,
-    selectedGate2,
-    setSelectedGate1,
-    setSelectedGate2,
-    reset
-  } = useProductionCodeStore();
+  const [isLoading, setIsLoading] = useState(false);
+  const [nopol, setNopol] = useState<string>('');
+  const [jenisBarang, setJenisBarang] = useState<number>(0);
+  const [productionCodes, setProductionCodes] = useState<IProductionCodeCard[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedGate1, setSelectedGate1] = useState<string | null>(null);
+  const [selectedGate2, setSelectedGate2] = useState<string | null>(null);
 
   useEffect(() => {
-    const validateSession = async () => {
-      const isValid = await sessionService.isValidKeraniSession();
+    const validateAndLoadData = async () => {
+      const session = await sessionService.getSession();
+      const isValid = session?.user_token ? true : false;
       setHasAccess(isValid);
       setIsValidating(false);
       
-      if (isValid && nopol) {
-        loadProductionCodes(nopol);
+      if (isValid && antreanId && session?.user_token) {
+        setIsLoading(true);
+        setError(null);
+        
+        try {
+          const data = await productionCodeApi.getProductionCodes(antreanId, session.user_token);
+          
+          setNopol(data.nopol);
+          setJenisBarang(data.jenis_barang);
+          
+          // Transform API data to match frontend interface
+          const transformedCodes: IProductionCodeCard[] = data.productionCodes.map(code => ({
+            ...code,
+            isCompleted: code.completed_entries === code.total_entries,
+            progress_percentage: Math.round((code.completed_entries / code.total_entries) * 100)
+          }));
+          
+          setProductionCodes(transformedCodes);
+        } catch (error) {
+          console.error('Failed to load production codes:', error);
+          setError(error instanceof Error ? error.message : 'Failed to load data');
+        } finally {
+          setIsLoading(false);
+        }
       }
     };
     
-    validateSession();
-    
-    return () => {
-      reset();
-    };
-  }, [nopol]);
+    validateAndLoadData();
+  }, [antreanId]);
 
   const handleCardClick = (code: IProductionCodeCard) => {
-    navigate(ROUTES.productionCodeEntry(nopol || '', code.id.toString()));
+    navigate(ROUTES.productionCodeEntry(antreanId || '', code.id.toString()));
   };
 
   const handleBack = () => {
@@ -110,7 +125,7 @@ export function ProductionCodePage() {
               </div>
               <div>
                 <div className="text-2xl font-bold text-gray-900">{nopol}</div>
-                <div className="text-base text-gray-600">{goodsCount} jenis barang</div>
+                <div className="text-base text-gray-600">{jenisBarang} jenis barang</div>
               </div>
             </div>
           </div>
