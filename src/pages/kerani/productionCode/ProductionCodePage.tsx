@@ -77,7 +77,9 @@ export function ProductionCodePage() {
   }, [antreanId]);
 
   const handleCardClick = (code: IProductionCodeCard) => {
-    navigate(ROUTES.productionCodeEntry(antreanId || '', code.id.toString()));
+    if (antreanId) {
+      navigate(ROUTES.productionCodeEntry(antreanId, code.id.toString()));
+    }
   };
 
   const handleBack = () => {

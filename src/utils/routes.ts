@@ -27,7 +27,7 @@ export class ROUTES {
     return `/production-code/${antreanId}` as const;
   }
   
-  static productionCodeEntry(antreanId: string, kodeProduksiId: string): string {
-    return `/production-code-entry/${antreanId}/${kodeProduksiId}` as const;
+  static productionCodeEntry(antreanId: string, goodsId: string): string {
+    return `/production-code-entry/${antreanId}/${goodsId}` as const;
   }
 }

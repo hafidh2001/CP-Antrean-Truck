@@ -5,134 +5,163 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import type { IProductionCodeCard } from '@/types/productionCode';
-import type { IProductionCodeEntryData, IJebolan, IProductionCodeEntry } from '@/types/productionCodeEntry';
 import { sessionService } from '@/services/sessionService';
 import { ROUTES } from '@/utils/routes';
+import { productionCodeEntryApi } from '@/services/productionCodeEntryApi';
 
 export function ProductionCodeEntryPage() {
   const navigate = useNavigate();
-  const { nopol, id } = useParams<{ nopol: string; id: string }>();
+  const { antreanId, goodsId } = useParams<{ antreanId: string; goodsId: string }>();
   
   const [isValidating, setIsValidating] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [nopol, setNopol] = useState<string>('');
   const [productionCodeData, setProductionCodeData] = useState<IProductionCodeCard | null>(null);
-  const [entryData, setEntryData] = useState<IProductionCodeEntryData | null>(null);
+  const [jebolan, setJebolan] = useState<Array<{ id: number; qty: number }>>([]);
+  const [kodeProduksi, setKodeProduksi] = useState<Array<{ id: number; kode_produksi: string }>>([]);
+  const [completedEntries, setCompletedEntries] = useState<number>(0);
   const [jebolainInput, setJebolainInput] = useState('');
   const [productionCodeInput, setProductionCodeInput] = useState('');
   const [isEditingJebolan, setIsEditingJebolan] = useState(false);
+  const [editingJebolanId, setEditingJebolanId] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const validateAndLoadData = async () => {
-      const isValid = await sessionService.isValidKeraniSession();
+      console.log('ProductionCodeEntry - antreanId:', antreanId, 'goodsId:', goodsId);
+      
+      const session = await sessionService.getSession();
+      console.log('ProductionCodeEntry - session:', session);
+      
+      const isValid = session?.user_token ? true : false;
       setHasAccess(isValid);
       setIsValidating(false);
       
-      if (!isValid) return;
-      
-      // Load production code data and entry data from localStorage
-      if (nopol && id) {
-        const storageKey = `production-code-entry-${nopol}-${id}`;
-        const savedEntry = localStorage.getItem(storageKey);
-      
-        // Get production code data from localStorage
-        const productionDataKey = `production-codes-${nopol}`;
-        const productionData = localStorage.getItem(productionDataKey);
+      if (isValid && antreanId && goodsId && session?.user_token) {
+        setIsLoading(true);
+        console.log('ProductionCodeEntry - Starting to fetch data...');
         
-        let productionCodeCard: IProductionCodeCard | null = null;
-        
-        if (productionData) {
-          const parsed = JSON.parse(productionData);
-          const productionCode = parsed.productionCodes.find((code: any) => code.id === parseInt(id));
+        try {
+          // Fetch production detail using antrean_id and goods_id
+          const productionDetail = await productionCodeEntryApi.getProductionCodeDetail(antreanId, goodsId, session.user_token);
           
-          if (productionCode) {
-            productionCodeCard = {
-              ...productionCode,
-              isCompleted: productionCode.completed_entries === productionCode.total_entries,
-              progress_percentage: Math.round((productionCode.completed_entries / productionCode.total_entries) * 100)
-            };
-            
-            setProductionCodeData(productionCodeCard);
-          }
-        }
-        
-        if (savedEntry) {
-          const parsed = JSON.parse(savedEntry);
-          setEntryData(parsed);
-          // Clear jebolan input when loading
-          setJebolainInput('');
-        } else if (productionCodeCard) {
-          setEntryData({
-            productionCodeId: parseInt(id),
-            goods_code: productionCodeCard.goods_code,
-            goods_name: productionCodeCard.goods_name || '',
-            do_no: productionCodeCard.do_no,
-            quantities: productionCodeCard.quantities,
-            total_entries: productionCodeCard.total_entries,
-            completed_entries: 0,
-            jebolan: null,
-            productionCodes: []
-          });
-          setJebolainInput('');
+          // Set header data
+          setNopol(productionDetail.nopol);
+          
+          // Then fetch jebolan and kode produksi
+          const [jebolanData, kodeProduksiData] = await Promise.all([
+            productionCodeEntryApi.getJebolan(antreanId, goodsId, session.user_token),
+            productionCodeEntryApi.getKodeProduksi(antreanId, goodsId, session.user_token)
+          ]);
+          
+          // Transform and set production code data
+          const code = productionDetail.productionCode;
+          const transformedCode: IProductionCodeCard = {
+            id: code.id,
+            goods_code: code.goods_code,
+            goods_name: code.goods_name || '',
+            quantities: code.quantities,
+            total_entries: code.total_entries,
+            completed_entries: kodeProduksiData.completed_entries,
+            isCompleted: kodeProduksiData.completed_entries === code.total_entries,
+            progress_percentage: Math.round((kodeProduksiData.completed_entries / code.total_entries) * 100)
+          };
+          
+          setProductionCodeData(transformedCode);
+          setJebolan(jebolanData);
+          setKodeProduksi(kodeProduksiData.kode_produksi);
+          setCompletedEntries(kodeProduksiData.completed_entries);
+          
+        } catch (error) {
+          console.error('Failed to load data:', error);
+          setError(error instanceof Error ? error.message : 'Failed to load data');
+        } finally {
+          setIsLoading(false);
         }
       }
     };
     
     validateAndLoadData();
-  }, [nopol, id]);
+  }, [antreanId, goodsId]);
 
-  const saveToStorage = (data: IProductionCodeEntryData) => {
-    if (nopol && id) {
-      const storageKey = `production-code-entry-${nopol}-${id}`;
-      localStorage.setItem(storageKey, JSON.stringify(data));
+  const reloadData = async () => {
+    const session = await sessionService.getSession();
+    if (session?.user_token && antreanId && goodsId) {
+      try {
+        const [jebolanData, kodeProduksiData] = await Promise.all([
+          productionCodeEntryApi.getJebolan(antreanId, goodsId, session.user_token),
+          productionCodeEntryApi.getKodeProduksi(antreanId, goodsId, session.user_token)
+        ]);
+        
+        setJebolan(jebolanData);
+        setKodeProduksi(kodeProduksiData.kode_produksi);
+        setCompletedEntries(kodeProduksiData.completed_entries);
+        
+        // Update production code data
+        if (productionCodeData) {
+          setProductionCodeData({
+            ...productionCodeData,
+            completed_entries: kodeProduksiData.completed_entries,
+            isCompleted: kodeProduksiData.completed_entries === productionCodeData.total_entries,
+            progress_percentage: Math.round((kodeProduksiData.completed_entries / productionCodeData.total_entries) * 100)
+          });
+        }
+      } catch (error) {
+        console.error('Failed to reload data:', error);
+      }
     }
   };
 
-  const handleJebolanSubmit = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && entryData) {
+  const handleJebolanSubmit = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
       e.preventDefault();
-      
-      // Allow empty jebolan (remove it)
-      if (!jebolainInput.trim()) {
-        const updatedData = {
-          ...entryData,
-          jebolan: null
-        };
-        
-        setEntryData(updatedData);
-        saveToStorage(updatedData);
-        setJebolainInput('');
-        setIsEditingJebolan(false);
-        (e.target as HTMLInputElement).blur();
-        return;
-      }
       
       const quantity = parseInt(jebolainInput);
       if (isNaN(quantity) || quantity <= 0) return;
       
-      const newJebolan: IJebolan = {
-        id: Date.now().toString(),
-        quantity,
-        timestamp: new Date().toISOString()
-      };
+      const session = await sessionService.getSession();
+      if (!session?.user_token || !antreanId || !goodsId) return;
       
-      const updatedData = {
-        ...entryData,
-        jebolan: newJebolan
-      };
+      setIsSubmitting(true);
       
-      setEntryData(updatedData);
-      saveToStorage(updatedData);
-      setJebolainInput('');
-      setIsEditingJebolan(false);
-      
-      // Remove focus from input
-      (e.target as HTMLInputElement).blur();
+      try {
+        const jebolanIdToEdit = editingJebolanId || (jebolan.length > 0 ? jebolan[0].id : undefined);
+        
+        await productionCodeEntryApi.saveJebolan(
+          antreanId,
+          goodsId,
+          quantity,
+          session.user_token,
+          jebolanIdToEdit
+        );
+        
+        setJebolainInput('');
+        setIsEditingJebolan(false);
+        setEditingJebolanId(null);
+        (e.target as HTMLInputElement).blur();
+        
+        // Reload data
+        await reloadData();
+      } catch (error) {
+        console.error('Failed to save jebolan:', error);
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
   const handleJebolanClick = () => {
-    setJebolainInput(entryData?.jebolan?.quantity.toString() || '');
-    setIsEditingJebolan(true);
+    if (jebolan.length > 0) {
+      setJebolainInput(jebolan[0].qty.toString());
+      setIsEditingJebolan(true);
+      setEditingJebolanId(jebolan[0].id);
+    } else {
+      setJebolainInput('');
+      setIsEditingJebolan(true);
+      setEditingJebolanId(null);
+    }
   };
 
   const handleJebolanBlur = () => {
@@ -141,44 +170,74 @@ export function ProductionCodeEntryPage() {
     // Reset input if user clicks away without saving
     setJebolainInput('');
     setIsEditingJebolan(false);
+    setEditingJebolanId(null);
   };
 
-  const handleAddProductionCode = () => {
-    if (!productionCodeInput.trim() || !entryData) return;
+  const handleAddProductionCode = async () => {
+    if (!productionCodeInput.trim() || !productionCodeData) return;
     
-    const newCode: IProductionCodeEntry = {
-      id: Date.now().toString(),
-      code: productionCodeInput.trim(),
-      timestamp: new Date().toISOString()
-    };
+    // Check if max entries reached
+    if (completedEntries >= productionCodeData.total_entries) {
+      alert('Maximum entries reached');
+      return;
+    }
     
-    const updatedData = {
-      ...entryData,
-      productionCodes: [...entryData.productionCodes, newCode],
-      completed_entries: entryData.productionCodes.length + 1
-    };
+    const session = await sessionService.getSession();
+    if (!session?.user_token || !antreanId || !goodsId) return;
     
-    setEntryData(updatedData);
-    saveToStorage(updatedData);
-    setProductionCodeInput('');
+    setIsSubmitting(true);
+    
+    try {
+      await productionCodeEntryApi.createKodeProduksi(
+        antreanId,
+        goodsId,
+        productionCodeInput.trim(),
+        session.user_token
+      );
+      
+      setProductionCodeInput('');
+      
+      // Reload data
+      await reloadData();
+    } catch (error) {
+      console.error('Failed to add production code:', error);
+      if (error instanceof Error && error.message === 'Kode produksi already exists') {
+        alert('Kode produksi sudah ada');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
 
-  const handleDeleteProductionCode = (codeId: string) => {
-    if (!entryData) return;
+  const handleDeleteProductionCode = async (codeId: number) => {
+    const session = await sessionService.getSession();
+    if (!session?.user_token) return;
     
-    const updatedData = {
-      ...entryData,
-      productionCodes: entryData.productionCodes.filter(code => code.id !== codeId),
-      completed_entries: entryData.productionCodes.length - 1
-    };
+    setIsSubmitting(true);
     
-    setEntryData(updatedData);
-    saveToStorage(updatedData);
+    try {
+      await productionCodeEntryApi.deleteKodeProduksi(
+        codeId,
+        session.user_token
+      );
+      
+      // Reload data
+      await reloadData();
+    } catch (error) {
+      console.error('Failed to delete production code:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleBack = () => {
-    navigate(`/production-code/${nopol}`);
+    const encryptedToken = sessionService.getEncryptedToken();
+    if (encryptedToken && antreanId) {
+      navigate(`${ROUTES.productionCode(antreanId)}?key=${encodeURIComponent(encryptedToken)}`);
+    } else {
+      navigate(ROUTES.base);
+    }
   };
 
   if (isValidating) {
@@ -203,16 +262,30 @@ export function ProductionCodeEntryPage() {
     );
   }
 
-  if (!productionCodeData || !entryData) {
+  if (error) {
     return (
       <div className="h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-gray-500">Memuat data...</div>
+        <div className="text-center">
+          <div className="text-red-500 mb-4">Error: {error}</div>
+          <Button onClick={() => window.location.reload()}>Coba Lagi</Button>
+        </div>
       </div>
     );
   }
 
-  const isCompleted = entryData.completed_entries === entryData.total_entries;
-  const canAddProductionCode = entryData.productionCodes.length < entryData.total_entries;
+  if (isLoading || !productionCodeData) {
+    return (
+      <div className="h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+          <div className="text-gray-500">Memuat data...</div>
+        </div>
+      </div>
+    );
+  }
+
+  const isCompleted = completedEntries === productionCodeData.total_entries;
+  const canAddProductionCode = completedEntries < productionCodeData.total_entries;
 
   return (
     <div className="h-screen bg-gray-100 flex items-center justify-center">
@@ -236,13 +309,13 @@ export function ProductionCodeEntryPage() {
             <div className="flex gap-4">
               {/* Left Column */}
               <div className="flex-1">
-                <div className="text-xl font-bold text-gray-900 mb-1">{entryData.goods_code}</div>
-                <div className="text-sm text-gray-700 mb-1">{entryData.do_no}</div>
+                <div className="text-xl font-bold text-gray-900 mb-1">{productionCodeData.goods_code}</div>
+                <div className="text-sm text-gray-700 mb-1">{productionCodeData.goods_name}</div>
                 <div className="text-sm text-gray-600">
-                  {entryData.quantities.map((q, index) => (
+                  {productionCodeData.quantities.map((q, index) => (
                     <span key={index}>
-                      {q.quantity} {q.uom}
-                      {index < entryData.quantities.length - 1 && ', '}
+                      {q.amount} {q.unit}
+                      {index < productionCodeData.quantities.length - 1 && ', '}
                     </span>
                   ))}
                 </div>
@@ -264,7 +337,7 @@ export function ProductionCodeEntryPage() {
                   <span className={`text-sm font-medium ${
                     isCompleted ? 'text-green-600' : 'text-gray-600'
                   }`}>
-                    {entryData.completed_entries}/{entryData.total_entries} entri kode
+                    {completedEntries}/{productionCodeData.total_entries} entri kode
                   </span>
                 </div>
               </div>
@@ -279,7 +352,7 @@ export function ProductionCodeEntryPage() {
             <h3 className="text-lg font-semibold text-gray-800 mb-3">Jebolan</h3>
             
             {/* Jebolan Input/Display */}
-            {!entryData.jebolan || isEditingJebolan ? (
+            {isEditingJebolan || jebolan.length === 0 ? (
               <Input
                 type="number"
                 placeholder="Jumlah jebolan (opsional)"
@@ -297,7 +370,7 @@ export function ProductionCodeEntryPage() {
               >
                 <CardContent className="p-3">
                   <div className="text-sm text-gray-900">
-                    {entryData.jebolan.quantity}
+                    {jebolan[0].qty}
                   </div>
                 </CardContent>
               </Card>
@@ -316,31 +389,32 @@ export function ProductionCodeEntryPage() {
                 value={productionCodeInput}
                 onChange={(e) => setProductionCodeInput(e.target.value)}
                 className="flex-1"
-                disabled={!canAddProductionCode}
+                disabled={!canAddProductionCode || isSubmitting}
               />
               <Button
                 onClick={handleAddProductionCode}
-                disabled={!canAddProductionCode || !productionCodeInput.trim()}
+                disabled={!canAddProductionCode || !productionCodeInput.trim() || isSubmitting}
                 className="px-6"
               >
-                Add
+                {isSubmitting ? 'Adding...' : 'Add'}
               </Button>
             </div>
             
             {/* Production Codes List */}
-            {entryData.productionCodes.length > 0 && (
+            {kodeProduksi.length > 0 && (
               <div className="space-y-2">
-                {entryData.productionCodes.map((code) => (
+                {kodeProduksi.map((code) => (
                   <Card key={code.id} className="border-gray-300">
                     <CardContent className="p-2">
                       <div className="flex items-center justify-between">
                         <div className="text-sm text-gray-900">
-                          {code.code}
+                          {code.kode_produksi}
                         </div>
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => handleDeleteProductionCode(code.id)}
+                          disabled={isSubmitting}
                           className="text-red-600 hover:text-red-700 hover:bg-red-50 h-7 w-7 p-0"
                         >
                           <Trash2 className="h-3 w-3" />

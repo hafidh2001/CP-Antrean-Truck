@@ -36,7 +36,7 @@ function App() {
           element={<ProductionCodePage />} 
         />
         <Route 
-          path={ROUTES.productionCodeEntry(':antreanId', ':kodeProduksiId')} 
+          path={ROUTES.productionCodeEntry(':antreanId', ':goodsId')} 
           element={<ProductionCodeEntryPage />} 
         />
         <Route 
