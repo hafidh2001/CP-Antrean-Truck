@@ -12,7 +12,7 @@ src/
 │   │   └── warehouseView/   # View mode page
 │   │       ├── WarehouseViewPage.tsx
 │   │       └── _components/ # Page-specific components
-│   ├── krani/               # Krani role pages
+│   ├── kerani/               # Krani role pages
 │   │   ├── antreanTruck/    # Truck queue page
 │   │   │   ├── AntreanTruckPage.tsx
 │   │   │   └── _components/ # Page-specific components
@@ -232,7 +232,7 @@ Pages are organized under role directories, but module naming follows functional
 Examples:
 - `/pages/admin/warehouseDetail/` → Module: warehouseDetail
 - `/pages/admin/warehouseView/` → Module: warehouseView  
-- `/pages/krani/antreanTruck/` → Module: antreanTruck
+- `/pages/kerani/antreanTruck/` → Module: antreanTruck
 
 ### Store and Types Naming
 Store and types use the module name, NOT the role name:
@@ -243,8 +243,8 @@ Store and types use the module name, NOT the role name:
 ```
 
 Examples:
-- `/store/antreanTruckStore.ts` (NOT kraniStore.ts)
-- `/types/antreanTruck/` (NOT /types/krani/)
+- `/store/antreanTruckStore.ts` (NOT keraniStore.ts)
+- `/types/antreanTruck/` (NOT /types/kerani/)
 
 ### URL Routing
 URLs should NOT include role names:
@@ -257,14 +257,14 @@ static get antreanTruck() {
 
 // ❌ Bad
 static get antreanTruck() {
-  return `/krani/antrean-truck` as const;
+  return `/kerani/antrean-truck` as const;
 }
 ```
 
 ### Import Examples
 ```typescript
-// Importing from antreanTruck module (under krani role)
-import { AntreanTruckPage } from '@/pages/krani/antreanTruck';
+// Importing from antreanTruck module (under kerani role)
+import { AntreanTruckPage } from '@/pages/kerani/antreanTruck';
 import { useAntreanTruckStore } from '@/store/antreanTruckStore';
 import type { IAntreanCard } from '@/types/antreanTruck';
 ```
@@ -272,7 +272,7 @@ import type { IAntreanCard } from '@/types/antreanTruck';
 ## 8. Data Flow and localStorage Management
 
 ### Mock Data Structure
-All mock data is centralized in `/data/krani-mock-data.json` containing:
+All mock data is centralized in `/data/kerani-mock-data.json` containing:
 - `antreanTruck`: List of trucks in queue
 - `productionCodes`: Production codes by nopol (license plate)
 

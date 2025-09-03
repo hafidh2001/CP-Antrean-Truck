@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { ProductionCodeStore } from '@/types/productionCode/store';
 import type { IProductionCodeCard } from '@/types/productionCode';
-import kraniMockData from '@/data/krani-mock-data.json';
+import keraniMockData from '@/data/kerani-mock-data.json';
 
 const STORAGE_KEY_PREFIX = 'production-codes-';
 const MOCK_DATA_VERSION = 'v3'; // Increment this when mock data changes
@@ -26,7 +26,7 @@ const initializeStorage = (nopol: string) => {
     }
     
     // Set new data
-    const mockProductionData = kraniMockData.productionCodes[nopol as keyof typeof kraniMockData.productionCodes];
+    const mockProductionData = keraniMockData.productionCodes[nopol as keyof typeof keraniMockData.productionCodes];
     if (mockProductionData) {
       localStorage.setItem(storageKey, JSON.stringify(mockProductionData));
     }
@@ -37,7 +37,7 @@ const initializeStorage = (nopol: string) => {
     // In production, only initialize if empty
     const stored = localStorage.getItem(storageKey);
     if (!stored) {
-      const mockProductionData = kraniMockData.productionCodes[nopol as keyof typeof kraniMockData.productionCodes];
+      const mockProductionData = keraniMockData.productionCodes[nopol as keyof typeof keraniMockData.productionCodes];
       if (mockProductionData) {
         localStorage.setItem(storageKey, JSON.stringify(mockProductionData));
       }

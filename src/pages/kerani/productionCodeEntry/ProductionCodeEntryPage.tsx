@@ -6,11 +6,15 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import type { IProductionCodeCard } from '@/types/productionCode';
 import type { IProductionCodeEntryData, IJebolan, IProductionCodeEntry } from '@/types/productionCodeEntry';
+import { sessionService } from '@/services/sessionService';
+import { ROUTES } from '@/utils/routes';
 
 export function ProductionCodeEntryPage() {
   const navigate = useNavigate();
   const { nopol, id } = useParams<{ nopol: string; id: string }>();
   
+  const [isValidating, setIsValidating] = useState(true);
+  const [hasAccess, setHasAccess] = useState(false);
   const [productionCodeData, setProductionCodeData] = useState<IProductionCodeCard | null>(null);
   const [entryData, setEntryData] = useState<IProductionCodeEntryData | null>(null);
   const [jebolainInput, setJebolainInput] = useState('');
@@ -18,52 +22,62 @@ export function ProductionCodeEntryPage() {
   const [isEditingJebolan, setIsEditingJebolan] = useState(false);
 
   useEffect(() => {
-    // Load production code data and entry data from localStorage
-    if (nopol && id) {
-      const storageKey = `production-code-entry-${nopol}-${id}`;
-      const savedEntry = localStorage.getItem(storageKey);
+    const validateAndLoadData = async () => {
+      const isValid = await sessionService.isValidKeraniSession();
+      setHasAccess(isValid);
+      setIsValidating(false);
       
-      // Get production code data from localStorage
-      const productionDataKey = `production-codes-${nopol}`;
-      const productionData = localStorage.getItem(productionDataKey);
+      if (!isValid) return;
       
-      let productionCodeCard: IProductionCodeCard | null = null;
+      // Load production code data and entry data from localStorage
+      if (nopol && id) {
+        const storageKey = `production-code-entry-${nopol}-${id}`;
+        const savedEntry = localStorage.getItem(storageKey);
       
-      if (productionData) {
-        const parsed = JSON.parse(productionData);
-        const productionCode = parsed.productionCodes.find((code: any) => code.id === parseInt(id));
+        // Get production code data from localStorage
+        const productionDataKey = `production-codes-${nopol}`;
+        const productionData = localStorage.getItem(productionDataKey);
         
-        if (productionCode) {
-          productionCodeCard = {
-            ...productionCode,
-            isCompleted: productionCode.completed_entries === productionCode.total_entries,
-            progress_percentage: Math.round((productionCode.completed_entries / productionCode.total_entries) * 100)
-          };
+        let productionCodeCard: IProductionCodeCard | null = null;
+        
+        if (productionData) {
+          const parsed = JSON.parse(productionData);
+          const productionCode = parsed.productionCodes.find((code: any) => code.id === parseInt(id));
           
-          setProductionCodeData(productionCodeCard);
+          if (productionCode) {
+            productionCodeCard = {
+              ...productionCode,
+              isCompleted: productionCode.completed_entries === productionCode.total_entries,
+              progress_percentage: Math.round((productionCode.completed_entries / productionCode.total_entries) * 100)
+            };
+            
+            setProductionCodeData(productionCodeCard);
+          }
+        }
+        
+        if (savedEntry) {
+          const parsed = JSON.parse(savedEntry);
+          setEntryData(parsed);
+          // Clear jebolan input when loading
+          setJebolainInput('');
+        } else if (productionCodeCard) {
+          setEntryData({
+            productionCodeId: parseInt(id),
+            goods_code: productionCodeCard.goods_code,
+            goods_name: productionCodeCard.goods_name || '',
+            do_no: productionCodeCard.do_no,
+            quantities: productionCodeCard.quantities,
+            total_entries: productionCodeCard.total_entries,
+            completed_entries: 0,
+            jebolan: null,
+            productionCodes: []
+          });
+          setJebolainInput('');
         }
       }
-      
-      if (savedEntry) {
-        const parsed = JSON.parse(savedEntry);
-        setEntryData(parsed);
-        // Clear jebolan input when loading
-        setJebolainInput('');
-      } else if (productionCodeCard) {
-        setEntryData({
-          productionCodeId: parseInt(id),
-          goods_code: productionCodeCard.goods_code,
-          goods_name: productionCodeCard.goods_name || '',
-          do_no: productionCodeCard.do_no,
-          quantities: productionCodeCard.quantities,
-          total_entries: productionCodeCard.total_entries,
-          completed_entries: 0,
-          jebolan: null,
-          productionCodes: []
-        });
-        setJebolainInput('');
-      }
-    }
+    };
+    
+    validateAndLoadData();
   }, [nopol, id]);
 
   const saveToStorage = (data: IProductionCodeEntryData) => {
@@ -166,6 +180,28 @@ export function ProductionCodeEntryPage() {
   const handleBack = () => {
     navigate(`/production-code/${nopol}`);
   };
+
+  if (isValidating) {
+    return (
+      <div className="h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+          <div className="text-gray-500">Memvalidasi sesi...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!hasAccess) {
+    return (
+      <div className="h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-500 mb-4">Tidak memiliki akses untuk mengakses halaman ini</div>
+          <Button onClick={() => navigate(ROUTES.base)}>Kembali ke Beranda</Button>
+        </div>
+      </div>
+    );
+  }
 
   if (!productionCodeData || !entryData) {
     return (

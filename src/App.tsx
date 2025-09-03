@@ -3,9 +3,9 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import WarehouseDetailPage from '@/pages/admin/warehouseDetail';
 import WarehouseViewPage from '@/pages/admin/warehouseView';
 import DecryptPage from '@/pages/decrypt/DecryptPage';
-import AntreanTruckPage from '@/pages/krani/antreanTruck';
-import ProductionCodePage from '@/pages/krani/productionCode';
-import ProductionCodeEntryPage from '@/pages/krani/productionCodeEntry';
+import AntreanTruckPage from '@/pages/kerani/antreanTruck';
+import ProductionCodePage from '@/pages/kerani/productionCode';
+import ProductionCodeEntryPage from '@/pages/kerani/productionCodeEntry';
 import { ROUTES } from '@/utils/routes';
 import { AppWrapper } from '@/components/layout/AppWrapper';
 

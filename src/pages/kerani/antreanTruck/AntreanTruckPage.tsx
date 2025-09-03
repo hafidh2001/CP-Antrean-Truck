@@ -4,6 +4,7 @@ import { useAntreanTruckStore } from '@/store/antreanTruckStore';
 import { AntreanCard } from './_components/AntreanCard';
 import type { IAntreanCard } from '@/types/antreanTruck';
 import { ROUTES } from '@/utils/routes';
+import { sessionService } from '@/services/sessionService';
 
 export function AntreanTruckPage() {
   const navigate = useNavigate();
@@ -11,21 +12,32 @@ export function AntreanTruckPage() {
   const { antreanList, isLoading, error, loadAntreanListFromApi, reset } = useAntreanTruckStore();
 
   useEffect(() => {
-    const searchParams = new URLSearchParams(location.search);
-    const encryptedData = searchParams.get('key');
+    const initPage = async () => {
+      const searchParams = new URLSearchParams(location.search);
+      const encryptedData = searchParams.get('key');
+      
+      if (!encryptedData) {
+        navigate(ROUTES.base);
+        return;
+      }
+      
+      try {
+        // Save session for use in other kerani pages
+        await sessionService.saveSession(encryptedData);
+        await loadAntreanListFromApi(encryptedData);
+      } catch (error) {
+        navigate(ROUTES.base);
+      }
+    };
     
-    if (!encryptedData) {
-      navigate(ROUTES.base);
-      return;
-    }
-    
-    loadAntreanListFromApi(encryptedData);
+    initPage();
   }, []);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       reset();
+      // Note: Don't clear session here, it should persist for navigation between kerani pages
     };
   }, [reset]);
 
@@ -38,7 +50,7 @@ export function AntreanTruckPage() {
       <div className="h-screen bg-gray-100 flex items-center justify-center">
         <div className="max-w-md w-full h-screen bg-white flex flex-col">
           <div className="bg-white border-b border-gray-200 p-6 text-center flex-shrink-0">
-            <h1 className="text-3xl font-bold text-gray-800">Antrian Krani</h1>
+            <h1 className="text-3xl font-bold text-gray-800">Antrian Kerani</h1>
           </div>
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
@@ -56,7 +68,7 @@ export function AntreanTruckPage() {
       <div className="h-screen bg-gray-100 flex items-center justify-center">
         <div className="max-w-md w-full h-screen bg-white flex flex-col">
           <div className="bg-white border-b border-gray-200 p-6 text-center flex-shrink-0">
-            <h1 className="text-3xl font-bold text-gray-800">Antrian Krani</h1>
+            <h1 className="text-3xl font-bold text-gray-800">Antrian Kerani</h1>
           </div>
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
@@ -73,7 +85,7 @@ export function AntreanTruckPage() {
       <div className="max-w-md w-full h-screen bg-white flex flex-col">
         {/* Header - Fixed */}
         <div className="bg-white border-b border-gray-200 p-6 text-center flex-shrink-0">
-          <h1 className="text-3xl font-bold text-gray-800">Antrian Krani</h1>
+          <h1 className="text-3xl font-bold text-gray-800">Antrian Kerani</h1>
         </div>
 
         {/* Scrollable Content - Takes remaining height */}

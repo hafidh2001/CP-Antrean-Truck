@@ -6,5 +6,5 @@ export const HomePage = lazyLoad(() => import('./home/HomePage'));
 export const WarehouseDetailPage = lazyLoad(() => import('./admin/warehouseDetail/WarehouseDetailPage'));
 export const WarehouseViewPage = lazyLoad(() => import('./admin/warehouseView/WarehouseViewPage'));
 export const DecryptPage = lazyLoad(() => import('./decrypt/DecryptPage'));
-export const AntreanTruckPage = lazyLoad(() => import('./krani/antreanTruck/AntreanTruckPage'));
-export const ProductionCodePage = lazyLoad(() => import('./krani/productionCode/ProductionCodePage'));
+export const AntreanTruckPage = lazyLoad(() => import('./kerani/antreanTruck/AntreanTruckPage'));
+export const ProductionCodePage = lazyLoad(() => import('./kerani/productionCode/ProductionCodePage'));

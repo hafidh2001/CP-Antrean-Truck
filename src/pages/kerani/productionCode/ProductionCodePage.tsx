@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useProductionCodeStore } from '@/store/productionCodeStore';
 import { ProductionCodeCard } from './_components/ProductionCodeCard';
@@ -13,10 +13,13 @@ import {
 } from '@/components/ui/select';
 import { ROUTES } from '@/utils/routes';
 import type { IProductionCodeCard } from '@/types/productionCode';
+import { sessionService } from '@/services/sessionService';
 
 export function ProductionCodePage() {
   const navigate = useNavigate();
   const { nopol } = useParams<{ nopol: string }>();
+  const [isValidating, setIsValidating] = useState(true);
+  const [hasAccess, setHasAccess] = useState(false);
   const { 
     productionCodes, 
     goodsCount,
@@ -30,22 +33,57 @@ export function ProductionCodePage() {
   } = useProductionCodeStore();
 
   useEffect(() => {
-    if (nopol) {
-      loadProductionCodes(nopol);
-    }
+    const validateSession = async () => {
+      const isValid = await sessionService.isValidKeraniSession();
+      setHasAccess(isValid);
+      setIsValidating(false);
+      
+      if (isValid && nopol) {
+        loadProductionCodes(nopol);
+      }
+    };
+    
+    validateSession();
     
     return () => {
       reset();
     };
-  }, [nopol, loadProductionCodes, reset]);
+  }, [nopol]);
 
   const handleCardClick = (code: IProductionCodeCard) => {
     navigate(ROUTES.productionCodeEntry(nopol || '', code.id.toString()));
   };
 
   const handleBack = () => {
-    navigate(ROUTES.antreanTruck);
+    const encryptedToken = sessionService.getEncryptedToken();
+    if (encryptedToken) {
+      navigate(`${ROUTES.antreanTruck}?key=${encodeURIComponent(encryptedToken)}`);
+    } else {
+      navigate(ROUTES.base);
+    }
   };
+
+  if (isValidating) {
+    return (
+      <div className="h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+          <div className="text-gray-500">Memvalidasi sesi...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!hasAccess) {
+    return (
+      <div className="h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-500 mb-4">Tidak memiliki akses untuk mengakses halaman ini</div>
+          <Button onClick={() => navigate(ROUTES.base)}>Kembali ke Beranda</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen bg-gray-100 flex items-center justify-center">
