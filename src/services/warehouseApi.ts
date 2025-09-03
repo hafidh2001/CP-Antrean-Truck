@@ -56,7 +56,6 @@ export const warehouseApi = {
         userToken
       ));
 
-      console.log('API Response:', response.data);
 
       // Parse the response - handle double encoding issue
       let data = response.data;
@@ -65,9 +64,8 @@ export const warehouseApi = {
       if (typeof data === 'string') {
         try {
           data = JSON.parse(data);
-          console.log('Parsed response:', data);
         } catch (e) {
-          console.error('Failed to parse JSON string:', e);
+          // Failed to parse JSON
         }
       }
 
@@ -78,25 +76,21 @@ export const warehouseApi = {
 
       // Validate response structure
       if (!data || typeof data !== 'object') {
-        console.error('Invalid response structure:', data);
         throw new Error('Invalid response from server');
       }
 
       // Ensure required fields exist
       if (!data.id || !data.name) {
-        console.error('Missing required fields in response:', data);
         throw new Error('Invalid warehouse data: missing id or name');
       }
 
       // Ensure storage_units is an array
       if (!Array.isArray(data.storage_units)) {
-        console.warn('storage_units is not an array, defaulting to empty array');
         data.storage_units = [];
       }
 
       return data;
     } catch (error) {
-      console.error('Failed to fetch warehouse locations:', error);
       throw error;
     }
   },
@@ -130,7 +124,7 @@ export const warehouseApi = {
         try {
           data = JSON.parse(data);
         } catch (e) {
-          console.error('Failed to parse JSON string:', e);
+          // Failed to parse JSON
         }
       }
 
@@ -141,7 +135,6 @@ export const warehouseApi = {
 
       return data;
     } catch (error) {
-      console.error('Failed to save warehouse locations:', error);
       throw error;
     }
   },
@@ -164,7 +157,6 @@ export const warehouseApi = {
 
       return response.data;
     } catch (error) {
-      console.error('Failed to fetch warehouse list:', error);
       // Return empty array as fallback
       return [];
     }

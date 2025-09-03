@@ -71,7 +71,6 @@ export const productionCodeEntryApi = {
         userToken
       );
 
-      console.log('getProductionCodeDetail requestBody:', requestBody);
       const response = await apiClient.post('', requestBody);
       const data = response.data;
 
@@ -81,7 +80,6 @@ export const productionCodeEntryApi = {
 
       return data;
     } catch (error) {
-      console.error('Failed to fetch production code detail:', error);
       throw error;
     }
   },
@@ -109,7 +107,6 @@ export const productionCodeEntryApi = {
 
       return data.jebolan || [];
     } catch (error) {
-      console.error('Failed to fetch jebolan:', error);
       throw error;
     }
   },
@@ -133,7 +130,6 @@ export const productionCodeEntryApi = {
       const response = await apiClient.post('', requestBody);
       return response.data;
     } catch (error) {
-      console.error('Failed to save jebolan:', error);
       throw error;
     }
   },
@@ -161,7 +157,6 @@ export const productionCodeEntryApi = {
 
       return data;
     } catch (error) {
-      console.error('Failed to fetch kode produksi:', error);
       throw error;
     }
   },
@@ -184,7 +179,6 @@ export const productionCodeEntryApi = {
       const response = await apiClient.post('', requestBody);
       return response.data;
     } catch (error) {
-      console.error('Failed to create kode produksi:', error);
       throw error;
     }
   },
@@ -206,7 +200,6 @@ export const productionCodeEntryApi = {
       const response = await apiClient.post('', requestBody);
       return response.data;
     } catch (error) {
-      console.error('Failed to delete jebolan:', error);
       throw error;
     }
   },
@@ -227,7 +220,6 @@ export const productionCodeEntryApi = {
       const response = await apiClient.post('', requestBody);
       return response.data;
     } catch (error) {
-      console.error('Failed to delete kode produksi:', error);
       throw error;
     }
   }

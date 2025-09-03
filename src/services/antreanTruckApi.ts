@@ -46,7 +46,6 @@ export const antreanTruckApi = {
         userToken
       ));
 
-      console.log('Antrean Truck API Response:', response.data);
 
       // Parse the response - handle double encoding issue
       let data = response.data;
@@ -55,9 +54,8 @@ export const antreanTruckApi = {
       if (typeof data === 'string') {
         try {
           data = JSON.parse(data);
-          console.log('Parsed response:', data);
         } catch (e) {
-          console.error('Failed to parse JSON string:', e);
+          // Failed to parse JSON
         }
       }
 
@@ -68,7 +66,6 @@ export const antreanTruckApi = {
 
       // Validate response structure
       if (!Array.isArray(data)) {
-        console.error('Invalid response structure:', data);
         throw new Error('Invalid response from server');
       }
 
@@ -82,7 +79,6 @@ export const antreanTruckApi = {
 
       return antreanList;
     } catch (error) {
-      console.error('Failed to fetch antrean truck list:', error);
       throw error;
     }
   }

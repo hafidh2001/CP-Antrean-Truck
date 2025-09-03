@@ -55,7 +55,6 @@ export const productionCodeApi = {
         userToken
       ));
 
-      console.log('Production Code API Response:', response.data);
 
       // Parse the response
       let data = response.data;
@@ -65,7 +64,7 @@ export const productionCodeApi = {
         try {
           data = JSON.parse(data);
         } catch (e) {
-          console.error('Failed to parse JSON string:', e);
+          // Failed to parse JSON
         }
       }
 
@@ -76,13 +75,11 @@ export const productionCodeApi = {
 
       // Validate response structure
       if (!data || typeof data !== 'object' || !Array.isArray(data.productionCodes)) {
-        console.error('Invalid response structure:', data);
         throw new Error('Invalid response from server');
       }
 
       return data as ApiProductionCodeResponse;
     } catch (error) {
-      console.error('Failed to fetch production codes:', error);
       throw error;
     }
   }

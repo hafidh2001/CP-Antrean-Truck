@@ -48,9 +48,6 @@ export default function DecryptPage() {
         decodedString += '=';
       }
       
-      console.log('Original:', encrypted);
-      console.log('Attempting to decrypt:', decodedString);
-      console.log('String length:', decodedString.length);
       
       // Decode from base64
       const raw = atob(decodedString);
@@ -93,7 +90,6 @@ export default function DecryptPage() {
       setDecryptedData(data);
       setError(null);
     } catch (err) {
-      console.error('Decryption error:', err);
       setError('Failed to decrypt data. Invalid or corrupted encryption.');
       setDecryptedData(null);
     }
@@ -104,7 +100,7 @@ export default function DecryptPage() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }).catch(err => {
-      console.error('Failed to copy:', err);
+      // Failed to copy
     });
   };
 

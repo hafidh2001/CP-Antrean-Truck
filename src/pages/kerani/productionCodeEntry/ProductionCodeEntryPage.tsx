@@ -8,6 +8,7 @@ import type { IProductionCodeCard } from '@/types/productionCode';
 import { sessionService } from '@/services/sessionService';
 import { ROUTES } from '@/utils/routes';
 import { productionCodeEntryApi } from '@/services/productionCodeEntryApi';
+import { showToast } from '@/utils/toast';
 
 export function ProductionCodeEntryPage() {
   const navigate = useNavigate();
@@ -30,10 +31,8 @@ export function ProductionCodeEntryPage() {
 
   useEffect(() => {
     const validateAndLoadData = async () => {
-      console.log('ProductionCodeEntry - antreanId:', antreanId, 'goodsId:', goodsId);
       
       const session = await sessionService.getSession();
-      console.log('ProductionCodeEntry - session:', session);
       
       const isValid = session?.user_token ? true : false;
       setHasAccess(isValid);
@@ -41,7 +40,6 @@ export function ProductionCodeEntryPage() {
       
       if (isValid && antreanId && goodsId && session?.user_token) {
         setIsLoading(true);
-        console.log('ProductionCodeEntry - Starting to fetch data...');
         
         try {
           // Fetch production detail using antrean_id and goods_id
@@ -75,7 +73,6 @@ export function ProductionCodeEntryPage() {
           setCompletedEntries(kodeProduksiData.completed_entries);
           
         } catch (error) {
-          console.error('Failed to load data:', error);
           setError(error instanceof Error ? error.message : 'Failed to load data');
         } finally {
           setIsLoading(false);
@@ -93,7 +90,7 @@ export function ProductionCodeEntryPage() {
         const jebolanData = await productionCodeEntryApi.getJebolan(antreanId, goodsId, session.user_token);
         setJebolan(jebolanData);
       } catch (error) {
-        console.error('Failed to reload jebolan:', error);
+        // Silent fail
       }
     }
   };
@@ -116,7 +113,7 @@ export function ProductionCodeEntryPage() {
           });
         }
       } catch (error) {
-        console.error('Failed to reload kode produksi:', error);
+        // Silent fail
       }
     }
   };
@@ -146,6 +143,8 @@ export function ProductionCodeEntryPage() {
           
           // Reload to confirm deletion
           await reloadJebolan();
+          
+          showToast('Jebolan berhasil dihapus', 'success');
           return;
         }
         
@@ -175,8 +174,12 @@ export function ProductionCodeEntryPage() {
         
         // Reload only jebolan data to get real IDs from server
         await reloadJebolan();
+        
+        const message = jebolanIdToEdit ? 'Jebolan berhasil diperbarui' : 'Jebolan berhasil ditambahkan';
+        showToast(message, 'success');
       } catch (error) {
-        console.error('Failed to process jebolan:', error);
+        // Show error toast
+        showToast('Gagal memproses jebolan', 'error');
       } finally {
         setIsSubmitting(false);
       }
@@ -230,10 +233,13 @@ export function ProductionCodeEntryPage() {
       
       // Reload only kode produksi data
       await reloadKodeProduksi();
+      
+      showToast('Kode produksi berhasil ditambahkan', 'success');
     } catch (error) {
-      console.error('Failed to add production code:', error);
       if (error instanceof Error && error.message === 'Kode produksi already exists') {
-        alert('Kode produksi sudah ada');
+        showToast('Kode produksi sudah ada', 'error');
+      } else {
+        showToast('Gagal menambah kode produksi', 'error');
       }
     } finally {
       setIsSubmitting(false);
@@ -255,8 +261,10 @@ export function ProductionCodeEntryPage() {
       
       // Reload only kode produksi data
       await reloadKodeProduksi();
+      
+      showToast('Kode produksi berhasil dihapus', 'success');
     } catch (error) {
-      console.error('Failed to delete production code:', error);
+      showToast('Gagal menghapus kode produksi', 'error');
     } finally {
       setIsSubmitting(false);
     }
