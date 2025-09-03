@@ -189,6 +189,28 @@ export const productionCodeEntryApi = {
     }
   },
 
+  // Delete jebolan
+  async deleteJebolan(antreanId: string, goodsId: string, userToken: string): Promise<SaveResponse> {
+    try {
+      const requestBody = createApiRequest(
+        'deleteJebolan',
+        'TAntreanJebolan',
+        { 
+          user_token: userToken,
+          antrean_id: parseInt(antreanId),
+          goods_id: parseInt(goodsId)
+        },
+        userToken
+      );
+
+      const response = await apiClient.post('', requestBody);
+      return response.data;
+    } catch (error) {
+      console.error('Failed to delete jebolan:', error);
+      throw error;
+    }
+  },
+
   // Delete kode produksi
   async deleteKodeProduksi(kodeProduksiId: number, userToken: string): Promise<SaveResponse> {
     try {

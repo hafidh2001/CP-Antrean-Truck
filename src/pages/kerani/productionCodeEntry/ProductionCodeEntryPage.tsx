@@ -125,15 +125,33 @@ export function ProductionCodeEntryPage() {
     if (e.key === 'Enter') {
       e.preventDefault();
       
-      const quantity = parseInt(jebolainInput);
-      if (isNaN(quantity) || quantity <= 0) return;
-      
       const session = await sessionService.getSession();
       if (!session?.user_token || !antreanId || !goodsId) return;
       
       setIsSubmitting(true);
       
       try {
+        // Check if input is empty - means delete
+        if (!jebolainInput.trim()) {
+          // Optimistic update - clear jebolan immediately
+          setJebolan([]);
+          
+          setJebolainInput('');
+          setIsEditingJebolan(false);
+          setEditingJebolanId(null);
+          (e.target as HTMLInputElement).blur();
+          
+          // Call delete API
+          await productionCodeEntryApi.deleteJebolan(antreanId, goodsId, session.user_token);
+          
+          // Reload to confirm deletion
+          await reloadJebolan();
+          return;
+        }
+        
+        const quantity = parseInt(jebolainInput);
+        if (isNaN(quantity) || quantity <= 0) return;
+        
         const jebolanIdToEdit = editingJebolanId || (jebolan.length > 0 ? jebolan[0].id : undefined);
         
         // Update UI immediately with optimistic update
@@ -158,7 +176,7 @@ export function ProductionCodeEntryPage() {
         // Reload only jebolan data to get real IDs from server
         await reloadJebolan();
       } catch (error) {
-        console.error('Failed to save jebolan:', error);
+        console.error('Failed to process jebolan:', error);
       } finally {
         setIsSubmitting(false);
       }

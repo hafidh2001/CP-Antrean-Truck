@@ -136,4 +136,48 @@ class TAntreanJebolan extends ActiveRecord
 		}
 	}
 
+	/**
+	 * Delete Jebolan
+	 * @param array $params
+	 * @return array
+	 */
+	public static function deleteJebolan($params = [])
+	{
+		$user_token = isset($params['user_token']) ? $params['user_token'] : null;
+		$antrean_id = isset($params['antrean_id']) ? $params['antrean_id'] : null;
+		$goods_id = isset($params['goods_id']) ? $params['goods_id'] : null;
+		
+		// Validate user_token exists (for authentication)
+		$userQuery = "SELECT id FROM p_user WHERE user_token = :user_token LIMIT 1";
+		$userCommand = Yii::app()->db->createCommand($userQuery);
+		$userCommand->bindValue(':user_token', $user_token, PDO::PARAM_STR);
+		$user = $userCommand->queryRow();
+		
+		if (!$user) {
+			return ['error' => 'Invalid user token'];
+		}
+		
+		if (!$antrean_id || !$goods_id) {
+			return ['error' => 'antrean_id and goods_id are required'];
+		}
+		
+		// Delete all jebolan for this antrean-goods combination
+		$deleteQuery = "DELETE FROM t_antrean_jebolan 
+			WHERE antrean_id = :antrean_id AND goods_id = :goods_id";
+		
+		$deleteCommand = Yii::app()->db->createCommand($deleteQuery);
+		$deleteCommand->bindValue(':antrean_id', $antrean_id, PDO::PARAM_INT);
+		$deleteCommand->bindValue(':goods_id', $goods_id, PDO::PARAM_INT);
+		
+		if ($deleteCommand->execute() !== false) {
+			return array(
+				'success' => true
+			);
+		} else {
+			return array(
+				'error' => 'Failed to delete jebolan'
+			);
+		}
+	}
+
 }
