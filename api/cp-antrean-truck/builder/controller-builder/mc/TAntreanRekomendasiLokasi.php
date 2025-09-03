@@ -1,8 +1,8 @@
 <?php
 
-Yii::import("app.modules.superadmin.forms.mGate.*");
+Yii::import("app.modules.mc.forms.tAntreanRekomendasiLokasi.*");
 
-class MGateController extends Controller {
+class TAntreanRekomendasiLokasiController extends Controller {
     public function filters() {
         // Use access control filter
         return ['accessControl'];
@@ -14,32 +14,32 @@ class MGateController extends Controller {
     }
     
     public function actionIndex() {
-        $this->renderForm('SuperadminMGateIndex');
+        $this->renderForm('McTAntreanRekomendasiLokasiIndex');
     }
 
     public function actionEdit($id = null) {
         if(is_null($id)){
-            $model = new SuperadminMGateForm;    
+            $model = new McTAntreanRekomendasiLokasiForm;    
         } else {
-            $model = $this->loadModel($id, "SuperadminMGateForm");       
+            $model = $this->loadModel($id, "McTAntreanRekomendasiLokasiForm");       
         }
         
-        if (isset($_POST["SuperadminMGateForm"])) {
-            $model->attributes = $_POST["SuperadminMGateForm"];
+        if (isset($_POST["McTAntreanRekomendasiLokasiForm"])) {
+            $model->attributes = $_POST["McTAntreanRekomendasiLokasiForm"];
             if ($model->save()) {
                 $this->flash('Data Berhasil Disimpan');
                 $this->redirect(['index']);
             }
         }
-        $this->renderForm("SuperadminMGateForm", $model);
+        $this->renderForm("McTAntreanRekomendasiLokasiForm", $model);
     }
 
     public function actionDelete($id) {
         if (strpos($id, ',') > 0) {
-            ActiveRecord::batchDelete("SuperadminMGateForm", explode(",", $id));
+            ActiveRecord::batchDelete("McTAntreanRekomendasiLokasiForm", explode(",", $id));
             $this->flash('Data Berhasil Dihapus');
         } else {
-            $model = $this->loadModel($id, "SuperadminMGateForm");
+            $model = $this->loadModel($id, "McTAntreanRekomendasiLokasiForm");
             if (!is_null($model)) {
                 $this->flash('Data Berhasil Dihapus');
                 $model->delete();

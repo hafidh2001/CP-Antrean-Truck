@@ -1,6 +1,6 @@
 <?php
 
-Yii::import("app.modules.mc.forms.tAntrean.*");
+Yii::import("app.modules.superadmin.forms.tAntrean.*");
 
 class TAntreanController extends Controller {
     public function filters() {
@@ -12,31 +12,30 @@ class TAntreanController extends Controller {
         // Only allow authenticated users
         return [['allow', 'users' => ['@']],['deny']];
     }
-
-    public function actionIndex() {
-        $this->renderForm('McTAntreanIndex');
-    }
     
+        public function actionIndex() {
+        $this->renderForm('SuperadminTAntreanIndex');
+    }
+
     public function actionHistory() {
-        $this->renderForm('McTAntreanHistory');
+        $this->renderForm('SuperadminTAntreanHistory');
     }
     
     public function actionFind($nopol) {
         $nopol = trim($nopol);
         
         $antrean = TAntrean::model()->find(
-            "nopol = :nopol AND status = 'OPEN'",
+            "nopol = :nopol AND status = 'LOADING'",
             [":nopol" => $nopol]
         );
     
         if ($antrean !== null) {
-            $this->redirect(['/mc/tAntrean/edit', 'id' => $antrean->id]);
+            $this->redirect(['/superadmin/tAntrean/edit', 'id' => $antrean->id]);
         } else {
             Yii::app()->user->setFlash('error', 'Antrean tidak ada.');
-            $this->redirect(['/mc/tAntrean/index']);
+             $this->redirect(['/superadmin/tAntrean/index']);
         }
     }
-    
 
     public function actionSaveRec(){
         $rest_json = file_get_contents("php://input");
@@ -62,14 +61,14 @@ class TAntreanController extends Controller {
             echo json_encode(['status' => 0, 'msg' => 'Missing ID']);
         }
 
-        $this->renderForm("McTAntreanForm");
+        $this->renderForm("SuperadminTAntreanForm");
     }
 
     public function actionEdit($id = null) {
-        if (is_null($id)) {
-            $model = new McTAntreanForm;    
+        if(is_null($id)){
+            $model = new SuperadminTAntreanForm;    
         } else {
-            $model = $this->loadModel($id, "McTAntreanForm"); 
+            $model = $this->loadModel($id, "SuperadminTAntreanForm");
             
             $gates = TAntreanGate::model()->findAll(
                 "antrean_id = :id",
@@ -78,13 +77,13 @@ class TAntreanController extends Controller {
             
             $model->gate_i_id = isset($gates[0]) ? $gates[0]->gate_id : null;
             $model->gate_ii_id = isset($gates[1]) ? $gates[1]->gate_id : null;
-            
         }
-
-        if (isset($_POST["McTAntreanForm"])) {
-            $model->attributes = $_POST["McTAntreanForm"];
-
+        
+        if (isset($_POST["SuperadminTAntreanForm"])) {
+            $model->attributes = $_POST["SuperadminTAntreanForm"];
+            
             $transaction = Yii::app()->db->beginTransaction();
+
             try {
                 if ($model->save()) {
                     $antreanId = $model->id;
@@ -92,18 +91,24 @@ class TAntreanController extends Controller {
                     // Update t_antrean (warehouse)
                     $antrean = TAntrean::model()->findByPk($antreanId);
                     if ($antrean) {
-                        $antrean->warehouse_id = isset($_POST["McTAntreanForm"]["warehouse_id"]) 
-                            ? $_POST["McTAntreanForm"]["warehouse_id"]
+                        $antrean->warehouse_id = isset($_POST["SuperadminTAntreanForm"]["warehouse_id"]) 
+                            ? $_POST["SuperadminTAntreanForm"]["warehouse_id"]
                             : $antrean->warehouse_id;
 
-                        $antrean->warehouse_override_id = isset($_POST["McTAntreanForm"]["warehouse_override_id"]) 
-                            ? $_POST["McTAntreanForm"]["warehouse_override_id"] 
+                        $antrean->warehouse_override_id = isset($_POST["SuperadminTAntreanForm"]["warehouse_override_id"]) 
+                            ? $_POST["SuperadminTAntreanForm"]["warehouse_override_id"] 
                             : $antrean->warehouse_override_id;
                         
-                        if (isset($_POST["McTAntreanForm"]["kerani_id"])) {
-                            $antrean->kerani_id = $_POST["McTAntreanForm"]["kerani_id"];
+                        if (isset($_POST["SuperadminTAntreanForm"]["kerani_id"])) {
+                            $antrean->kerani_id = $_POST["SuperadminTAntreanForm"]["kerani_id"];
                             $antrean->assigned_kerani_time = date('Y-m-d H:i:s');
                             $antrean->status = "LOADING";
+                        }
+                        
+                        if (isset($_POST["SuperadminTAntreanForm"]["admin_id"])) {
+                            $antrean->admin_id = $_POST["SuperadminTAntreanForm"]["admin_id"];
+                            $antrean->assigned_kerani_time = date('Y-m-d H:i:s');
+                            $antrean->status = "VERIFIYING";
                         }
 
                         $antrean->save();
@@ -111,8 +116,8 @@ class TAntreanController extends Controller {
     
                     // Update t_antrean_gate
                     $gatesInput = [
-                        isset($_POST["McTAntreanForm"]["gate_i_id"]) ? $_POST["McTAntreanForm"]["gate_i_id"] : null,
-                        isset($_POST["McTAntreanForm"]["gate_ii_id"]) ? $_POST["McTAntreanForm"]["gate_ii_id"] : null,
+                        isset($_POST["SuperadminTAntreanForm"]["gate_i_id"]) ? $_POST["SuperadminTAntreanForm"]["gate_i_id"] : null,
+                        isset($_POST["SuperadminTAntreanForm"]["gate_ii_id"]) ? $_POST["SuperadminTAntreanForm"]["gate_ii_id"] : null,
                     ];
 
                     $gates = array_unique(array_filter($gatesInput));
@@ -134,20 +139,20 @@ class TAntreanController extends Controller {
 
                     if (isset($lokasi)) {
                         foreach ($lokasi as $item) {
-                            $item->location_id = isset($_POST["McTAntreanForm"]["location_id"])
-                                ? $_POST["McTAntreanForm"]["location_id"] 
+                            $item->location_id = isset($_POST["SuperadminTAntreanForm"]["location_id"])
+                                ? $_POST["SuperadminTAntreanForm"]["location_id"] 
                                 : $item->location_id;
                         
-                            $item->location_override_id = isset($_POST["McTAntreanForm"]["location_override_id"])
-                                ? $_POST["McTAntreanForm"]["location_override_id"] 
+                            $item->location_override_id = isset($_POST["SuperadminTAntreanForm"]["location_override_id"])
+                                ? $_POST["SuperadminTAntreanForm"]["location_override_id"] 
                                 : $item->location_override_id;
                                 
-                            $item->qty = isset($_POST["McTAntreanForm"]["qty"])
-                                ? $_POST["McTAntreanForm"]["qty"] 
+                            $item->qty = isset($_POST["SuperadminTAntreanForm"]["qty"])
+                                ? $_POST["SuperadminTAntreanForm"]["qty"] 
                                 : $item->qty;
                                 
-                             $item->qty_override_id = isset($_POST["McTAntreanForm"]["qty_override"])
-                                ? $_POST["McTAntreanForm"]["qty_override"] 
+                             $item->qty_override_id = isset($_POST["SuperadminTAntreanForm"]["qty_override"])
+                                ? $_POST["SuperadminTAntreanForm"]["qty_override"] 
                                 : $item->qty_override_id;
                         
                             $item->save();
@@ -176,15 +181,15 @@ class TAntreanController extends Controller {
         
         $model->jenis_truck = $jenis_truck;
     
-        $this->renderForm("McTAntreanForm", $model);
+        $this->renderForm("SuperadminTAntreanForm", $model);
     }
 
     public function actionDelete($id) {
         if (strpos($id, ',') > 0) {
-            ActiveRecord::batchDelete("McTAntreanForm", explode(",", $id));
+            ActiveRecord::batchDelete("SuperadminTAntreanForm", explode(",", $id));
             $this->flash('Data Berhasil Dihapus');
         } else {
-            $model = $this->loadModel($id, "McTAntreanForm");
+            $model = $this->loadModel($id, "SuperadminTAntreanForm");
             if (!is_null($model)) {
                 $this->flash('Data Berhasil Dihapus');
                 $model->delete();
@@ -199,5 +204,5 @@ class TAntreanController extends Controller {
         vdump($id);
         die();
     }
-                    
+    
 }
