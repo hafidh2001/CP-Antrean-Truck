@@ -5,7 +5,6 @@ import { Shield, AlertCircle, CheckCircle, Copy, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
-import { decryptAES } from '@/functions/decrypt';
 
 export default function DecryptPage() {
   const [searchParams] = useSearchParams();
@@ -99,7 +98,7 @@ export default function DecryptPage() {
     navigator.clipboard.writeText(text).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    }).catch(err => {
+    }).catch(() => {
       // Failed to copy
     });
   };
