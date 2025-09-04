@@ -170,7 +170,7 @@ CREATE TABLE "public"."t_antrean_jebolan" (
     "id" integer DEFAULT nextval('t_antrean_jebolan_id_seq') NOT NULL,
     "antrean_id" integer NOT NULL,
     "goods_id" integer NOT NULL,
-    "qty" integer NOT NULL,
+    "qty" numeric NOT NULL,
     CONSTRAINT "t_antrean_jebolan_pkey" PRIMARY KEY ("id")
 ) WITH (oids = false);
 
@@ -342,4 +342,4 @@ ALTER TABLE ONLY "public"."t_stock" ADD CONSTRAINT "t_stock_location_id_fkey" FO
 ALTER TABLE ONLY "public"."t_stock" ADD CONSTRAINT "t_stock_opnam_id_fkey" FOREIGN KEY (opnam_id) REFERENCES t_opnam(id) NOT DEFERRABLE;
 ALTER TABLE ONLY "public"."t_stock" ADD CONSTRAINT "t_stock_uom_id_fkey" FOREIGN KEY (uom_id) REFERENCES m_uom(id) NOT DEFERRABLE;
 
--- 2025-09-03 03:43:08.719757+02
+-- 2025-09-04 11:20:48.209624+02

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Truck, CheckCircle2, Circle, Trash2 } from 'lucide-react';
+import { ArrowLeft, Truck, CheckCircle2, Circle, Trash2, Mic, MicOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -9,6 +9,7 @@ import { sessionService } from '@/services/sessionService';
 import { ROUTES } from '@/utils/routes';
 import { productionCodeEntryApi } from '@/services/productionCodeEntryApi';
 import { showToast } from '@/utils/toast';
+import { useSpeechToText } from '@/hooks/useSpeechToText';
 
 export function ProductionCodeEntryPage() {
   const navigate = useNavigate();
@@ -28,7 +29,47 @@ export function ProductionCodeEntryPage() {
   const [editingJebolanId, setEditingJebolanId] = useState<number | null>(null);
   const [originalJebolanValue, setOriginalJebolanValue] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmittingJebolan, setIsSubmittingJebolan] = useState(false);
+  const [isSubmittingProduction, setIsSubmittingProduction] = useState(false);
+
+  const handleSpeechEnd = async (finalTranscript: string) => {
+    // Only process if we have actual speech content
+    if (!finalTranscript || finalTranscript.trim().length === 0) return;
+    
+    console.log('Speech recognition ended with final result:', finalTranscript);
+    
+    // Set the input value
+    setJebolainInput(finalTranscript);
+    
+    // Auto-save after speech recognition with the transcript value
+    setTimeout(async () => {
+      await handleJebolanSubmitActionWithValue(finalTranscript);
+    }, 100); // Short delay
+  };
+
+  const { transcript, isListening, startListening, stopListening, isSupported } = useSpeechToText(handleSpeechEnd);
+
+  // Update input field with live transcript
+  useEffect(() => {
+    if (transcript && transcript.trim().length > 0) {
+      // Only update input if we're listening
+      if (isListening) {
+        // If not in editing mode, enter editing mode first
+        if (!isEditingJebolan) {
+          if (jebolan.length > 0) {
+            setOriginalJebolanValue(jebolan[0].qty.toString());
+            setEditingJebolanId(jebolan[0].id);
+          } else {
+            setOriginalJebolanValue('');
+            setEditingJebolanId(null);
+          }
+          setIsEditingJebolan(true);
+        }
+        
+        setJebolainInput(transcript);
+      }
+    }
+  }, [transcript, isListening, isEditingJebolan, jebolan]);
 
   useEffect(() => {
     const validateAndLoadData = async () => {
@@ -84,6 +125,7 @@ export function ProductionCodeEntryPage() {
     validateAndLoadData();
   }, [antreanId, goodsId]);
 
+
   const reloadJebolan = async () => {
     const session = await sessionService.getSession();
     if (session?.user_token && antreanId && goodsId) {
@@ -119,15 +161,17 @@ export function ProductionCodeEntryPage() {
     }
   };
 
-  const handleJebolanSubmitAction = async () => {
+  const handleJebolanSubmitActionWithValue = async (value?: string) => {
+    const inputValue = value || jebolainInput;
+    
     const session = await sessionService.getSession();
     if (!session?.user_token || !antreanId || !goodsId) return;
     
-    setIsSubmitting(true);
+    setIsSubmittingJebolan(true);
     
     try {
       // Check if input is empty - means delete
-      if (!jebolainInput.trim()) {
+      if (!inputValue.trim()) {
         // Optimistic update - clear jebolan immediately
         setJebolan([]);
         
@@ -145,7 +189,7 @@ export function ProductionCodeEntryPage() {
         return;
       }
       
-      const quantity = parseInt(jebolainInput);
+      const quantity = parseInt(inputValue);
       if (isNaN(quantity) || quantity <= 0) return;
       
       const jebolanIdToEdit = editingJebolanId || (jebolan.length > 0 ? jebolan[0].id : undefined);
@@ -177,8 +221,12 @@ export function ProductionCodeEntryPage() {
       // Show error toast
       showToast('Gagal memproses jebolan', 'error');
     } finally {
-      setIsSubmitting(false);
+      setIsSubmittingJebolan(false);
     }
+  };
+
+  const handleJebolanSubmitAction = async () => {
+    await handleJebolanSubmitActionWithValue();
   };
 
   const handleJebolanSubmit = async (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -222,6 +270,55 @@ export function ProductionCodeEntryPage() {
     await handleJebolanSubmitAction();
   };
 
+  // Voice recording handlers
+  const [isMobileHold, setIsMobileHold] = useState(false);
+  
+  // Detect if it's a touch device
+  const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+  const handleVoiceInteraction = () => {
+    if (isTouchDevice) {
+      // Mobile: single tap to toggle
+      if (isListening) {
+        stopListening();
+      } else {
+        startListening(false); // Click mode for mobile too
+      }
+    } else {
+      // Desktop: click to toggle
+      if (isListening) {
+        stopListening();
+      } else {
+        startListening(false); // Click mode
+      }
+    }
+  };
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    if (e.pointerType === 'touch') {
+      // For touch devices, we'll use long press detection
+      const longPressTimer = setTimeout(() => {
+        setIsMobileHold(true);
+        startListening(true); // Auto-stop mode for hold
+      }, 500); // 500ms for long press
+      
+      e.currentTarget.setAttribute('data-timer', String(longPressTimer));
+    }
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    const timerId = e.currentTarget.getAttribute('data-timer');
+    if (timerId) {
+      clearTimeout(Number(timerId));
+      e.currentTarget.removeAttribute('data-timer');
+    }
+    
+    if (isMobileHold) {
+      stopListening();
+      setIsMobileHold(false);
+    }
+  };
+
   const handleAddProductionCode = async () => {
     if (!productionCodeInput.trim() || !productionCodeData) return;
     
@@ -234,7 +331,7 @@ export function ProductionCodeEntryPage() {
     const session = await sessionService.getSession();
     if (!session?.user_token || !antreanId || !goodsId) return;
     
-    setIsSubmitting(true);
+    setIsSubmittingProduction(true);
     
     try {
       await productionCodeEntryApi.createKodeProduksi(
@@ -257,7 +354,7 @@ export function ProductionCodeEntryPage() {
         showToast('Gagal menambah kode produksi', 'error');
       }
     } finally {
-      setIsSubmitting(false);
+      setIsSubmittingProduction(false);
     }
   };
 
@@ -266,7 +363,7 @@ export function ProductionCodeEntryPage() {
     const session = await sessionService.getSession();
     if (!session?.user_token) return;
     
-    setIsSubmitting(true);
+    setIsSubmittingProduction(true);
     
     try {
       await productionCodeEntryApi.deleteKodeProduksi(
@@ -281,7 +378,7 @@ export function ProductionCodeEntryPage() {
     } catch (error) {
       showToast('Gagal menghapus kode produksi', 'error');
     } finally {
-      setIsSubmitting(false);
+      setIsSubmittingProduction(false);
     }
   };
 
@@ -406,31 +503,50 @@ export function ProductionCodeEntryPage() {
             <h3 className="text-lg font-semibold text-gray-800 mb-3">Jebolan</h3>
             
             {/* Jebolan Input/Display */}
-            {isEditingJebolan || jebolan.length === 0 ? (
-              <Input
-                type="tel"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                placeholder="Jumlah jebolan (opsional)"
-                value={jebolainInput}
-                onChange={(e) => setJebolainInput(e.target.value)}
-                onKeyDown={handleJebolanSubmit}
-                onBlur={handleJebolanBlur}
-                className="w-full"
-                autoFocus={isEditingJebolan}
-              />
-            ) : (
-              <Card 
-                className="border-gray-300 cursor-pointer hover:bg-gray-50"
-                onClick={handleJebolanClick}
-              >
-                <CardContent className="p-3">
-                  <div className="text-sm text-gray-900">
-                    {jebolan[0].qty}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+            <div className="flex gap-2">
+              {isEditingJebolan || jebolan.length === 0 ? (
+                <Input
+                  type="tel"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  placeholder="Jumlah jebolan (opsional)"
+                  value={jebolainInput}
+                  onChange={(e) => setJebolainInput(e.target.value)}
+                  onKeyDown={handleJebolanSubmit}
+                  onBlur={handleJebolanBlur}
+                  className="flex-1"
+                  autoFocus={isEditingJebolan}
+                />
+              ) : (
+                <Card 
+                  className="border-gray-300 cursor-pointer hover:bg-gray-50 flex-1"
+                  onClick={handleJebolanClick}
+                >
+                  <CardContent className="p-3">
+                    <div className="text-sm text-gray-900">
+                      {jebolan[0].qty}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              
+              {/* Voice Button - Always visible */}
+              {isSupported && (
+                <Button
+                  id="voice-button"
+                  type="button"
+                  variant={isListening ? "default" : "outline"}
+                  onClick={handleVoiceInteraction}
+                  onPointerDown={handlePointerDown}
+                  onPointerUp={handlePointerUp}
+                  onPointerCancel={handlePointerUp}
+                  disabled={isSubmittingJebolan}
+                  className={`h-[44px] w-[44px] p-0 flex items-center justify-center ${isListening ? 'bg-red-500 hover:bg-red-600 text-white' : ''}`}
+                >
+                  {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                </Button>
+              )}
+            </div>
           </div>
 
           {/* Production Codes Section */}
@@ -447,14 +563,14 @@ export function ProductionCodeEntryPage() {
                 value={productionCodeInput}
                 onChange={(e) => setProductionCodeInput(e.target.value)}
                 className="flex-1"
-                disabled={!canAddProductionCode || isSubmitting}
+                disabled={!canAddProductionCode || isSubmittingProduction}
               />
               <Button
                 onClick={handleAddProductionCode}
-                disabled={!canAddProductionCode || !productionCodeInput.trim() || isSubmitting}
+                disabled={!canAddProductionCode || !productionCodeInput.trim() || isSubmittingProduction}
                 className="px-6"
               >
-                {isSubmitting ? 'Adding...' : 'Add'}
+                {isSubmittingProduction ? 'Adding...' : 'Add'}
               </Button>
             </div>
             
@@ -472,7 +588,7 @@ export function ProductionCodeEntryPage() {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleDeleteProductionCode(code.id)}
-                          disabled={isSubmitting}
+                          disabled={isSubmittingProduction}
                           className="text-red-600 hover:text-red-700 hover:bg-red-50 h-7 w-7 p-0"
                         >
                           <Trash2 className="h-3 w-3" />
