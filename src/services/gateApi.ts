@@ -5,6 +5,11 @@ import type { IGateOption } from '@/types/productionCode';
 const API_URL = import.meta.env.VITE_API_URL;
 const API_TOKEN = import.meta.env.VITE_API_TOKEN;
 
+// Validate environment variables
+if (!API_URL || !API_TOKEN) {
+  throw new Error('API configuration is missing. Please check environment variables.');
+}
+
 // Create axios instance with default config
 const apiClient = axios.create({
   baseURL: API_URL,

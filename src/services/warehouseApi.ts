@@ -5,6 +5,11 @@ import { IWarehouse, TAnyStorageUnit } from '@/types/warehouseDetail';
 const API_URL = import.meta.env.VITE_API_URL;
 const API_TOKEN = import.meta.env.VITE_API_TOKEN;
 
+// Validate environment variables
+if (!API_URL || !API_TOKEN) {
+  throw new Error('API configuration is missing. Please check environment variables.');
+}
+
 // Create axios instance with default config
 const apiClient = axios.create({
   baseURL: API_URL,
@@ -12,6 +17,16 @@ const apiClient = axios.create({
     'Content-Type': 'application/json',
   },
   timeout: 30000, // 30 seconds
+});
+
+// Helper to create API request body
+const createApiRequest = (functionName: string, model: string, params: any, userToken: string) => ({
+  function: functionName,
+  mode: 'function',
+  model: model,
+  params: params,
+  token: API_TOKEN,
+  user_token: userToken,
 });
 
 // Response interfaces
@@ -32,16 +47,6 @@ interface SaveLocationResponse {
     errors: string[];
   };
 }
-
-// Helper to create API request body
-const createApiRequest = (functionName: string, model: string, params: any, userToken: string) => ({
-  function: functionName,
-  mode: 'function',
-  model: model,
-  params: params,
-  token: API_TOKEN,
-  user_token: userToken,
-});
 
 export const warehouseApi = {
   /**

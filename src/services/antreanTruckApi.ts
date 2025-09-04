@@ -7,10 +7,7 @@ const API_TOKEN = import.meta.env.VITE_API_TOKEN;
 
 // Validate environment variables
 if (!API_URL || !API_TOKEN) {
-  console.error('Missing required environment variables:', {
-    API_URL: API_URL || 'NOT SET',
-    API_TOKEN: API_TOKEN || 'NOT SET'
-  });
+  throw new Error('API configuration is missing. Please check environment variables.');
 }
 
 // Create axios instance with default config

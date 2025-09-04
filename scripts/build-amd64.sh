@@ -19,11 +19,15 @@ TAG="amd64"
 
 echo "Building Docker image for AMD64 architecture..."
 echo "Using VITE_DECRYPT_SECRET_KEY: ${VITE_DECRYPT_SECRET_KEY:0:4}****" # Show first 4 chars for verification
+echo "Using VITE_API_URL: ${VITE_API_URL}"
+echo "Using VITE_API_TOKEN: ${VITE_API_TOKEN:0:4}****" # Show first 4 chars for verification
 
 # Build the image for AMD64
 docker buildx build \
   --platform linux/amd64 \
   --build-arg VITE_DECRYPT_SECRET_KEY="${VITE_DECRYPT_SECRET_KEY}" \
+  --build-arg VITE_API_URL="${VITE_API_URL}" \
+  --build-arg VITE_API_TOKEN="${VITE_API_TOKEN}" \
   -t ${IMAGE_NAME}:${TAG} \
   --load \
   .
