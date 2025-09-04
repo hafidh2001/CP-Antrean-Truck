@@ -26,6 +26,7 @@ export function ProductionCodeEntryPage() {
   const [productionCodeInput, setProductionCodeInput] = useState('');
   const [isEditingJebolan, setIsEditingJebolan] = useState(false);
   const [editingJebolanId, setEditingJebolanId] = useState<number | null>(null);
+  const [originalJebolanValue, setOriginalJebolanValue] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -118,93 +119,107 @@ export function ProductionCodeEntryPage() {
     }
   };
 
-  const handleJebolanSubmit = async (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      
-      const session = await sessionService.getSession();
-      if (!session?.user_token || !antreanId || !goodsId) return;
-      
-      setIsSubmitting(true);
-      
-      try {
-        // Check if input is empty - means delete
-        if (!jebolainInput.trim()) {
-          // Optimistic update - clear jebolan immediately
-          setJebolan([]);
-          
-          setJebolainInput('');
-          setIsEditingJebolan(false);
-          setEditingJebolanId(null);
-          (e.target as HTMLInputElement).blur();
-          
-          // Call delete API
-          await productionCodeEntryApi.deleteJebolan(antreanId, goodsId, session.user_token);
-          
-          // Reload to confirm deletion
-          await reloadJebolan();
-          
-          showToast('Jebolan berhasil dihapus', 'success');
-          return;
-        }
-        
-        const quantity = parseInt(jebolainInput);
-        if (isNaN(quantity) || quantity <= 0) return;
-        
-        const jebolanIdToEdit = editingJebolanId || (jebolan.length > 0 ? jebolan[0].id : undefined);
-        
-        // Update UI immediately with optimistic update
-        const optimisticJebolan = jebolanIdToEdit 
-          ? jebolan.map(j => j.id === jebolanIdToEdit ? { ...j, qty: quantity } : j)
-          : [...jebolan, { id: Date.now(), qty: quantity }];
-        setJebolan(optimisticJebolan);
+  const handleJebolanSubmitAction = async () => {
+    const session = await sessionService.getSession();
+    if (!session?.user_token || !antreanId || !goodsId) return;
+    
+    setIsSubmitting(true);
+    
+    try {
+      // Check if input is empty - means delete
+      if (!jebolainInput.trim()) {
+        // Optimistic update - clear jebolan immediately
+        setJebolan([]);
         
         setJebolainInput('');
         setIsEditingJebolan(false);
         setEditingJebolanId(null);
-        (e.target as HTMLInputElement).blur();
         
-        await productionCodeEntryApi.saveJebolan(
-          antreanId,
-          goodsId,
-          quantity,
-          session.user_token,
-          jebolanIdToEdit
-        );
+        // Call delete API
+        await productionCodeEntryApi.deleteJebolan(antreanId, goodsId, session.user_token);
         
-        // Reload only jebolan data to get real IDs from server
+        // Reload to confirm deletion
         await reloadJebolan();
         
-        const message = jebolanIdToEdit ? 'Jebolan berhasil diperbarui' : 'Jebolan berhasil ditambahkan';
-        showToast(message, 'success');
-      } catch (error) {
-        // Show error toast
-        showToast('Gagal memproses jebolan', 'error');
-      } finally {
-        setIsSubmitting(false);
+        showToast('Jebolan berhasil dihapus', 'success');
+        return;
       }
+      
+      const quantity = parseInt(jebolainInput);
+      if (isNaN(quantity) || quantity <= 0) return;
+      
+      const jebolanIdToEdit = editingJebolanId || (jebolan.length > 0 ? jebolan[0].id : undefined);
+      
+      // Update UI immediately with optimistic update
+      const optimisticJebolan = jebolanIdToEdit 
+        ? jebolan.map(j => j.id === jebolanIdToEdit ? { ...j, qty: quantity } : j)
+        : [...jebolan, { id: Date.now(), qty: quantity }];
+      setJebolan(optimisticJebolan);
+      
+      setJebolainInput('');
+      setIsEditingJebolan(false);
+      setEditingJebolanId(null);
+      
+      await productionCodeEntryApi.saveJebolan(
+        antreanId,
+        goodsId,
+        quantity,
+        session.user_token,
+        jebolanIdToEdit
+      );
+      
+      // Reload only jebolan data to get real IDs from server
+      await reloadJebolan();
+      
+      const message = jebolanIdToEdit ? 'Jebolan berhasil diperbarui' : 'Jebolan berhasil ditambahkan';
+      showToast(message, 'success');
+    } catch (error) {
+      // Show error toast
+      showToast('Gagal memproses jebolan', 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleJebolanSubmit = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      await handleJebolanSubmitAction();
     }
   };
 
   const handleJebolanClick = () => {
     if (jebolan.length > 0) {
-      setJebolainInput(jebolan[0].qty.toString());
+      const currentValue = jebolan[0].qty.toString();
+      setJebolainInput(currentValue);
+      setOriginalJebolanValue(currentValue);
       setIsEditingJebolan(true);
       setEditingJebolanId(jebolan[0].id);
     } else {
       setJebolainInput('');
+      setOriginalJebolanValue('');
       setIsEditingJebolan(true);
       setEditingJebolanId(null);
     }
   };
 
-  const handleJebolanBlur = () => {
+  const handleJebolanBlur = async () => {
     if (!isEditingJebolan) return;
     
-    // Reset input if user clicks away without saving
-    setJebolainInput('');
-    setIsEditingJebolan(false);
-    setEditingJebolanId(null);
+    // Check if value actually changed
+    const hasChanged = jebolainInput.trim() !== originalJebolanValue.trim();
+    
+    if (!hasChanged) {
+      // No change, just reset editing state
+      setJebolainInput('');
+      setIsEditingJebolan(false);
+      setEditingJebolanId(null);
+      setOriginalJebolanValue('');
+      return;
+    }
+    
+    // Value changed, proceed with save or delete
+    await handleJebolanSubmitAction();
   };
 
   const handleAddProductionCode = async () => {
