@@ -16,7 +16,10 @@
     "react",
     "typescript"
   ],
-  "author": "",
+  "author": {
+    "name": "Hafidh Ahmad Fauzan",
+    "url": "https://github.com/hafidh2001"
+  },
   "license": "ISC",
   "description": "Truck Queue Management System",
   "devDependencies": {

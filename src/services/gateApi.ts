@@ -1,9 +1,9 @@
 import axios from 'axios';
-import type { IGateOption } from '@/types/gate';
+import type { IGateOption } from '@/types/productionCode';
 
-// API Configuration
-const API_URL = 'https://hachi.kamz-kun.id/cp_fifo/index.php?r=Api';
-const API_TOKEN = 'dctfvgybefvgyabdfhwuvjlnsd';
+// API Configuration from environment variables
+const API_URL = import.meta.env.VITE_API_URL;
+const API_TOKEN = import.meta.env.VITE_API_TOKEN;
 
 // Create axios instance with default config
 const apiClient = axios.create({

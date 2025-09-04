@@ -1,65 +1,65 @@
 # Project Standards Guide
 
+**Author:** Hafidh Ahmad Fauzan  
+**GitHub:** [https://github.com/hafidh2001](https://github.com/hafidh2001)
+
+## Overview
+This document outlines the coding standards, architectural decisions, and best practices for the CP-Antrean-Truck project. Following these standards ensures consistency, maintainability, and scalability across the codebase.
+
+## Project Description
+CP-Antrean-Truck is a mobile-first React application for warehouse staff to manage truck queues and production codes.
+
+### Tech Stack
+- **React 18** with TypeScript
+- **Vite** for fast development and building
+- **Zustand** for state management
+- **Tailwind CSS** for styling
+- **React Router** for navigation
+- **Axios** for API communication
+
+### Key Features
+- Truck queue management
+- Production code tracking per truck
+- Production code entry with jebolan management
+- Gate assignment for trucks
+- Real-time updates with optimistic UI
+- Mobile-first responsive design
+
+## Table of Contents
+1. [Project Structure](#1-project-structure)
+2. [Folder Usage Guidelines](#2-folder-usage-guidelines)
+3. [Import Standards](#3-import-standards)
+4. [Type Declaration Standards](#4-type-declaration-standards)
+5. [Naming Conventions](#5-naming-conventions)
+6. [Module Boundaries](#6-module-boundaries)
+7. [Best Practices](#7-best-practices)
+8. [Module Naming Convention](#8-module-naming-convention)
+9. [Data Flow and localStorage Management](#9-data-flow-and-localstorage-management)
+10. [Authentication & Encryption](#10-authentication--encryption)
+11. [API Integration Standards](#11-api-integration-and-loading-state-standards)
+12. [Environment Configuration](#12-environment-configuration)
+13. [Common Pitfalls to Avoid](#13-common-pitfalls-to-avoid)
+
 ## 1. Project Structure
 
 ```
 src/
-├── pages/                    # Page components organized by role
-│   ├── admin/               # Admin role pages
-│   │   ├── warehouseDetail/ # Edit mode page
-│   │   │   ├── WarehouseDetailPage.tsx
-│   │   │   └── _components/ # Page-specific components
-│   │   └── warehouseView/   # View mode page
-│   │       ├── WarehouseViewPage.tsx
-│   │       └── _components/ # Page-specific components
-│   ├── kerani/               # Krani role pages
-│   │   ├── antreanTruck/    # Truck queue page
-│   │   │   ├── AntreanTruckPage.tsx
-│   │   │   └── _components/ # Page-specific components
-│   │   ├── productionCode/  # Production code list page
-│   │   │   ├── ProductionCodePage.tsx
-│   │   │   └── _components/ # Page-specific components
-│   │   └── productionCodeEntry/ # Production code entry page
-│   │       ├── ProductionCodeEntryPage.tsx
-│   │       └── _components/ # Page-specific components
-│   └── home/                # Shared/public pages
-│       └── HomePage.tsx
-├── store/                   # Zustand stores (one per module)
-│   ├── warehouseDetailStore.ts
-│   ├── warehouseViewStore.ts
-│   ├── antreanTruckStore.ts
-│   ├── productionCodeStore.ts
-│   └── homeStore.ts
-├── types/                   # TypeScript types (organized by module)
-│   ├── warehouseDetail/     # Types for detail module
-│   │   ├── index.ts        # Main types (IWarehouse, IStorageUnit, etc.)
-│   │   └── store.ts        # Store-specific types
-│   ├── warehouseView/       # Types for view module
-│   │   └── index.ts        # Store interface only
-│   ├── antreanTruck/        # Types for antrean truck module
-│   │   ├── index.ts        # Main types (IAntrean, IAntreanCard)
-│   │   └── store.ts        # Store interface
-│   ├── productionCode/      # Types for production code module
-│   │   ├── index.ts        # Main types (IProductionCode, IQuantityItem)
-│   │   └── store.ts        # Store interface
-│   ├── productionCodeEntry/ # Types for production code entry module
-│   │   └── index.ts        # Main types (IJebolan, IProductionCodeEntry)
-│   └── home/                # Types for home module
-│       ├── index.ts        # Main types (IWarehouse)
-│       └── store.ts        # Store interface
-├── services/                # API services (shared across modules)
-│   └── warehouseApi.ts
-├── functions/               # Business logic functions (shared)
-│   ├── decrypt.ts          # Encryption/decryption logic
-│   └── warehouseHelpers.ts # Type guards and helpers
-├── utils/                   # Pure utility functions
-│   └── routes.ts           # Route constants and helpers
-├── hooks/                   # Custom React hooks
-│   └── useModal.ts
-└── constants/              # Constants (shared)
-    └── warehouse.ts
-
+├── pages/              # React page components
+├── store/              # Zustand state management
+├── types/              # TypeScript type definitions
+├── services/           # API communication layer
+├── functions/          # Business logic & helpers
+├── utils/              # Pure utility functions
+├── hooks/              # Custom React hooks
+├── constants/          # App constants
+└── components/         # Reusable UI components
 ```
+
+### Key Principles:
+- **Modular Organization**: Group related files by feature/module
+- **Clear Separation**: Business logic in `/functions`, utilities in `/utils`
+- **Type Safety**: All modules have corresponding type definitions in `/types`
+- **Single Responsibility**: Each file has one clear purpose
 
 ## 2. Folder Usage Guidelines
 
@@ -303,64 +303,53 @@ production-code-entry-{nopol}-{id}  # Entry data for specific production code
 - Update parent data when child data changes
 - Clear data appropriately on logout/reset
 
-## 9. Authentication & Encryption
+## 9. Authentication & Session Management
 
-### Encrypted Token Usage
-All authenticated pages require an encrypted token passed as a URL query parameter:
+### Encrypted Token Handling
+All authenticated pages receive an encrypted token via URL query parameter:
 ```
 /page-name?key={encrypted_token}
 ```
 
-### Token Structure
-The encrypted token contains a JSON object with:
+### Frontend Implementation
 ```typescript
-{
-  user_token: string;      // User authentication token
-  warehouse_id?: number;   // Warehouse ID (optional for some endpoints)
-}
-```
-
-### Decryption Process
-1. **Algorithm**: AES-256-CBC
-2. **Key Derivation**: SHA-256 hash of secret key
-3. **Format**: Base64 encoded (IV + Ciphertext)
-4. **Implementation**: `/src/functions/decrypt.ts`
-
-### Environment Configuration
-```bash
-VITE_DECRYPT_SECRET_KEY=your_secret_key_here
-```
-⚠️ **Important**: Must match the backend PHP secret key
-
-### Usage Example
-```typescript
-// In store or page component
+// Decrypt token from URL
 import { decryptAES } from '@/functions/decrypt';
+import { sessionService } from '@/services/sessionService';
 
 const encryptedData = searchParams.get('key');
+if (!encryptedData) {
+  navigate(ROUTES.base);
+  return;
+}
+
+// Decrypt and store in session
 const decrypted = await decryptAES(encryptedData);
-
-// Access decrypted data
-const warehouseId = decrypted.warehouse_id;
-const userToken = decrypted.user_token;
+await sessionService.setSession({
+  user_token: decrypted.user_token,
+  warehouse_id: decrypted.warehouse_id
+});
 ```
 
-### Backend Token Generation (PHP)
-```php
-// ReController.php
-$res = [
-    'user_token' => $user_token,
-    'warehouse_id' => $id
-];
-$plain = json_encode($res);
-$enc = Self::encryptAES($plain);
-header("Location: " .$endpoint.'page-name?key='.$enc);
+### Session Management Pattern
+```typescript
+// Store encrypted token for navigation
+sessionStorage.setItem('encrypted_token', encryptedData);
+
+// Retrieve for page navigation
+const token = sessionStorage.getItem('encrypted_token');
+navigate(`${ROUTES.nextPage}?key=${encodeURIComponent(token)}`);
+
+// Clear on logout
+sessionStorage.clear();
 ```
 
-### Error Handling
-- If no token is provided, redirect to base route
-- If decryption fails, show error message
-- URL encoding issues: Spaces are automatically converted back to '+' characters
+### Security Best Practices
+- Never store decrypted tokens in localStorage or cookies
+- Use sessionStorage for temporary session data
+- Always validate token presence before API calls
+- Clear session data on logout or page unload
+- URL encode tokens when passing in navigation
 
 ## 10. API Integration and Loading State Standards
 
@@ -470,3 +459,201 @@ export const useModuleStore = create<ModuleStore>((set, get) => ({
     hasInitialized: false
   })
 }));
+
+## 12. Environment Configuration
+
+### Required Environment Variables
+All environment variables must be prefixed with `VITE_` to be accessible in the frontend:
+
+```bash
+# .env file structure
+# Decrypt Configuration
+VITE_DECRYPT_SECRET_KEY=your_secret_key_here
+
+# API Configuration
+VITE_API_URL=https://your-api-domain.com/cp_fifo/index.php?r=Api
+VITE_API_TOKEN=your_api_token_here
+```
+
+### Environment Files
+- `.env` - Local development environment (never commit)
+- `.env.example` - Example configuration (commit this)
+- `.env.production` - Production environment (managed by DevOps)
+
+### TypeScript Support
+Environment variables are typed in `/src/env.d.ts`:
+```typescript
+interface ImportMetaEnv {
+  readonly VITE_DECRYPT_SECRET_KEY: string
+  readonly VITE_API_URL: string
+  readonly VITE_API_TOKEN: string
+}
+```
+
+### Usage in Code
+```typescript
+const apiUrl = import.meta.env.VITE_API_URL;
+const apiToken = import.meta.env.VITE_API_TOKEN;
+```
+
+## 13. Common Pitfalls to Avoid
+
+### ❌ DON'T: Hardcode sensitive data
+```typescript
+// Bad
+const API_TOKEN = 'dctfvgybefvgyabdfhwuvjlnsd';
+```
+
+### ✅ DO: Use environment variables
+```typescript
+// Good
+const API_TOKEN = import.meta.env.VITE_API_TOKEN;
+```
+
+### ❌ DON'T: Create standalone type files
+```typescript
+// Bad: /src/types/antrean.ts
+export interface IAntrean { ... }
+```
+
+### ✅ DO: Organize types by module
+```typescript
+// Good: /src/types/antreanTruck/index.ts
+export interface IAntrean { ... }
+```
+
+### ❌ DON'T: Mix business logic in utils
+```typescript
+// Bad: /src/utils/calculatePrice.ts
+export function calculateWarehousePrice() { ... }
+```
+
+### ✅ DO: Put business logic in functions folder
+```typescript
+// Good: /src/functions/warehouseCalculations.ts
+export function calculateWarehousePrice() { ... }
+```
+
+### ❌ DON'T: Use any type
+```typescript
+// Bad
+const handleData = (data: any) => { ... }
+```
+
+### ✅ DO: Define proper types
+```typescript
+// Good
+const handleData = (data: IWarehouseData) => { ... }
+```
+
+### ❌ DON'T: Forget cleanup in components
+```typescript
+// Bad
+useEffect(() => {
+  loadData();
+}, []);
+```
+
+### ✅ DO: Clean up on unmount
+```typescript
+// Good
+useEffect(() => {
+  return () => store.reset();
+}, []);
+```
+
+## Important Notes
+
+### API Response Handling
+1. **Always handle double-encoded JSON**: Some API responses may be double-encoded
+2. **Check for error property**: API errors are returned as `{ error: "message" }`
+3. **Transform data at the service layer**: Keep components clean
+
+### State Management Rules
+1. **One store per module**: Don't share stores between unrelated features
+2. **Reset on unmount**: Always clean up store state when leaving a page
+3. **Use hasInitialized pattern**: Prevent double API calls in React StrictMode
+
+### Security Best Practices
+1. **Never commit .env files**: Only .env.example should be in version control
+2. **Validate decrypted data**: Always validate structure after decryption
+3. **Use HTTPS**: All API calls must use secure connections
+
+### Performance Guidelines
+1. **Lazy load pages**: Use React.lazy for route components
+2. **Batch API calls**: Use Promise.all for parallel requests
+3. **Implement proper loading states**: Show skeleton screens during data fetch
+
+### UI/UX Standards
+
+#### State Management Patterns
+```typescript
+// ✅ Optimistic Updates
+const handleUpdate = async (data) => {
+  // Update UI immediately
+  setLocalState(data);
+  
+  try {
+    await api.update(data);
+  } catch (error) {
+    // Rollback on error
+    setLocalState(previousData);
+    showToast('Update failed', 'error');
+  }
+};
+
+// ✅ Loading States
+if (isLoading) return <LoadingSpinner />;
+if (error) return <ErrorMessage error={error} />;
+return <Content data={data} />;
+```
+
+#### Mobile-First Design
+```typescript
+// ✅ Responsive Container
+<div className="max-w-md mx-auto h-screen">
+  {/* Mobile-optimized content */}
+</div>
+
+// ✅ Touch-Friendly Buttons
+<button className="min-h-[44px] px-4 py-2">
+  Click Me
+</button>
+```
+
+#### Toast Notifications
+```typescript
+// ✅ Toast Implementation
+import { showToast } from '@/utils/toast';
+
+// Success notification
+showToast('Operation successful', 'success');
+
+// Error notification
+showToast('Something went wrong', 'error');
+
+// Custom duration
+showToast('Processing...', 'success', { duration: 5000 });
+```
+
+### Code Quality Checklist
+- [ ] Follows project structure standards
+- [ ] TypeScript types properly defined
+- [ ] No hardcoded values (use constants/env vars)
+- [ ] Proper error handling implemented
+- [ ] Loading states for async operations
+- [ ] Mobile responsive design
+- [ ] No console.log statements
+- [ ] Imports are organized and used
+- [ ] Components follow naming conventions
+- [ ] Store includes reset method
+
+### Deployment Checklist
+- [ ] Environment variables configured
+- [ ] Build passes without warnings
+- [ ] All console.logs removed
+- [ ] API endpoints point to production
+- [ ] Error handling implemented
+- [ ] Loading states working
+- [ ] Mobile responsive
+- [ ] Performance optimized

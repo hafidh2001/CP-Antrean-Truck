@@ -187,3 +187,224 @@ Saat ini menggunakan static tokens:
 - `user_token`: "dNS1f.f4HKgIXqH9GDs9F150nhSbK"
 
 Authentication handling dilakukan di level API controller Plansys.
+
+## Backend Architecture (PHP Yii Framework)
+
+### Database Schema
+
+#### Core Tables:
+- **t_antrean**: Truck queue records
+  - id, nopol, status (OPEN, LOADING, VERIFYING, VERIFIED, CLOSED), created_time
+- **t_antrean_rekomendasi_lokasi**: Recommended locations with goods
+  - id, antrean_id, goods_id, qty, uom_id, location_id
+- **t_antrean_kode_produksi**: Production code entries
+  - id, antrean_id, goods_id, production_code, qty, uom_id
+- **t_antrean_jebolan**: Jebolan (spillage) records
+  - id, antrean_id, goods_id, jebolan
+- **t_antrean_gate**: Gate assignments
+  - id, antrean_id, gate_id, position
+
+#### Master Tables:
+- **m_goods**: Master goods data (id, kode, alias)
+- **m_gate**: Master gate data (id, code)
+- **m_uom**: Master unit of measure (id, unit, convert_to)
+- **m_location**: Master location data
+
+### API Endpoints Documentation
+
+#### 1. Antrean Management
+
+##### getAntreanTruck
+```php
+// Model: TAntrean
+// Function: getAntreanTruck
+// Parameters:
+{
+  "user_token": "string",
+  "status": "string[]" // Optional, defaults to all statuses
+}
+// Returns: Array of antrean with id, nopol, created_time, jenis_barang
+```
+
+##### getAntreanKodeProduksi  
+```php
+// Model: TAntreanRekomendasiLokasi
+// Function: getAntreanKodeProduksi
+// Parameters:
+{
+  "user_token": "string",
+  "antrean_id": "integer"
+}
+// Returns: { nopol, jenis_barang, productionCodes[] }
+// Note: Uses goods_id as ID, groups by goods_id
+```
+
+##### getProductionCodeDetail
+```php
+// Model: TAntreanRekomendasiLokasi
+// Function: getProductionCodeDetail
+// Parameters:
+{
+  "user_token": "string",
+  "antrean_id": "integer",
+  "goods_id": "integer"
+}
+// Returns: { nopol, jenis_barang, productionCode }
+```
+
+#### 2. Production Code Entry
+
+##### saveKodeProduksi
+```php
+// Model: TAntreanKodeProduksi
+// Function: saveKodeProduksi
+// Parameters:
+{
+  "user_token": "string",
+  "antrean_id": "integer",
+  "goods_id": "integer",
+  "entries": [
+    {
+      "production_code": "string",
+      "qty": "number",
+      "uom_id": "integer"
+    }
+  ]
+}
+// Returns: { success, message }
+// Logic: Delete all existing entries, then insert new ones
+```
+
+##### getKodeProduksi
+```php
+// Model: TAntreanKodeProduksi
+// Function: getKodeProduksi
+// Parameters:
+{
+  "user_token": "string",
+  "antrean_id": "integer",
+  "goods_id": "integer"
+}
+// Returns: { entries[], total_saved }
+```
+
+#### 3. Jebolan Management
+
+##### getJebolan
+```php
+// Model: TAntreanJebolan
+// Function: getJebolan
+// Parameters:
+{
+  "user_token": "string",
+  "antrean_id": "integer",
+  "goods_id": "integer"
+}
+// Returns: { jebolan[] }
+```
+
+##### saveJebolan
+```php
+// Model: TAntreanJebolan
+// Function: saveJebolan
+// Parameters:
+{
+  "user_token": "string",
+  "antrean_id": "integer",
+  "goods_id": "integer",
+  "jebolan": "string"
+}
+// Returns: { success, message }
+```
+
+##### deleteJebolan
+```php
+// Model: TAntreanJebolan
+// Function: deleteJebolan
+// Parameters:
+{
+  "user_token": "string",
+  "antrean_id": "integer",
+  "goods_id": "integer"
+}
+// Returns: { success, message }
+```
+
+#### 4. Gate Management
+
+##### getGateOptions
+```php
+// Model: MGate
+// Function: getGateOptions
+// Parameters:
+{
+  "user_token": "string"
+}
+// Returns: { gates[] } with id and code
+```
+
+##### getAntreanGate
+```php
+// Model: TAntreanGate
+// Function: getAntreanGate
+// Parameters:
+{
+  "user_token": "string",
+  "antrean_id": "integer"
+}
+// Returns: { gates[] } array where index 0 = Gate 1, index 1 = Gate 2
+```
+
+##### setAntreanGate
+```php
+// Model: TAntreanGate
+// Function: setAntreanGate
+// Parameters:
+{
+  "user_token": "string",
+  "antrean_id": "integer",
+  "gate_id": "integer",
+  "position": "integer" // 1 or 2
+}
+// Returns: { success, message }
+```
+
+##### deleteAntreanGate
+```php
+// Model: TAntreanGate
+// Function: deleteAntreanGate
+// Parameters:
+{
+  "user_token": "string",
+  "antrean_id": "integer"
+}
+// Returns: { success, message }
+// Logic: Only deletes gate 2 (second item in array)
+```
+
+### Business Logic Rules
+
+1. **Queue Status Flow**: 
+   - OPEN → LOADING → VERIFYING → VERIFIED → CLOSED
+   - Frontend only shows LOADING status
+
+2. **UOM Hierarchy**: 
+   - Items with `convert_to = NULL` are smallest units
+   - Smallest units count as 1 entry
+   - Larger units count as their quantity
+   - Sort order: Items with convert_to first, then NULL items
+
+3. **Gate Logic**: 
+   - Gate 1 must be selected before Gate 2
+   - No duplicate gates allowed
+   - Stored as array: position 0 = Gate 1, position 1 = Gate 2
+
+4. **Entry Counting**: 
+   - Based on UOM type
+   - Completed entries tracked in t_antrean_kode_produksi
+
+### Error Codes
+- "Invalid user token" - Authentication failed
+- "antrean_id and goods_id are required" - Missing parameters
+- "Antrean not found" - Invalid ID
+- Database errors will include SQL error messages
