@@ -141,8 +141,23 @@ class TAntreanRekomendasiLokasi extends ActiveRecord
 				$uomGroups[$uom_id]['amount'] += (int)$qtyRow['qty'];
 			}
 			
-			// Convert to array format and calculate total_entries
+			// Separate UOMs by convert_to status
+			$uomsWithConvertTo = array();
+			$uomsWithoutConvertTo = array();
+			
 			foreach ($uomGroups as $uomData) {
+				if ($uomData['convert_to'] === null) {
+					$uomsWithoutConvertTo[] = $uomData;
+				} else {
+					$uomsWithConvertTo[] = $uomData;
+				}
+			}
+			
+			// Add UOMs with convert_to first, then those without
+			$sortedUoms = array_merge($uomsWithConvertTo, $uomsWithoutConvertTo);
+			
+			// Convert to array format and calculate total_entries
+			foreach ($sortedUoms as $uomData) {
 				$quantities[] = array(
 					'amount' => $uomData['amount'],
 					'unit' => $uomData['unit']
@@ -264,8 +279,23 @@ class TAntreanRekomendasiLokasi extends ActiveRecord
 			$uomGroups[$uom_id]['amount'] += (int)$qtyRow['qty'];
 		}
 		
-		// Convert to array format and calculate total_entries
+		// Separate UOMs by convert_to status
+		$uomsWithConvertTo = array();
+		$uomsWithoutConvertTo = array();
+		
 		foreach ($uomGroups as $uomData) {
+			if ($uomData['convert_to'] === null) {
+				$uomsWithoutConvertTo[] = $uomData;
+			} else {
+				$uomsWithConvertTo[] = $uomData;
+			}
+		}
+		
+		// Add UOMs with convert_to first, then those without
+		$sortedUoms = array_merge($uomsWithConvertTo, $uomsWithoutConvertTo);
+		
+		// Convert to array format and calculate total_entries
+		foreach ($sortedUoms as $uomData) {
 			$quantities[] = array(
 				'amount' => $uomData['amount'],
 				'unit' => $uomData['unit']
