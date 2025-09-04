@@ -9,3 +9,12 @@ export enum StorageTypeEnum {
   RACK = 'rack',
   ECERAN = 'eceran'
 }
+
+// Antrean status enum (used in multiple modules)
+export enum AntreanStatusEnum {
+  OPEN = 'OPEN',
+  LOADING = 'LOADING',
+  VERIFYING = 'VERIFYING',
+  VERIFIED = 'VERIFIED',
+  CLOSED = 'CLOSED'
+}

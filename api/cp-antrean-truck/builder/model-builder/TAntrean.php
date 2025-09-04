@@ -54,10 +54,15 @@ class TAntrean extends ActiveRecord
 	{
 		// Extract parameters from params
 		$user_token = isset($params['user_token']) ? $params['user_token'] : null;
-		$status = isset($params['status']) ? $params['status'] : null;
+		$status = isset($params['status']) ? $params['status'] : array(); // Always treat as array
 		
 		if (!$user_token) {
 			return ['error' => 'user_token is required'];
+		}
+		
+		// Convert single status to array for consistent handling
+		if (!empty($status) && !is_array($status)) {
+			$status = array($status);
 		}
 
 		// Validate user_token exists (for authentication)
@@ -72,26 +77,44 @@ class TAntrean extends ActiveRecord
 
 		// Query untuk mengambil semua data antrean truck (tidak filter berdasarkan kerani)
 		$query = "SELECT 
-					id,
-					nopol,
-					created_time,
-					warehouse_id,
-					kerani_id,
-					status,
-					warehouse_override_id
-				FROM t_antrean";
+					ta.id,
+					ta.nopol,
+					ta.created_time,
+					ta.warehouse_id,
+					ta.kerani_id,
+					ta.status,
+					ta.warehouse_override_id,
+					COUNT(DISTINCT tarl.goods_id) as jenis_barang
+				FROM t_antrean ta
+				LEFT JOIN t_antrean_rekomendasi_lokasi tarl ON ta.id = tarl.antrean_id";
 		
-		// Add status filter only if status is provided
-		if ($status !== null) {
-			$query .= " WHERE status = :status";
+		// Add status filter only if status array is not empty
+		$whereClause = array();
+		$bindParams = array();
+		
+		if (!empty($status)) {
+			// Always use IN clause for consistency
+			$statusPlaceholders = array();
+			foreach ($status as $idx => $s) {
+				$placeholder = ":status_" . $idx;
+				$statusPlaceholders[] = $placeholder;
+				$bindParams[$placeholder] = $s;
+			}
+			$whereClause[] = "ta.status IN (" . implode(',', $statusPlaceholders) . ")";
 		}
 		
-		$query .= " ORDER BY created_time ASC";
+		if (!empty($whereClause)) {
+			$query .= " WHERE " . implode(' AND ', $whereClause);
+		}
+		
+		$query .= " GROUP BY ta.id, ta.nopol, ta.created_time, ta.warehouse_id, ta.kerani_id, ta.status, ta.warehouse_override_id";
+		$query .= " ORDER BY ta.created_time ASC";
 		
 		$command = Yii::app()->db->createCommand($query);
 		
-		if ($status !== null) {
-			$command->bindParam(':status', $status, PDO::PARAM_STR);
+		// Bind all parameters
+		foreach ($bindParams as $key => $value) {
+			$command->bindValue($key, $value, PDO::PARAM_STR);
 		}
 		
 		$antreanList = $command->queryAll();
@@ -106,7 +129,8 @@ class TAntrean extends ActiveRecord
 				'warehouse_id' => (int)$antrean['warehouse_id'],
 				'kerani_id' => $antrean['kerani_id'] ? (int)$antrean['kerani_id'] : null,
 				'status' => $antrean['status'],
-				'warehouse_override_id' => $antrean['warehouse_override_id'] ? (int)$antrean['warehouse_override_id'] : null
+				'warehouse_override_id' => $antrean['warehouse_override_id'] ? (int)$antrean['warehouse_override_id'] : null,
+				'jenis_barang' => (int)$antrean['jenis_barang']
 			];
 		}
 

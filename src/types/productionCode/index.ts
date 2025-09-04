@@ -16,3 +16,9 @@ export interface IProductionCodeCard extends IProductionCode {
   isCompleted: boolean;
   progress_percentage: number;
 }
+
+// Gate option interface (used in production code page)
+export interface IGateOption {
+  id: number;
+  code: string;
+}

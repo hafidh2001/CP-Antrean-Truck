@@ -11,8 +11,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ROUTES } from '@/utils/routes';
-import type { IProductionCodeCard } from '@/types/productionCode';
-import type { IGateOption } from '@/types/gate';
+import type { IProductionCodeCard, IGateOption } from '@/types/productionCode';
 import { sessionService } from '@/services/sessionService';
 import { productionCodeApi } from '@/services/productionCodeApi';
 import { gateApi } from '@/services/gateApi';

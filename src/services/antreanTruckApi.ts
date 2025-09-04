@@ -28,7 +28,7 @@ export const antreanTruckApi = {
   /**
    * Get antrean truck list
    */
-  async getAntreanTruck(userToken: string, status?: string): Promise<IAntreanCard[]> {
+  async getAntreanTruck(userToken: string, status?: string | string[]): Promise<IAntreanCard[]> {
     try {
       const params: any = { 
         user_token: userToken
@@ -74,7 +74,7 @@ export const antreanTruckApi = {
         id: item.id,
         nopol: item.nopol,
         created_at: item.created_time,
-        jenis_barang: 10 // Hardcoded in frontend as requested
+        jenis_barang: item.jenis_barang || 0 // Use actual count from API
       }));
 
       return antreanList;

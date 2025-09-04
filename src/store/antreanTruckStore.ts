@@ -3,6 +3,7 @@ import type { AntreanTruckStore } from '@/types/antreanTruck/store';
 import type { AntreanTruckDecryptData } from '@/types/antreanTruck';
 import { antreanTruckApi } from '@/services/antreanTruckApi';
 import { decryptAES } from '@/functions/decrypt';
+import { AntreanStatusEnum } from '@/types';
 
 export const useAntreanTruckStore = create<AntreanTruckStore>((set) => ({
   antreanList: [],
@@ -15,7 +16,8 @@ export const useAntreanTruckStore = create<AntreanTruckStore>((set) => ({
     
     try {
       const decrypted = await decryptAES<AntreanTruckDecryptData>(encryptedData);
-      const antreanList = await antreanTruckApi.getAntreanTruck(decrypted.user_token);
+      // Only fetch antrean with LOADING status
+      const antreanList = await antreanTruckApi.getAntreanTruck(decrypted.user_token, AntreanStatusEnum.LOADING);
       
       set({ 
         antreanList, 
