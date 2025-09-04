@@ -5,6 +5,14 @@ import { IAntreanCard } from '@/types/antreanTruck';
 const API_URL = import.meta.env.VITE_API_URL;
 const API_TOKEN = import.meta.env.VITE_API_TOKEN;
 
+// Validate environment variables
+if (!API_URL || !API_TOKEN) {
+  console.error('Missing required environment variables:', {
+    API_URL: API_URL || 'NOT SET',
+    API_TOKEN: API_TOKEN || 'NOT SET'
+  });
+}
+
 // Create axios instance with default config
 const apiClient = axios.create({
   baseURL: API_URL,
@@ -12,7 +20,6 @@ const apiClient = axios.create({
     'Content-Type': 'application/json',
   },
   timeout: 30000, // 30 seconds
-  withCredentials: true, // Enable cookies for CSRF
 });
 
 // Helper to create API request body

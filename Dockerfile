@@ -13,10 +13,15 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-# Set build-time environment variable
-# This must be provided during docker build using --build-arg
+# Set build-time environment variables
+# These must be provided during docker build using --build-arg
 ARG VITE_DECRYPT_SECRET_KEY
+ARG VITE_API_URL
+ARG VITE_API_TOKEN
+
 ENV VITE_DECRYPT_SECRET_KEY=${VITE_DECRYPT_SECRET_KEY}
+ENV VITE_API_URL=${VITE_API_URL}
+ENV VITE_API_TOKEN=${VITE_API_TOKEN}
 
 # Build the application
 RUN npm run build

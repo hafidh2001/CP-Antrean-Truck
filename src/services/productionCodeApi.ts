@@ -12,7 +12,6 @@ const apiClient = axios.create({
     'Content-Type': 'application/json',
   },
   timeout: 30000, // 30 seconds
-  withCredentials: true, // Enable cookies for CSRF
 });
 
 // Helper to create API request body
