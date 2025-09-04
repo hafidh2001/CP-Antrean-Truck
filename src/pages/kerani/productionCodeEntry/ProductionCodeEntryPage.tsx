@@ -393,7 +393,9 @@ export function ProductionCodeEntryPage() {
             {/* Jebolan Input/Display */}
             {isEditingJebolan || jebolan.length === 0 ? (
               <Input
-                type="number"
+                type="tel"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 placeholder="Jumlah jebolan (opsional)"
                 value={jebolainInput}
                 onChange={(e) => setJebolainInput(e.target.value)}
@@ -423,7 +425,9 @@ export function ProductionCodeEntryPage() {
             {/* Production Code Form */}
             <div className="flex gap-2 mb-3">
               <Input
-                type="number"
+                type="tel"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 placeholder="Kode produksi"
                 value={productionCodeInput}
                 onChange={(e) => setProductionCodeInput(e.target.value)}
