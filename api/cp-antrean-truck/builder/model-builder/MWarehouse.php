@@ -65,11 +65,11 @@ class MWarehouse extends ActiveRecord
 			return ['error' => 'Warehouse not found'];
 		}
 
-		// Query untuk mengambil semua locations dari warehouse
+		// Query untuk mengambil semua locations dari warehouse (hanya yang tidak soft deleted)
 		$queryLocations = "SELECT id, warehouse_id, label, type, x, y, width, height, 
 							type_storage, text_styling
 							FROM m_location
-							WHERE warehouse_id = :warehouse_id
+							WHERE warehouse_id = :warehouse_id AND is_deleted = false
 							ORDER BY id ASC";
 
 		$locations = Yii::app()->db->createCommand($queryLocations)
@@ -133,7 +133,7 @@ class MWarehouse extends ActiveRecord
                               INNER JOIN m_goods g on g.id = s.goods_id 
                               INNER JOIN m_uom u on u.id = s.uom_id 
                               INNER JOIN t_opnam o on o.id = s.opnam_id
-                            WHERE l.id = ".$location['id']."
+                            WHERE l.id = ".$location['id']." AND l.is_deleted = false
                              $w
                             ";
         				
@@ -183,11 +183,11 @@ class MWarehouse extends ActiveRecord
 			return ['error' => 'Warehouse not found'];
 		}
 
-		// Query untuk mengambil semua locations dari warehouse
+		// Query untuk mengambil semua locations dari warehouse (hanya yang tidak soft deleted)
 		$queryLocations = "SELECT id, warehouse_id, label, type, x, y, width, height, 
 							type_storage, text_styling
 							FROM m_location
-							WHERE warehouse_id = :warehouse_id
+							WHERE warehouse_id = :warehouse_id AND is_deleted = false
 							ORDER BY id ASC";
 
 		$locations = Yii::app()->db->createCommand($queryLocations)
@@ -253,7 +253,7 @@ class MWarehouse extends ActiveRecord
                       INNER JOIN m_goods g on g.id = s.goods_id 
                       INNER JOIN m_uom u on u.id = s.uom_id 
                       INNER JOIN t_opnam o on o.id = s.opnam_id
-                    WHERE l.id = ".$location['id']."
+                    WHERE l.id = ".$location['id']." AND l.is_deleted = false
                      $w
                     ";
 				
@@ -288,7 +288,7 @@ class MWarehouse extends ActiveRecord
                       INNER JOIN m_goods g on g.id = s.goods_id 
                       INNER JOIN m_uom u on u.id = s.uom_id 
                       INNER JOIN t_opnam o on o.id = s.opnam_id
-                    WHERE l.id = ".$location['id']."
+                    WHERE l.id = ".$location['id']." AND l.is_deleted = false
                      $w
                     ";
 				

@@ -408,3 +408,128 @@ Authentication handling dilakukan di level API controller Plansys.
 - "antrean_id and goods_id are required" - Missing parameters
 - "Antrean not found" - Invalid ID
 - Database errors will include SQL error messages
+
+## Development Guidelines
+
+### Kapan Edit Model vs Model + Controller
+
+#### **Edit Model Saja:**
+Untuk operasi CRUD standar yang tidak melibatkan user action langsung:
+- ✅ **CREATE operations**: Membuat data baru
+- ✅ **UPDATE operations**: Mengupdate data existing  
+- ✅ **SELECT operations**: Query dan filtering data
+- ✅ **Business logic methods**: Static methods untuk API calls
+
+**Contoh:**
+```php
+// Model: MLocation.php
+public static function getWarehouseLocations($params) {
+    // SELECT operation - cukup edit di model
+    $sql = "SELECT * FROM m_location WHERE warehouse_id = :id AND is_deleted = false";
+}
+
+public static function saveWarehouseLocations($params) {
+    // Bulk UPDATE/INSERT operation - business logic di model
+    // Soft delete logic untuk units yang tidak ada di frontend
+}
+```
+
+#### **Edit Model + Controller:**
+Untuk operasi yang melibatkan user interaction langsung dan behavioral changes:
+- ✅ **DELETE operations**: Karena ada direct user action (button click)
+- ✅ **Behavioral changes**: Hard delete → Soft delete
+- ✅ **Authentication/authorization logic**
+- ✅ **Request handling & response**: Flash messages, redirects
+- ✅ **Permission checks**: Access control
+
+**Contoh:**
+```php
+// Controller: MLocationController.php
+public function actionDelete($id) {
+    // User clicks "Delete" button - handle user action
+    if (strpos($id, ',') > 0) {
+        // Batch delete handling
+        $ids = explode(",", $id);
+        foreach($ids as $locationId) {
+            $this->softDeleteLocation(trim($locationId));
+        }
+    } else {
+        $this->softDeleteLocation($id);
+    }
+    
+    $this->flash('Data Berhasil Dihapus'); // User feedback
+    $this->redirect(['index']); // Navigation
+}
+
+private function softDeleteLocation($id) {
+    // Business logic - could also be moved to model
+    $sql = "UPDATE m_location SET is_deleted = true WHERE id = :id";
+    return Yii::app()->db->createCommand($sql)->execute();
+}
+```
+
+### MVC Architecture Flow
+
+```
+User Action → Controller → Model → Database
+     ↓           ↓          ↓        ↓
+1. Click Delete → actionDelete() → softDeleteLocation() → UPDATE is_deleted=true
+2. Flash message ← Controller response
+3. Redirect ← Controller navigation
+```
+
+### Soft Delete Implementation Strategy
+
+#### **Database Level:**
+- ✅ Column `is_deleted boolean DEFAULT false NOT NULL` sudah ada
+- ✅ Foreign keys tetap CASCADE (tidak ter-trigger karena tidak ada hard delete)
+
+#### **Model Level:**
+- ✅ **defaultScope()**: Otomatis filter `is_deleted = false` untuk semua query
+- ✅ **withDeleted()**: Method untuk include soft deleted records jika diperlukan
+- ✅ **Query updates**: Semua SELECT query ditambah `AND is_deleted = false`
+- ✅ **Soft delete logic**: UPDATE `is_deleted = true` instead of DELETE
+
+#### **Controller Level:**
+- ✅ **User action handling**: Replace `$model->delete()` dengan `softDeleteLocation()`
+- ✅ **Batch delete support**: Handle comma-separated IDs
+- ✅ **User feedback**: Flash messages dan redirects
+- ✅ **Consistency**: Semua delete operations menggunakan soft delete
+
+### Implementation Example: m_location Soft Delete
+
+#### **Why Both Model + Controller?**
+
+1. **Different Delete Contexts:**
+   - **Model method** (`saveWarehouseLocations`): Bulk operation saat user save layout
+   - **Controller method** (`actionDelete`): Single operation saat user klik delete button
+
+2. **User Interface Flow:**
+   ```
+   Frontend Warehouse Editor:
+   User removes unit → removeUnit() → Save Layout → saveWarehouseLocations()
+        ↓
+   Soft delete via bulk save
+
+   Admin Interface:
+   User clicks Delete button → actionDelete() → softDeleteLocation()
+        ↓
+   Soft delete for consistency
+   ```
+
+3. **Separation of Concerns:**
+   - **Controller**: Request handling, user feedback, navigation
+   - **Model**: Business logic, database operations
+
+#### **Benefits of Soft Delete:**
+- 🔒 **Historical Data Preserved**: Semua location yang di-delete masih tersimpan
+- 🔗 **Referential Integrity**: Records di `t_stock` dan `t_antrean_rekomendasi_lokasi` tetap valid
+- 👥 **Seamless UX**: User experience tidak berubah
+- 🔄 **Data Recovery**: Data bisa di-restore dengan `UPDATE m_location SET is_deleted = false`
+
+### Best Practices
+
+1. **Consistent Approach**: Jika implement soft delete, pastikan semua query dan operations konsisten
+2. **Clear Documentation**: Dokumentasikan behavioral changes untuk team
+3. **Testing**: Test both create/update/delete flows setelah perubahan
+4. **Migration Plan**: Pertimbangkan existing data saat implement soft delete

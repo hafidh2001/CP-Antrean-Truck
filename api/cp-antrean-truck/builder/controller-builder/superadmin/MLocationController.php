@@ -36,18 +36,26 @@ class MLocationController extends Controller {
 
     public function actionDelete($id) {
         if (strpos($id, ',') > 0) {
-            ActiveRecord::batchDelete("SuperadminMLocationForm", explode(",", $id));
+            // Batch soft delete
+            $ids = explode(",", $id);
+            foreach($ids as $locationId) {
+                $this->softDeleteLocation(trim($locationId));
+            }
             $this->flash('Data Berhasil Dihapus');
         } else {
-            $model = $this->loadModel($id, "SuperadminMLocationForm");
-            if (!is_null($model)) {
-                $this->flash('Data Berhasil Dihapus');
-                $model->delete();
-            }
+            $this->softDeleteLocation($id);
+            $this->flash('Data Berhasil Dihapus');
         }
 
-
         $this->redirect(['index']);
+    }
+    
+    private function softDeleteLocation($id) {
+        // Use raw SQL for soft delete to avoid model dependencies
+        $sql = "UPDATE m_location SET is_deleted = true WHERE id = :id AND is_deleted = false";
+        $command = Yii::app()->db->createCommand($sql);
+        $command->bindParam(':id', $id, PDO::PARAM_INT);
+        return $command->execute();
     }
     
 }

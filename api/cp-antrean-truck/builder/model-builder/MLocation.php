@@ -39,7 +39,22 @@ class MLocation extends ActiveRecord
 			'height' => 'Height',
 			'type_storage' => 'Type Storage',
 			'text_styling' => 'Text Styling',
+			'is_deleted' => 'Deleted',
 		);
+	}
+
+	public function defaultScope()
+	{
+		// Default scope to exclude soft deleted records
+		return array(
+			'condition' => 'is_deleted = false',
+		);
+	}
+
+	public function withDeleted()
+	{
+		// Method to include soft deleted records
+		return $this->resetScope(false);
 	}
 
 	public static function getWarehouseLocations($params = [])
@@ -65,11 +80,11 @@ class MLocation extends ActiveRecord
 			return ['error' => 'Warehouse not found'];
 		}
 
-		// Query untuk mengambil semua locations dari warehouse
+		// Query untuk mengambil semua locations dari warehouse (hanya yang tidak soft deleted)
 		$queryLocations = "SELECT id, warehouse_id, label, type, x, y, width, height, 
 							type_storage, text_styling
 							FROM m_location
-							WHERE warehouse_id = :warehouse_id
+							WHERE warehouse_id = :warehouse_id AND is_deleted = false
 							ORDER BY id ASC";
 
 		$locations = Yii::app()->db->createCommand($queryLocations)
@@ -156,8 +171,8 @@ class MLocation extends ActiveRecord
 			$deletedCount = 0;
 			$errors = [];
 			
-			// 1. Get all existing locations from DB for this warehouse
-			$existingQuery = "SELECT id FROM m_location WHERE warehouse_id = :warehouse_id";
+			// 1. Get all existing locations from DB for this warehouse (hanya yang tidak soft deleted)
+			$existingQuery = "SELECT id FROM m_location WHERE warehouse_id = :warehouse_id AND is_deleted = false";
 			$existingIds = Yii::app()->db->createCommand($existingQuery)
 				->bindParam(':warehouse_id', $warehouse_id, PDO::PARAM_INT)
 				->queryColumn();
@@ -173,12 +188,14 @@ class MLocation extends ActiveRecord
 				}
 			}
 			
-			// 2. Delete units that exist in DB but not in frontend
+			// 2. Soft delete units that exist in DB but not in frontend
 			$toDelete = array_diff($existingIds, $frontendIds);
 			if (!empty($toDelete)) {
-				$deleteQuery = "DELETE FROM m_location 
+				$deleteQuery = "UPDATE m_location 
+								SET is_deleted = true
 								WHERE warehouse_id = :warehouse_id 
-								AND id IN (" . implode(',', $toDelete) . ")";
+								AND id IN (" . implode(',', $toDelete) . ")
+								AND is_deleted = false";
 				$deleteCommand = Yii::app()->db->createCommand($deleteQuery);
 				$deleteCommand->bindParam(':warehouse_id', $warehouse_id, PDO::PARAM_INT);
 				$deletedCount = $deleteCommand->execute();
