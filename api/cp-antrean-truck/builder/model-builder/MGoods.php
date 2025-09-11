@@ -41,7 +41,10 @@ class MGoods extends ActiveRecord
 	
 	public static function getList(){
 	    
-	  $res = MGoods::model()->findAllByAttributes([]);  
+	  $res = MGoods::model()->findAllByAttributes([], [
+        'select' => 'id, COALESCE(alias, kode) as kode',
+        'order'  => '2 ASC'
+    ]);  
 	  
 	  return array_column($res, 'attributes');
 	}

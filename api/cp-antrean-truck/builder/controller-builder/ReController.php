@@ -28,7 +28,7 @@ class ReController extends Controller {
         exit;
 	}
 	
-	public function actionFormKerani($id){
+	public function actionFormKerani(){
         $endpoint = XEndpointConfig::model()->findByAttributes(['label' => 'floor_plan'])->endpoint;
         $user_token = User::model()->findByPk(Yii::app()->user->id)->user_token;
         $res = [
@@ -41,15 +41,31 @@ class ReController extends Controller {
         exit;
 	}
 	
+	public function actionViewStock($id){
+        $endpoint = XEndpointConfig::model()->findByAttributes(['label' => 'opname'])->endpoint;
+        $res = [
+                'user_id' => Yii::app()->user->id,
+                'warehouse_id' => $id
+            ];
+        $plain = json_encode($res);
+        $enc = Self::encryptAES($plain);
+        header("Location: " .$endpoint.'pages/warehouse?key='.$enc);
+        exit;
+	}
+	
 	public function actionOpnam($id){
         $endpoint = XEndpointConfig::model()->findByAttributes(['label' => 'opname'])->endpoint;
         // $user_token = User::model()->findByPk(Yii::app()->user->id)->user_token;
         //cek apakah ada opnam aktif
-        $opnam = new TOpnam;
-        $opnam->warehouse_id = $id;
-        $opnam->user_id = Yii::app()->user->id;
-        $opnam->created_time = date('Y-m-d H:i:s');
-        $opnam->save();
+        $opnam = TOpnam::model()->findByAttributes(['warehouse_id' => $id], ['condition' => 'finished_time IS NULL']);
+        if(!$opnam){
+            $opnam = new TOpnam;    
+            $opnam->warehouse_id = $id;
+            $opnam->user_id = Yii::app()->user->id;
+            $opnam->created_time = date('Y-m-d H:i:s');
+            $opnam->save();
+        }
+        
         $res = [
                 'user_id' => Yii::app()->user->id,
                 'warehouse_id' => $id

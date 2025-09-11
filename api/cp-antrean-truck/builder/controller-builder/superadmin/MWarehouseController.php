@@ -18,6 +18,7 @@ class MWarehouseController extends Controller {
     }
 
     public function actionEdit($id = null) {
+        $params = [];
         if(is_null($id)){
             $model = new SuperadminMWarehouseForm;    
         } else {
