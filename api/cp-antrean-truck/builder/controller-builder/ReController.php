@@ -24,7 +24,7 @@ class ReController extends Controller {
         $plain = json_encode($res);
         $enc = Self::encryptAES($plain);
         
-        header("Location: " .$endpoint.'warehouse?key='.$enc);
+        header("Location: " .$endpoint.'warehouse?key='.urlencode($enc));
         exit;
 	}
 	
@@ -37,7 +37,7 @@ class ReController extends Controller {
         $plain = json_encode($res);
         $enc = Self::encryptAES($plain);
         
-        header("Location: " .$endpoint.'antrean-truck?key='.$enc);
+        header("Location: " .$endpoint.'antrean-truck?key='.urlencode($enc));
         exit;
 	}
 	

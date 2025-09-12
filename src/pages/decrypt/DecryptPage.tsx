@@ -1,17 +1,16 @@
-import { useSearchParams } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Shield, AlertCircle, CheckCircle, Copy, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
+import { extractEncryptedKey } from '@/utils/urlParams';
 
 export default function DecryptPage() {
-  const [searchParams] = useSearchParams();
-  const encryptedDataFromUrl = searchParams.get('key');
-  // Fix URL encoding issue where + becomes space
-  const fixedEncryptedData = encryptedDataFromUrl ? encryptedDataFromUrl.replace(/ /g, '+') : '';
-  const [encryptedData, setEncryptedData] = useState(fixedEncryptedData);
+  const location = useLocation();
+  const encryptedDataFromUrl = extractEncryptedKey(location.search);
+  const [encryptedData, setEncryptedData] = useState(encryptedDataFromUrl || '');
   const [decryptedData, setDecryptedData] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);

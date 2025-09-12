@@ -7,6 +7,7 @@ import { useWarehouseDetailStore } from '@/store/warehouseDetailStore';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { ROUTES } from '@/utils/routes';
+import { extractEncryptedKey } from '@/utils/urlParams';
 
 export default function WarehouseDetailPage() {
   const navigate = useNavigate();
@@ -20,15 +21,16 @@ export default function WarehouseDetailPage() {
   } = useWarehouseDetailStore();
 
   useEffect(() => {
-    const searchParams = new URLSearchParams(location.search);
-    const encryptedData = searchParams.get('key');
+    const encryptedData = extractEncryptedKey(location.search);
     
     if (!encryptedData) {
+      console.error('No encrypted key found in URL');
       navigate(ROUTES.base);
       return;
     }
     
-    initializeFromEncryptedData(encryptedData).catch(() => {
+    initializeFromEncryptedData(encryptedData).catch((error) => {
+      console.error('Failed to initialize warehouse:', error);
       navigate(ROUTES.base);
     });
   }, []);

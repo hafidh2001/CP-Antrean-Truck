@@ -5,6 +5,7 @@ import { AntreanCard } from './_components/AntreanCard';
 import type { IAntreanCard } from '@/types/antreanTruck';
 import { ROUTES } from '@/utils/routes';
 import { sessionService } from '@/services/sessionService';
+import { extractEncryptedKey } from '@/utils/urlParams';
 
 export function AntreanTruckPage() {
   const navigate = useNavigate();
@@ -13,10 +14,10 @@ export function AntreanTruckPage() {
 
   useEffect(() => {
     const initPage = async () => {
-      const searchParams = new URLSearchParams(location.search);
-      const encryptedData = searchParams.get('key');
+      const encryptedData = extractEncryptedKey(location.search);
       
       if (!encryptedData) {
+        console.error('No encrypted key found in URL');
         navigate(ROUTES.base);
         return;
       }
@@ -26,6 +27,7 @@ export function AntreanTruckPage() {
         await sessionService.saveSession(encryptedData);
         await loadAntreanListFromApi(encryptedData);
       } catch (error) {
+        console.error('Failed to initialize antrean truck:', error);
         navigate(ROUTES.base);
       }
     };
