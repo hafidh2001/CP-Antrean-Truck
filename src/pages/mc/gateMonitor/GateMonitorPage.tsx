@@ -83,7 +83,9 @@ export default function GateMonitorPage() {
     );
   }
 
-  const getBadgeColor = (hours: number, minutes: number) => {
+  const getBadgeColor = (hours: number, minutes: number, seconds: number) => {
+    // If all time is 0, show gray (completed)
+    if (hours === 0 && minutes === 0 && seconds === 0) return 'bg-gray-400 text-white';
     if (hours > 0) return 'bg-blue-500 text-white'; // Still have hours
     if (minutes > 0) return 'bg-yellow-500 text-white'; // Only minutes left
     return 'bg-red-500 text-white'; // Only seconds left
@@ -143,7 +145,8 @@ export default function GateMonitorPage() {
                                 'px-3 py-1 rounded-full text-sm font-medium',
                                 getBadgeColor(
                                   antrean.remaining_time_formatted.hours,
-                                  antrean.remaining_time_formatted.minutes
+                                  antrean.remaining_time_formatted.minutes,
+                                  antrean.remaining_time_formatted.seconds
                                 )
                               )}
                             >

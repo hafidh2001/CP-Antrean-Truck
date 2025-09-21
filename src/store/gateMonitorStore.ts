@@ -107,13 +107,24 @@ export const useGateMonitorStore = create<GateMonitorStore>((set, get) => ({
         ...gate,
         antrean_list: gate.antrean_list
           .map(antrean => {
-            // Decrease remaining time by 1 second
-            const newRemainingMinutes = Math.max(0, antrean.remaining_minutes - (1 / 60));
+            // Only decrease time if it's still > 0
+            const newRemainingMinutes = antrean.remaining_minutes > 0 
+              ? Math.max(0, antrean.remaining_minutes - (1 / 60))
+              : 0;
             
             // Calculate new formatted time
             const hours = Math.floor(newRemainingMinutes / 60);
             const minutes = Math.floor(newRemainingMinutes % 60);
             const seconds = Math.floor((newRemainingMinutes * 60) % 60);
+            
+            // Show "SELESAI" when time reaches 0
+            const display = newRemainingMinutes === 0
+              ? 'SELESAI'
+              : hours > 0
+                ? `${hours} JAM ${minutes} MENIT ${seconds} DETIK`
+                : minutes > 0
+                  ? `${minutes} MENIT ${seconds} DETIK`
+                  : `${seconds} DETIK`;
             
             return {
               ...antrean,
@@ -122,16 +133,12 @@ export const useGateMonitorStore = create<GateMonitorStore>((set, get) => ({
                 hours,
                 minutes,
                 seconds,
-                display: hours > 0
-                  ? `${hours} JAM ${minutes} MENIT ${seconds} DETIK`
-                  : minutes > 0
-                    ? `${minutes} MENIT ${seconds} DETIK`
-                    : `${seconds} DETIK`
+                display
               }
             };
           })
-          // Filter out completed antrean (remaining_minutes <= 0)
-          .filter(antrean => antrean.remaining_minutes > 0)
+          // Keep all items, don't filter by time
+          // Server will handle removing items when status changes from LOADING/VERIFYING
       }));
 
       return { gates: updatedGates };

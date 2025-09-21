@@ -202,10 +202,9 @@ class MGate extends ActiveRecord
 					)
 				);
 				
-				// Only include if there's remaining time
-				if ($remainingMinutes > 0) {
-					$gateData['antrean_list'][] = $antreanData;
-				}
+				// Always include trucks with LOADING/VERIFYING status
+				// The frontend will handle display based on remaining time
+				$gateData['antrean_list'][] = $antreanData;
 			}
 			
 			$result[] = $gateData;
