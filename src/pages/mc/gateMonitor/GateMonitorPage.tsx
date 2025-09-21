@@ -84,9 +84,9 @@ export default function GateMonitorPage() {
   }
 
   const getBadgeColor = (hours: number, minutes: number) => {
-    if (hours > 0) return 'bg-blue-100 text-blue-700'; // Still have hours
-    if (minutes > 0) return 'bg-yellow-100 text-yellow-700'; // Only minutes left
-    return 'bg-red-100 text-red-700'; // Only seconds left
+    if (hours > 0) return 'bg-blue-500 text-white'; // Still have hours
+    if (minutes > 0) return 'bg-yellow-500 text-white'; // Only minutes left
+    return 'bg-red-500 text-white'; // Only seconds left
   };
 
   return (
