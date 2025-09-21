@@ -8,6 +8,7 @@ interface GateMonitorStore {
   isLoading: boolean;
   error: string | null;
   intervalId: NodeJS.Timeout | null;
+  refreshIntervalId: NodeJS.Timeout | null;
   userToken: string | null;
   
   // Actions
@@ -26,6 +27,7 @@ export const useGateMonitorStore = create<GateMonitorStore>((set, get) => ({
   isLoading: false,
   error: null,
   intervalId: null,
+  refreshIntervalId: null,
   userToken: null,
 
   setUserToken: (token) => {
@@ -59,11 +61,14 @@ export const useGateMonitorStore = create<GateMonitorStore>((set, get) => ({
   },
 
   startPolling: (intervalMs = 1000) => {
-    const { intervalId, fetchGateData, updateCountdowns } = get();
+    const { intervalId, refreshIntervalId, fetchGateData, updateCountdowns } = get();
     
     // Stop existing polling if any
     if (intervalId) {
       clearInterval(intervalId);
+    }
+    if (refreshIntervalId) {
+      clearInterval(refreshIntervalId);
     }
 
     // Initial fetch
@@ -75,19 +80,25 @@ export const useGateMonitorStore = create<GateMonitorStore>((set, get) => ({
     }, intervalMs);
 
     // Refresh data from server every 30 seconds
-    const refreshIntervalId = setInterval(() => {
+    const newRefreshIntervalId = setInterval(() => {
       fetchGateData();
     }, 30000);
 
-    set({ intervalId: newIntervalId });
+    set({ 
+      intervalId: newIntervalId,
+      refreshIntervalId: newRefreshIntervalId
+    });
   },
 
   stopPolling: () => {
-    const { intervalId } = get();
+    const { intervalId, refreshIntervalId } = get();
     if (intervalId) {
       clearInterval(intervalId);
-      set({ intervalId: null });
     }
+    if (refreshIntervalId) {
+      clearInterval(refreshIntervalId);
+    }
+    set({ intervalId: null, refreshIntervalId: null });
   },
 
   updateCountdowns: () => {
@@ -136,6 +147,8 @@ export const useGateMonitorStore = create<GateMonitorStore>((set, get) => ({
       timestamp: null,
       isLoading: false,
       error: null,
+      intervalId: null,
+      refreshIntervalId: null,
       userToken: null,
     });
   },
