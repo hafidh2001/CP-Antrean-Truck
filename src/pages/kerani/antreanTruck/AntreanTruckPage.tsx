@@ -1,37 +1,37 @@
-import { useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { useAntreanTruckStore } from '@/store/antreanTruckStore';
-import { AntreanCard } from './_components/AntreanCard';
-import type { IAntreanCard } from '@/types/antreanTruck';
-import { ROUTES } from '@/utils/routes';
-import { sessionService } from '@/services/sessionService';
-import { extractEncryptedKey } from '@/utils/urlParams';
+import { useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useAntreanTruckStore } from "@/store/antreanTruckStore";
+import { AntreanCard } from "./_components/AntreanCard";
+import type { IAntreanCard } from "@/types/antreanTruck";
+import { ROUTES } from "@/utils/routes";
+import { sessionService } from "@/services/sessionService";
+import { extractEncryptedKey } from "@/utils/urlParams";
 
 export function AntreanTruckPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { antreanList, isLoading, error, loadAntreanListFromApi, reset } = useAntreanTruckStore();
-
+  const { antreanList, isLoading, error, loadAntreanListFromApi, reset } =
+    useAntreanTruckStore();
   useEffect(() => {
     const initPage = async () => {
       const encryptedData = extractEncryptedKey(location.search);
-      
+
       if (!encryptedData) {
-        console.error('No encrypted key found in URL');
+        console.error("No encrypted key found in URL");
         navigate(ROUTES.base);
         return;
       }
-      
+
       try {
         // Save session for use in other kerani pages
         await sessionService.saveSession(encryptedData);
         await loadAntreanListFromApi(encryptedData);
       } catch (error) {
-        console.error('Failed to initialize antrean truck:', error);
+        console.error("Failed to initialize antrean truck:", error);
         navigate(ROUTES.base);
       }
     };
-    
+
     initPage();
   }, []);
 

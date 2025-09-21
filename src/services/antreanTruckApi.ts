@@ -79,7 +79,8 @@ export const antreanTruckApi = {
         id: item.id,
         nopol: item.nopol,
         created_at: item.created_time,
-        jenis_barang: item.jenis_barang || 0 // Use actual count from API
+        jenis_barang: item.jenis_barang || 0, // Use actual count from API
+        status: item.status
       }));
 
       return antreanList;

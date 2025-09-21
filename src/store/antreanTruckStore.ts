@@ -17,7 +17,7 @@ export const useAntreanTruckStore = create<AntreanTruckStore>((set) => ({
     try {
       const decrypted = await decryptAES<AntreanTruckDecryptData>(encryptedData);
       // Only fetch antrean with LOADING status
-      const antreanList = await antreanTruckApi.getAntreanTruck(decrypted.user_token, AntreanStatusEnum.LOADING);
+      const antreanList = await antreanTruckApi.getAntreanTruck(decrypted.user_token, [AntreanStatusEnum.LOADING, AntreanStatusEnum.VERIFYING]);
       
       set({ 
         antreanList, 
