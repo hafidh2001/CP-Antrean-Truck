@@ -132,7 +132,7 @@ export default function GateMonitorPage() {
                       </span>
                     ) : (
                       <div className="flex flex-wrap gap-3">
-                        {gate.antrean_list.map((antrean, index) => (
+                        {gate.antrean_list.map((antrean) => (
                           <div
                             key={antrean.antrean_id}
                             className={cn(
