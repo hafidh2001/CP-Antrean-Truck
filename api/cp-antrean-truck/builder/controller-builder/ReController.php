@@ -53,6 +53,29 @@ class ReController extends Controller {
         exit;
 	}
 	
+	public function actionGateMonitor(){
+        $endpoint = XEndpointConfig::model()->findByAttributes(['label' => 'floor_plan'])->endpoint;
+        $user_token = User::model()->findByPk(Yii::app()->user->id)->user_token;
+        
+        // Check user role for access control
+        $userRole = UserRole::model()->with('role')->findByAttributes(
+            ['user_id' => Yii::app()->user->id]
+        );
+        
+        if (!$userRole || !in_array(strtolower($userRole->role->role_name), ['mc', 'admin'])) {
+            throw new CHttpException(403, 'Access denied. Only MC and Admin can access this page.');
+        }
+        
+        $res = [
+            'user_token' => $user_token
+        ];
+        $plain = json_encode($res);
+        $enc = Self::encryptAES($plain);
+        
+        header("Location: " .$endpoint.'gate-monitor?key='.urlencode($enc));
+        exit;
+	}
+	
 	public function actionOpnam($id){
         $endpoint = XEndpointConfig::model()->findByAttributes(['label' => 'opname'])->endpoint;
         // $user_token = User::model()->findByPk(Yii::app()->user->id)->user_token;

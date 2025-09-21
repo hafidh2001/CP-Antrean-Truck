@@ -34,6 +34,34 @@ interface GateResponse {
   error?: string;
 }
 
+export interface IAntreanItem {
+  antrean_id: number;
+  nopol: string;
+  status: string;
+  assigned_kerani_time: string;
+  loading_time_minutes: number;
+  remaining_minutes: number;
+  remaining_time_formatted: {
+    hours: number;
+    minutes: number;
+    seconds: number;
+    display: string;
+  };
+}
+
+export interface IGateData {
+  gate_id: number;
+  gate_code: string;
+  warehouse_name: string;
+  antrean_list: IAntreanItem[];
+}
+
+export interface IGateAntreanResponse {
+  gates: IGateData[];
+  server_time: string;
+  timestamp: number;
+}
+
 export const gateApi = {
   async getGateOptions(userToken: string): Promise<IGateOption[]> {
     try {
@@ -55,6 +83,28 @@ export const gateApi = {
       return data.gates || [];
     } catch (error) {
       console.error('Failed to fetch gate options:', error);
+      throw error;
+    }
+  },
+
+  async getGateAntreanList(userToken: string): Promise<IGateAntreanResponse> {
+    try {
+      const requestBody = createApiRequest(
+        'getGateAntreanList',
+        'MGate',
+        { user_token: userToken },
+        userToken
+      );
+
+      const response = await apiClient.post<IGateAntreanResponse>('', requestBody);
+
+      if ('error' in response.data) {
+        throw new Error((response.data as any).error);
+      }
+
+      return response.data;
+    } catch (error) {
+      console.error('Failed to fetch gate antrean list:', error);
       throw error;
     }
   }

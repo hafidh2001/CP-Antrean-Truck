@@ -23,6 +23,10 @@ export class ROUTES {
     return `/antrean-truck` as const;
   }
   
+  static get gateMonitor() {
+    return `/gate-monitor` as const;
+  }
+  
   static productionCode(antreanId: string): string {
     return `/production-code/${antreanId}` as const;
   }

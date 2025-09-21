@@ -332,6 +332,72 @@ Authentication handling dilakukan di level API controller Plansys.
 
 #### 4. Gate Management
 
+##### getGateAntreanList
+```php
+// Model: MGate
+// Function: getGateAntreanList
+// Access: MC and Admin roles only
+// Parameters:
+{
+  "user_token": "string"  // Must be MC or Admin user
+}
+// Returns: All gates from all warehouses with antrean queue and countdown
+// Response structure:
+{
+  "gates": [
+    {
+      "gate_id": 1,
+      "gate_code": "GATE 1",
+      "warehouse_name": "Gudang Utama",
+      "antrean_list": [
+        {
+          "antrean_id": 123,
+          "nopol": "L 123 BA",
+          "status": "LOADING",
+          "assigned_kerani_time": "2024-01-12 10:00:00",
+          "loading_time_minutes": 80,  // Total loading time for this truck
+          "remaining_minutes": 30.5,    // Remaining time including queue
+          "remaining_time_formatted": {
+            "hours": 0,
+            "minutes": 30,
+            "seconds": 30,
+            "display": "30 MENIT 30 DETIK"
+          }
+        },
+        {
+          "antrean_id": 124,
+          "nopol": "AE 2112 BA",
+          "status": "LOADING",
+          "assigned_kerani_time": "2024-01-12 10:05:00",
+          "loading_time_minutes": 40,
+          "remaining_minutes": 70.5,    // Includes wait time for truck ahead
+          "remaining_time_formatted": {
+            "hours": 1,
+            "minutes": 10,
+            "seconds": 30,
+            "display": "1 JAM 10 MENIT 30 DETIK"
+          }
+        }
+      ]
+    },
+    {
+      "gate_id": 2,
+      "gate_code": "GATE 2",
+      "antrean_list": [...]
+    }
+  ],
+  "server_time": "2024-01-12 11:30:00",
+  "timestamp": 1705033800
+}
+// Logic:
+// - Role validation: Only MC and Admin can access
+// - Shows ALL gates from ALL warehouses (no warehouse filter needed)
+// - Only shows trucks with status LOADING or VERIFYING
+// - Calculates loading time: qty_in_tons * loading_time_per_ton (default 10 min/ton)
+// - Cumulative time: Each truck's remaining time includes all trucks ahead in queue
+// - Auto-removes trucks when countdown reaches 0 (frontend handling)
+```
+
 ##### getGateOptions
 ```php
 // Model: MGate

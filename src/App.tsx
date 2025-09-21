@@ -6,6 +6,7 @@ import DecryptPage from '@/pages/decrypt/DecryptPage';
 import AntreanTruckPage from '@/pages/kerani/antreanTruck';
 import ProductionCodePage from '@/pages/kerani/productionCode';
 import ProductionCodeEntryPage from '@/pages/kerani/productionCodeEntry';
+import GateMonitorPage from '@/pages/mc/gateMonitor';
 import { ROUTES } from '@/utils/routes';
 import { AppWrapper } from '@/components/layout/AppWrapper';
 
@@ -30,6 +31,10 @@ function App() {
         <Route 
           path={ROUTES.antreanTruck} 
           element={<AntreanTruckPage />} 
+        />
+        <Route 
+          path={ROUTES.gateMonitor} 
+          element={<GateMonitorPage />} 
         />
         <Route 
           path={ROUTES.productionCode(':antreanId')} 
