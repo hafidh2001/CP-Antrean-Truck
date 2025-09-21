@@ -117,14 +117,12 @@ export const useGateMonitorStore = create<GateMonitorStore>((set, get) => ({
             const minutes = Math.floor(newRemainingMinutes % 60);
             const seconds = Math.floor((newRemainingMinutes * 60) % 60);
             
-            // Show "SELESAI" when time reaches 0
-            const display = newRemainingMinutes === 0
-              ? 'SELESAI'
-              : hours > 0
-                ? `${hours} JAM ${minutes} MENIT ${seconds} DETIK`
-                : minutes > 0
-                  ? `${minutes} MENIT ${seconds} DETIK`
-                  : `${seconds} DETIK`;
+            // Keep showing 0 DETIK when time reaches 0
+            const display = hours > 0
+              ? `${hours} JAM ${minutes} MENIT ${seconds} DETIK`
+              : minutes > 0
+                ? `${minutes} MENIT ${seconds} DETIK`
+                : `${seconds} DETIK`;
             
             return {
               ...antrean,

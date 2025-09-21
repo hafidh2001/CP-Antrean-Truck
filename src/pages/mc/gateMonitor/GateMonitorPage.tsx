@@ -83,12 +83,12 @@ export default function GateMonitorPage() {
     );
   }
 
-  const getBadgeColor = (hours: number, minutes: number, seconds: number) => {
+  const getCardColor = (hours: number, minutes: number, seconds: number) => {
     // If all time is 0, show gray (completed)
-    if (hours === 0 && minutes === 0 && seconds === 0) return 'bg-gray-400 text-white';
-    if (hours > 0) return 'bg-blue-500 text-white'; // Still have hours
-    if (minutes > 0) return 'bg-yellow-500 text-white'; // Only minutes left
-    return 'bg-red-500 text-white'; // Only seconds left
+    if (hours === 0 && minutes === 0 && seconds === 0) return 'bg-gray-400 border-gray-500';
+    if (hours > 0) return 'bg-blue-500 border-blue-600'; // Still have hours
+    if (minutes > 0) return 'bg-yellow-500 border-yellow-600'; // Only minutes left
+    return 'bg-red-500 border-red-600'; // Only seconds left
   };
 
   return (
@@ -131,32 +131,40 @@ export default function GateMonitorPage() {
                         Tidak ada antrean
                       </span>
                     ) : (
-                      <div className="space-y-2">
+                      <div className="flex flex-wrap gap-3">
                         {gate.antrean_list.map((antrean, index) => (
                           <div
                             key={antrean.antrean_id}
-                            className="flex items-center gap-3"
-                          >
-                            <span className="font-semibold text-gray-800 min-w-[100px]">
-                              {antrean.nopol}
-                            </span>
-                            <span 
-                              className={cn(
-                                'px-3 py-1 rounded-full text-sm font-medium',
-                                getBadgeColor(
-                                  antrean.remaining_time_formatted.hours,
-                                  antrean.remaining_time_formatted.minutes,
-                                  antrean.remaining_time_formatted.seconds
-                                )
-                              )}
-                            >
-                              {antrean.remaining_time_formatted.display}
-                            </span>
-                            {index === 0 && (
-                              <span className="ml-2 px-2 py-1 text-xs bg-green-100 text-green-700 rounded">
-                                Sedang Loading
-                              </span>
+                            className={cn(
+                              'relative p-3 rounded-lg border-2 text-white w-[160px]',
+                              getCardColor(
+                                antrean.remaining_time_formatted.hours,
+                                antrean.remaining_time_formatted.minutes,
+                                antrean.remaining_time_formatted.seconds
+                              )
                             )}
+                          >
+                            {/* Status badge only for VERIFYING */}
+                            {antrean.status === 'VERIFYING' && (
+                              <div className="absolute top-2 right-2">
+                                <span className="px-2 py-1 text-xs bg-white/20 backdrop-blur rounded">
+                                  VERIFYING
+                                </span>
+                              </div>
+                            )}
+                            
+                            {/* License plate number */}
+                            <div className="font-bold text-lg mb-2">
+                              {antrean.nopol}
+                            </div>
+                            
+                            {/* Bottom row */}
+                            <div className="flex justify-between items-end">
+                              {/* Countdown timer */}
+                              <div className="text-sm font-medium">
+                                {antrean.remaining_time_formatted.display}
+                              </div>
+                            </div>
                           </div>
                         ))}
                       </div>
