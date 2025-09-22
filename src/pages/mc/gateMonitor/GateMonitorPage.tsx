@@ -1,11 +1,12 @@
-import { useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { useGateMonitorStore } from '@/store/gateMonitorStore';
-import { extractEncryptedKey } from '@/utils/urlParams';
-import { decryptAES } from '@/functions/decrypt';
-import { ROUTES } from '@/utils/routes';
-import { AlertCircle } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useGateMonitorStore } from "@/store/gateMonitorStore";
+import { extractEncryptedKey } from "@/utils/urlParams";
+import { decryptAES } from "@/functions/decrypt";
+import { ROUTES } from "@/utils/routes";
+import { AlertCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { AntreanStatusEnum } from "@/types";
 
 interface DecryptedData {
   user_token: string;
@@ -27,28 +28,28 @@ export default function GateMonitorPage() {
   useEffect(() => {
     const initPage = async () => {
       const encryptedData = extractEncryptedKey(location.search);
-      
+
       if (!encryptedData) {
-        console.error('No encrypted key found in URL');
+        console.error("No encrypted key found in URL");
         navigate(ROUTES.base);
         return;
       }
-      
+
       try {
         const decrypted = await decryptAES<DecryptedData>(encryptedData);
-        
+
         if (!decrypted.user_token) {
-          throw new Error('Invalid token data');
+          throw new Error("Invalid token data");
         }
-        
+
         setUserToken(decrypted.user_token);
         startPolling(1000); // Update countdown every second
       } catch (error) {
-        console.error('Failed to initialize gate monitor:', error);
+        console.error("Failed to initialize gate monitor:", error);
         navigate(ROUTES.base);
       }
     };
-    
+
     initPage();
 
     // Cleanup
@@ -85,10 +86,11 @@ export default function GateMonitorPage() {
 
   const getCardColor = (hours: number, minutes: number, seconds: number) => {
     // If all time is 0, show gray (completed)
-    if (hours === 0 && minutes === 0 && seconds === 0) return 'bg-gray-400 border-gray-500';
-    if (hours > 0) return 'bg-blue-500 border-blue-600'; // Still have hours
-    if (minutes > 0) return 'bg-yellow-500 border-yellow-600'; // Only minutes left
-    return 'bg-red-500 border-red-600'; // Only seconds left
+    if (hours === 0 && minutes === 0 && seconds === 0)
+      return "bg-gray-400 border-gray-500";
+    if (hours > 0) return "bg-blue-500 border-blue-600"; // Still have hours
+    if (minutes > 0) return "bg-yellow-500 border-yellow-600"; // Only minutes left
+    return "bg-red-500 border-red-600"; // Only seconds left
   };
 
   return (
@@ -136,7 +138,7 @@ export default function GateMonitorPage() {
                           <div
                             key={antrean.antrean_id}
                             className={cn(
-                              'relative p-3 rounded-lg border-2 text-white w-[160px]',
+                              "relative p-3 rounded-lg border-2 text-white w-[250px]",
                               getCardColor(
                                 antrean.remaining_time_formatted.hours,
                                 antrean.remaining_time_formatted.minutes,
@@ -145,19 +147,19 @@ export default function GateMonitorPage() {
                             )}
                           >
                             {/* Status badge only for VERIFYING */}
-                            {antrean.status === 'VERIFYING' && (
+                            {antrean.status === AntreanStatusEnum.VERIFYING && (
                               <div className="absolute top-2 right-2">
                                 <span className="px-2 py-1 text-xs bg-white/20 backdrop-blur rounded">
                                   VERIFYING
                                 </span>
                               </div>
                             )}
-                            
+
                             {/* License plate number */}
                             <div className="font-bold text-lg mb-2">
                               {antrean.nopol}
                             </div>
-                            
+
                             {/* Bottom row */}
                             <div className="flex justify-between items-end">
                               {/* Countdown timer */}
