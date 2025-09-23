@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Truck, CheckCircle2, Circle, Trash2 } from 'lucide-react';
+import { ArrowLeft, Truck, CheckCircle2, Circle, Trash2, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -346,15 +346,24 @@ export function ProductionCodeEntryPage() {
       <div className="max-w-md w-full h-screen bg-white flex flex-col">
         {/* Header - Fixed */}
         <div className="bg-white border-b border-gray-200 flex-shrink-0">
-          {/* Back Button Row */}
-          <div className="flex items-center pl-2 pb-2">
+          {/* Top Row with Back and Logout */}
+          <div className="flex items-center justify-between p-2">
             <Button
               variant="ghost"
               onClick={handleBack}
               className="flex items-center gap-2"
             >
-              <ArrowLeft className="h-5 w-5" />
-              <span>Back</span>
+              <ArrowLeft className="h-4 w-4" />
+              <span className="text-sm">Back</span>
+            </Button>
+            <Button
+              onClick={() => window.location.href = 'https://hachi.kamz-kun.id/cp_fifo/index.php?r=site/logout'}
+              variant="destructive"
+              size="sm"
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              <LogOut className="h-4 w-4 mr-1" />
+              <span className="text-sm">Logout</span>
             </Button>
           </div>
           

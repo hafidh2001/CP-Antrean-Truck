@@ -6,6 +6,8 @@ import type { IAntreanCard } from "@/types/antreanTruck";
 import { ROUTES } from "@/utils/routes";
 import { sessionService } from "@/services/sessionService";
 import { extractEncryptedKey } from "@/utils/urlParams";
+import { LogOut } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export function AntreanTruckPage() {
   const navigate = useNavigate();
@@ -51,8 +53,20 @@ export function AntreanTruckPage() {
     return (
       <div className="h-screen bg-gray-100 flex items-center justify-center">
         <div className="max-w-md w-full h-screen bg-white flex flex-col">
-          <div className="bg-white border-b border-gray-200 p-6 text-center flex-shrink-0">
-            <h1 className="text-3xl font-bold text-gray-800">Antrian Kerani</h1>
+          <div className="bg-white border-b border-gray-200 p-4 flex-shrink-0">
+            <div className="flex items-center justify-between">
+              <div className="w-20"></div>
+              <h1 className="text-2xl font-bold text-gray-800 flex-1 text-center">Antrian Kerani</h1>
+              <Button
+                onClick={() => window.location.href = 'https://hachi.kamz-kun.id/cp_fifo/index.php?r=site/logout'}
+                variant="destructive"
+                size="sm"
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                <LogOut className="h-4 w-4 mr-1" />
+                <span className="hidden sm:inline">Logout</span>
+              </Button>
+            </div>
           </div>
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
@@ -69,8 +83,20 @@ export function AntreanTruckPage() {
     return (
       <div className="h-screen bg-gray-100 flex items-center justify-center">
         <div className="max-w-md w-full h-screen bg-white flex flex-col">
-          <div className="bg-white border-b border-gray-200 p-6 text-center flex-shrink-0">
-            <h1 className="text-3xl font-bold text-gray-800">Antrian Kerani</h1>
+          <div className="bg-white border-b border-gray-200 p-4 flex-shrink-0">
+            <div className="flex items-center justify-between">
+              <div className="w-20"></div>
+              <h1 className="text-2xl font-bold text-gray-800 flex-1 text-center">Antrian Kerani</h1>
+              <Button
+                onClick={() => window.location.href = 'https://hachi.kamz-kun.id/cp_fifo/index.php?r=site/logout'}
+                variant="destructive"
+                size="sm"
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                <LogOut className="h-4 w-4 mr-1" />
+                <span className="hidden sm:inline">Logout</span>
+              </Button>
+            </div>
           </div>
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
@@ -86,8 +112,20 @@ export function AntreanTruckPage() {
     <div className="h-screen bg-gray-100 flex items-center justify-center">
       <div className="max-w-md w-full h-screen bg-white flex flex-col">
         {/* Header - Fixed */}
-        <div className="bg-white border-b border-gray-200 p-6 text-center flex-shrink-0">
-          <h1 className="text-3xl font-bold text-gray-800">Antrian Kerani</h1>
+        <div className="bg-white border-b border-gray-200 p-4 flex-shrink-0">
+          <div className="flex items-center justify-between">
+            <div className="w-20"></div> {/* Spacer for centering */}
+            <h1 className="text-2xl font-bold text-gray-800 flex-1 text-center">Antrian Kerani</h1>
+            <Button
+              onClick={() => window.location.href = 'https://hachi.kamz-kun.id/cp_fifo/index.php?r=site/logout'}
+              variant="destructive"
+              size="sm"
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              <LogOut className="h-4 w-4 mr-1" />
+              <span className="hidden sm:inline">Logout</span>
+            </Button>
+          </div>
         </div>
 
         {/* Scrollable Content - Takes remaining height */}
