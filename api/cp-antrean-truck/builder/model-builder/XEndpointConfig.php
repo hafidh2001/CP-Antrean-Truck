@@ -202,6 +202,19 @@ class XEndpointConfig extends ActiveRecord
 			$warehouseScores = array();
 			
 			foreach ($warehouses as $warehouse) {
+				// ========================================
+				// GET LAST COMPLETED OPNAME FOR THIS WAREHOUSE
+				// ========================================
+				$lastOpname = TOpnam::model()->find(array(
+					'condition' => 'warehouse_id = :warehouse_id AND finished_time IS NOT NULL',
+					'params' => array(':warehouse_id' => $warehouse->id),
+					'order' => 'finished_time DESC'
+				));
+				
+				// Skip warehouse if no completed opname exists
+				if (!$lastOpname) {
+					continue;
+				}
 				$canFulfillAll = true;
 				$totalStock = 0;
 				$earliestProductionDate = null;
@@ -269,7 +282,7 @@ class XEndpointConfig extends ActiveRecord
 								$sortOrder = 't.production_date IS NULL DESC, t.production_date ASC, t.id ASC';
 							}
 							
-							// Get stock for this UOM
+							// Get stock for this UOM from last opname
 							$stockQuery = TStock::model()
 								->with(array(
 									'location' => array(
@@ -278,11 +291,11 @@ class XEndpointConfig extends ActiveRecord
 									)
 								))
 								->findAll(array(
-									'condition' => 't.goods_id = :goods_id AND t.uom_id = :uom_id AND t.status = :status AND t.qty > 0',
+									'condition' => 't.goods_id = :goods_id AND t.uom_id = :uom_id AND t.opnam_id = :opnam_id AND t.qty > 0',
 									'params' => array(
 										':goods_id' => $goodsId,
 										':uom_id' => $uom->id,
-										':status' => 'ACTIVE'
+										':opnam_id' => $lastOpname->id
 									),
 									'order' => $sortOrder
 								));
@@ -506,6 +519,17 @@ class XEndpointConfig extends ActiveRecord
 				// Return all warehouses even if they can't fulfill
 				// Just pick the one with most variety of goods
 				foreach ($warehouses as $warehouse) {
+					// Get last completed opname
+					$lastOpname = TOpnam::model()->find(array(
+						'condition' => 'warehouse_id = :warehouse_id AND finished_time IS NOT NULL',
+						'params' => array(':warehouse_id' => $warehouse->id),
+						'order' => 'finished_time DESC'
+					));
+					
+					if (!$lastOpname) {
+						continue;
+					}
+					
 					$locationDetails = array();
 					$goodsVariety = 0;
 					
@@ -518,10 +542,10 @@ class XEndpointConfig extends ActiveRecord
 								)
 							))
 							->exists(array(
-								'condition' => 't.goods_id = :goods_id AND t.status = :status AND t.qty > 0',
+								'condition' => 't.goods_id = :goods_id AND t.opnam_id = :opnam_id AND t.qty > 0',
 								'params' => array(
 									':goods_id' => $required['goods_id'],
-									':status' => 'ACTIVE'
+									':opnam_id' => $lastOpname->id
 								)
 							));
 						
@@ -545,9 +569,16 @@ class XEndpointConfig extends ActiveRecord
 				}
 			}
 			
-			// If still no warehouses, just return first warehouse
+			// If still no warehouses, just return first warehouse with completed opname
 			if (empty($warehouseScores)) {
-				$firstWarehouse = MWarehouse::model()->find(array('condition' => 'status = :status', 'params' => array(':status' => 'OPEN')));
+				$firstWarehouse = MWarehouse::model()->find(array(
+					'condition' => 'status = :status AND EXISTS (
+						SELECT 1 FROM t_opnam 
+						WHERE t_opnam.warehouse_id = t.id 
+						AND t_opnam.finished_time IS NOT NULL
+					)',
+					'params' => array(':status' => 'OPEN')
+				));
 				if ($firstWarehouse) {
 					$warehouseScores[] = array(
 						'warehouse_id' => $firstWarehouse->id,
