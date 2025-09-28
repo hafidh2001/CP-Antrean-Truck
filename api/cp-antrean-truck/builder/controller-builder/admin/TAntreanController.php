@@ -21,16 +21,38 @@ class TAntreanController extends Controller {
         $this->renderForm('AdminTAntreanHistory');
     }
     
+    public function actionGate() {
+        $this->renderForm('AdminTAntreanGate');
+    }
+    
     public function actionFind($nopol) {
         $nopol = trim($nopol);
         
         $antrean = TAntrean::model()->find(
-            "nopol = :nopol AND status = 'LOADING'",
+            "nopol = :nopol AND status = 'LOADING' OR status = 'VERIFIYING' OR status = 'PENDING'",
             [":nopol" => $nopol]
         );
     
         if ($antrean !== null) {
-            $this->redirect(['/admin/tAntrean/edit', 'id' => $antrean->id]);
+            if ($antrean->status === 'LOADING') {
+                // update jadi VERIFYING
+                $antrean->status = 'VERIFYING';
+                $antrean->verifying_time = date('Y-m-d H:i:s');
+                if ($antrean->save()) {
+                    $this->redirect(['/admin/tAntrean/edit', 'id' => $antrean->id]);
+                    return;
+                } else {
+                    Yii::app()->user->setFlash('error', 'Gagal mengupdate status.');
+                }
+            } else if (in_array($antrean->status, ['VERIFIYING', 'PENDING'])) {
+                // sudah VERIFYING, langsung ke detail
+                $this->redirect(['/admin/tAntrean/edit', 'id' => $antrean->id]);
+                return;
+            } else {
+                Yii::app()->user->setFlash('error', 'Status antrean tidak valid.');
+                $this->redirect(['/admin/tAntrean/index']);
+                return;
+            }
         } else {
             Yii::app()->user->setFlash('error', 'Antrean tidak ada.');
              $this->redirect(['/admin/tAntrean/index']);
@@ -78,7 +100,7 @@ class TAntreanController extends Controller {
             $model->gate_i_id = isset($gates[0]) ? $gates[0]->gate_id : null;
             $model->gate_ii_id = isset($gates[1]) ? $gates[1]->gate_id : null;
         }
-        
+
         if (isset($_POST["AdminTAntreanForm"])) {
             $model->attributes = $_POST["AdminTAntreanForm"];
             
@@ -107,8 +129,6 @@ class TAntreanController extends Controller {
                         
                         if (isset($_POST["AdminTAntreanForm"]["admin_id"])) {
                             $antrean->admin_id = $_POST["AdminTAntreanForm"]["admin_id"];
-                            $antrean->verifying_time = date('Y-m-d H:i:s');
-                            $antrean->status = "VERIFIYING";
                         }
 
                         $antrean->save();
@@ -198,6 +218,56 @@ class TAntreanController extends Controller {
 
 
         $this->redirect(['index']);
+    }
+    
+    public function actionVerified($id) {
+        $antrean = TAntrean::model()->findByPk($id);
+    
+        if ($antrean === null) {
+            Yii::app()->user->setFlash('error', 'Data antrean tidak ditemukan.');
+            $this->redirect(['/admin/tAntrean/index']);
+            return;
+        }
+    
+        // update status hanya jika sebelumnya VERIFYING
+        if ($antrean->status === 'VERIFYING') {
+            $antrean->status = 'VERIFIED';
+            $antrean->verified_time = date('Y-m-d H:i:s');
+            if ($antrean->save()) {
+                Yii::app()->user->setFlash('success', 'Status berhasil diubah menjadi VERIFIED.');
+                $this->redirect(['/admin/tAntrean/index']);
+                return;
+            } else {
+                Yii::app()->user->setFlash('error', 'Gagal mengupdate status.');
+            }
+        }
+    
+        $this->redirect(['/admin/tAntrean/index']);
+    }
+    
+    public function actionSavePendingNote() {
+        $rest_json = file_get_contents("php://input");
+        $post = json_decode($rest_json, true);
+        
+        $id_antrean = isset($post['data']['id']) ? $post['data']['id'] : null;
+        $pending_note = isset($post['data']['pending_note']) ? $post['data']['pending_note'] : null;
+        
+        $antrean = TAntrean::model()->findByPk($id_antrean);
+        
+        if ($antrean === null) {
+            Yii::app()->user->setFlash('error', 'Data antrean tidak ditemukan.');
+            $this->redirect(['/admin/tAntrean/index']);
+            return;
+        }
+    
+        $antrean->status = 'PENDING';
+        $antrean->pending_note = $pending_note;
+        if ($antrean->save()) {
+            $this->redirect(['/admin/tAntrean/edit', 'id' => $antrean->id]);
+            return;
+        } else {
+            Yii::app()->user->setFlash('error', 'Gagal mengupdate status.');
+        }
     }
     
     public function actionPrint($id) {

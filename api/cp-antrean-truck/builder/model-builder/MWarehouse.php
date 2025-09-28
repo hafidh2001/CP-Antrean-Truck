@@ -109,7 +109,7 @@ class MWarehouse extends ActiveRecord
 				$unit['type_storage'] = $location['type_storage'] ?: 'warehouse'; //default ke 'warehouse'
 				
 				
-				$qo = "SELECT * FROM t_opnam WHERE warehouse_id = '1' AND unlocked_time IS NOT NULL ORDER BY created_time DESC LIMIT 1";
+				$qo = "SELECT * FROM t_opnam WHERE warehouse_id = '".$warehouse_id."' AND finished_time IS NOT NULL ORDER BY created_time DESC LIMIT 1";
 				$lastOpnam = Yii::app()->db->createCommand($qo)->queryRow();
 				
 				$w = "";
@@ -126,7 +126,10 @@ class MWarehouse extends ActiveRecord
                               g.kode as goods_code, 
                               s.qty as stock_qty, 
                               u.unit as stock_unit, 
-                              o.finished_time as opnam_date 
+                              
+                              s.production_date as opnam_date,
+                              u.id as uom_id,
+                              s.from_last_opnam
                             FROM 
                               t_stock s 
                               INNER JOIN m_location l on l.id = s.location_id 
@@ -228,9 +231,9 @@ class MWarehouse extends ActiveRecord
 				
 				
 				
-				
+				$unit['stock'] = [];
 				//Current Opnam Stock
-				$qo = "SELECT * FROM t_opnam WHERE warehouse_id = '1' AND unlocked_time IS NOT NULL ORDER BY created_time DESC LIMIT 1";
+				$qo = "SELECT * FROM t_opnam WHERE warehouse_id = '".$warehouse_id."' AND unlocked_time IS NOT NULL AND finished_time is NULL ORDER BY created_time DESC LIMIT 1";
 				$currentOpnam = Yii::app()->db->createCommand($qo)->queryRow();
 				
 				$w = "";
@@ -246,7 +249,10 @@ class MWarehouse extends ActiveRecord
                       g.kode as goods_code, 
                       s.qty as stock_qty, 
                       u.unit as stock_unit, 
-                      o.finished_time as opnam_date 
+                      s.production_date as opnam_date,
+                      u.id as uom_id,
+                      s.from_last_opnam
+                      
                     FROM 
                       t_stock s 
                       INNER JOIN m_location l on l.id = s.location_id 
@@ -264,9 +270,11 @@ class MWarehouse extends ActiveRecord
 				
 				//Last Opnam Stock
 				
-				$qo = "SELECT * FROM t_opnam WHERE warehouse_id = '1' AND finished_time IS NOT NULL ORDER BY created_time DESC LIMIT 1";
+				$qo = "SELECT * FROM t_opnam WHERE warehouse_id = '".$warehouse_id."' AND finished_time IS NOT NULL ORDER BY created_time DESC LIMIT 1";
 				
 				$currentOpnam = Yii::app()->db->createCommand($qo)->queryRow();
+				
+				
 				
 				$w = "";
 				if($currentOpnam){
@@ -281,7 +289,9 @@ class MWarehouse extends ActiveRecord
                       g.kode as goods_code, 
                       s.qty as stock_qty, 
                       u.unit as stock_unit, 
-                      o.finished_time as opnam_date 
+                      s.production_date as opnam_date,
+                      u.id as uom_id,
+                      true as from_last_opnam
                     FROM 
                       t_stock s 
                       INNER JOIN m_location l on l.id = s.location_id 
@@ -294,7 +304,11 @@ class MWarehouse extends ActiveRecord
 				
 				$stock = Yii::app()->db->createCommand($q)->queryAll();
 				
-				$unit['last_stock'] = $stock;
+				
+				if(count($unit['stock'])<=0){
+				    $unit['stock'] = $stock;    
+				}
+				
 				
 			}
 
@@ -360,7 +374,7 @@ class MWarehouse extends ActiveRecord
 	}
 	
 	public static function setEncrypt() {
-        $plaintext="{\"warehouse_id\":1, \"user_id\":4}";
+        $plaintext="{\"warehouse_id\":5, \"user_id\":4}";
 	    $key = "alfafukidialdio";
         $key = substr(hash('sha256', $key, true), 0, 32); // 256-bit key
         $iv  = openssl_random_pseudo_bytes(16); // 128-bit IV

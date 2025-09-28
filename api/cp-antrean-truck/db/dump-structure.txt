@@ -25,6 +25,7 @@ CREATE TABLE "public"."m_goods" (
     "id_sap" integer,
     "alias" character varying(256),
     "loading_time" integer DEFAULT '10' NOT NULL,
+    "umur" integer DEFAULT '14' NOT NULL,
     CONSTRAINT "m_goods_pkey" PRIMARY KEY ("id")
 ) WITH (oids = false);
 
@@ -114,6 +115,16 @@ CREATE TABLE "public"."p_user" (
     CONSTRAINT "p_user_pkey" PRIMARY KEY ("id")
 ) WITH (oids = false);
 
+INSERT INTO "p_user" ("id", "email", "username", "password", "last_login", "is_deleted", "user_token") VALUES
+(3,	'mail@mail.com',	'kerani',	'$2y$10$mDhCyaiSIbq9EcKE8hgc8Ow3dNS1f.f4HKgIXqH9GDs9F150nhSbK',	'2025-07-29 11:47:06',	NULL,	'dNS1f.f4HKgIXqH9GDs9F150nhSbK'),
+(2,	'mail@mail.com',	'administrator',	'$2y$10$fwUMIl8gnzXVwQW6BLpC9euSso8D1cBny0y/lKuv56VpA2jcXxOM.',	'2025-08-20 10:42:46',	'f',	'6BLpC9euSso8D1cBny0'),
+(9,	'mail@mail.com',	'dummy4',	'$2y$10$2nwx/tQ2t/qbgtUPtGSWceVMLNlNh2S95ZZn/FQn.7mor4Et/LnKC',	NULL,	'f',	''),
+(10,	'mail@mail.com',	'dummy5',	'$2y$10$bSk7e5R58sIdMi.kUJvnuOE63zx4/Bai2NR01C1SwFm9o2.fKdeBO',	NULL,	'f',	''),
+(11,	'mail@mail.com',	'dummy7',	'$2y$10$GW4FdrarS3iph/6ofnhol.No.NrcBZqBIU/64ZvbiwGIkeUlRYtxe',	NULL,	'f',	''),
+(4,	'mail@mail.com',	'pengawas',	'$2y$10$7p0JxLndx/oC1K1XEKp6quTPkJKvnbSKzTS8ag1wWdKgxq1GBpckq',	'2025-08-17 20:29:35',	NULL,	'TS8ag1wWdKgxq1GBpckq'),
+(1,	'kamil@avolut.com',	'kamz',	'$2y$10$HOMaYfDtNCNtEDkaTTgyuuP9fT64PowUQL0ZvEu/J5udVJazu8e2O',	'2025-08-21 10:47:24',	'f',	''),
+(5,	'mail@mail.com',	'mcdev',	'$2y$10$iU431ykFCfThXOYxdliNmueAWeDKo1TTldJg0MtfzpdwBtIB.D8g6',	'2025-08-18 01:58:27',	NULL,	''),
+(12,	'main@gmail.com',	'admin',	'$2y$10$21CLTXe5/Koa6hLRC/ALAez0J.t7weamVlbLs1Qie23qMi/qT8s6a',	NULL,	NULL,	'ALAez0J.t7weamVlbLs1Qie23qMi');
 
 DROP TABLE IF EXISTS "p_user_role";
 DROP SEQUENCE IF EXISTS p_user_role_id_seq;
@@ -147,6 +158,7 @@ CREATE TABLE "public"."t_antrean" (
     "admin_id" integer,
     "warehouse_override_id" integer,
     "pending_note" text,
+    "qr_code" character varying(256),
     CONSTRAINT "t_antrean_pkey" PRIMARY KEY ("id")
 ) WITH (oids = false);
 
@@ -204,6 +216,7 @@ CREATE TABLE "public"."t_antrean_rekomendasi_lokasi" (
     "uom_id" integer NOT NULL,
     "location_override_id" integer,
     "qty_override" integer,
+    "tgl_produksi" date,
     CONSTRAINT "t_antrean_rekomendasi_lokasi_pkey" PRIMARY KEY ("id")
 ) WITH (oids = false);
 
@@ -290,6 +303,8 @@ CREATE TABLE "public"."t_stock" (
     "created_by" integer NOT NULL,
     "opnam_id" integer NOT NULL,
     "production_date" date,
+    "from_last_opnam" boolean DEFAULT false NOT NULL,
+    "keterangan" text,
     CONSTRAINT "t_stock_pkey" PRIMARY KEY ("id")
 ) WITH (oids = false);
 
@@ -323,18 +338,22 @@ ALTER TABLE ONLY "public"."t_antrean" ADD CONSTRAINT "t_antrean_mc_id_fkey" FORE
 ALTER TABLE ONLY "public"."t_antrean" ADD CONSTRAINT "t_antrean_warehouse_id_fkey" FOREIGN KEY (warehouse_id) REFERENCES m_warehouse(id) NOT DEFERRABLE;
 ALTER TABLE ONLY "public"."t_antrean" ADD CONSTRAINT "t_antrean_warehouse_override_id_fkey" FOREIGN KEY (warehouse_override_id) REFERENCES m_warehouse(id) NOT DEFERRABLE;
 
-ALTER TABLE ONLY "public"."t_antrean_gate" ADD CONSTRAINT "t_antrean_gate_antrean_id_fkey" FOREIGN KEY (antrean_id) REFERENCES t_antrean(id) NOT DEFERRABLE;
+ALTER TABLE ONLY "public"."t_antrean_gate" ADD CONSTRAINT "t_antrean_gate_antrean_id_fkey" FOREIGN KEY (antrean_id) REFERENCES t_antrean(id) ON UPDATE CASCADE ON DELETE CASCADE NOT DEFERRABLE;
 ALTER TABLE ONLY "public"."t_antrean_gate" ADD CONSTRAINT "t_antrean_gate_gate_id_fkey" FOREIGN KEY (gate_id) REFERENCES m_gate(id) NOT DEFERRABLE;
 
 ALTER TABLE ONLY "public"."t_antrean_jebolan" ADD CONSTRAINT "t_antrean_jebolan_antrean_id_fkey" FOREIGN KEY (antrean_id) REFERENCES t_antrean(id) NOT DEFERRABLE;
+ALTER TABLE ONLY "public"."t_antrean_jebolan" ADD CONSTRAINT "t_antrean_jebolan_goods_id_fkey" FOREIGN KEY (goods_id) REFERENCES m_goods(id) NOT DEFERRABLE;
 
-ALTER TABLE ONLY "public"."t_antrean_rekomendasi_lokasi" ADD CONSTRAINT "t_antrean_rekomendasi_lokasi_antrean_id_fkey" FOREIGN KEY (antrean_id) REFERENCES t_antrean(id) NOT DEFERRABLE;
+ALTER TABLE ONLY "public"."t_antrean_kode_produksi" ADD CONSTRAINT "t_antrean_kode_produksi_antrean_id_fkey" FOREIGN KEY (antrean_id) REFERENCES t_antrean(id) ON UPDATE CASCADE ON DELETE CASCADE NOT DEFERRABLE;
+ALTER TABLE ONLY "public"."t_antrean_kode_produksi" ADD CONSTRAINT "t_antrean_kode_produksi_goods_id_fkey" FOREIGN KEY (goods_id) REFERENCES m_goods(id) NOT DEFERRABLE;
+
+ALTER TABLE ONLY "public"."t_antrean_rekomendasi_lokasi" ADD CONSTRAINT "t_antrean_rekomendasi_lokasi_antrean_id_fkey" FOREIGN KEY (antrean_id) REFERENCES t_antrean(id) ON UPDATE CASCADE ON DELETE CASCADE NOT DEFERRABLE;
 ALTER TABLE ONLY "public"."t_antrean_rekomendasi_lokasi" ADD CONSTRAINT "t_antrean_rekomendasi_lokasi_goods_id_fkey" FOREIGN KEY (goods_id) REFERENCES m_goods(id) NOT DEFERRABLE;
 ALTER TABLE ONLY "public"."t_antrean_rekomendasi_lokasi" ADD CONSTRAINT "t_antrean_rekomendasi_lokasi_location_id_fkey" FOREIGN KEY (location_id) REFERENCES m_location(id) ON DELETE CASCADE NOT DEFERRABLE;
 ALTER TABLE ONLY "public"."t_antrean_rekomendasi_lokasi" ADD CONSTRAINT "t_antrean_rekomendasi_lokasi_location_override_id_fkey" FOREIGN KEY (location_override_id) REFERENCES m_location(id) NOT DEFERRABLE;
 ALTER TABLE ONLY "public"."t_antrean_rekomendasi_lokasi" ADD CONSTRAINT "t_antrean_rekomendasi_lokasi_uom_id_fkey" FOREIGN KEY (uom_id) REFERENCES m_uom(id) NOT DEFERRABLE;
 
-ALTER TABLE ONLY "public"."t_delivery_order_line" ADD CONSTRAINT "t_delivery_order_line_do_id_fkey" FOREIGN KEY (do_id) REFERENCES t_delivery_order(id) NOT DEFERRABLE;
+ALTER TABLE ONLY "public"."t_delivery_order_line" ADD CONSTRAINT "t_delivery_order_line_do_id_fkey" FOREIGN KEY (do_id) REFERENCES t_delivery_order(id) ON UPDATE CASCADE ON DELETE CASCADE NOT DEFERRABLE;
 
 ALTER TABLE ONLY "public"."t_opnam" ADD CONSTRAINT "t_opnam_user_id_fkey" FOREIGN KEY (user_id) REFERENCES p_user(id) NOT DEFERRABLE;
 ALTER TABLE ONLY "public"."t_opnam" ADD CONSTRAINT "t_opnam_warehouse_id_fkey" FOREIGN KEY (warehouse_id) REFERENCES m_warehouse(id) NOT DEFERRABLE;
@@ -345,4 +364,4 @@ ALTER TABLE ONLY "public"."t_stock" ADD CONSTRAINT "t_stock_location_id_fkey" FO
 ALTER TABLE ONLY "public"."t_stock" ADD CONSTRAINT "t_stock_opnam_id_fkey" FOREIGN KEY (opnam_id) REFERENCES t_opnam(id) ON UPDATE CASCADE ON DELETE CASCADE NOT DEFERRABLE;
 ALTER TABLE ONLY "public"."t_stock" ADD CONSTRAINT "t_stock_uom_id_fkey" FOREIGN KEY (uom_id) REFERENCES m_uom(id) NOT DEFERRABLE;
 
--- 2025-09-11 10:42:23.030057+02
+-- 2025-09-27 05:47:01.388056+02

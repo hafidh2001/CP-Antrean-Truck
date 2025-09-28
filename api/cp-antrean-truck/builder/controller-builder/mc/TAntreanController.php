@@ -21,11 +21,15 @@ class TAntreanController extends Controller {
         $this->renderForm('McTAntreanHistory');
     }
     
+    public function actionPrintSlip($id){
+        TAntrean::PrintSlip($id);
+    }
+    
     public function actionFind($nopol) {
         $nopol = trim($nopol);
         
         $antrean = TAntrean::model()->find(
-            "nopol = :nopol AND status = 'OPEN'",
+            "nopol = :nopol AND status = 'OPEN' OR status = 'PENDING'",
             [":nopol" => $nopol]
         );
     

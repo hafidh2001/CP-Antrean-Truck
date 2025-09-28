@@ -38,6 +38,7 @@ class TAntreanRekomendasiLokasi extends ActiveRecord
 			'uom_id' => 'Uom',
 			'location_override_id' => 'Location Override',
 			'qty_override' => 'Qty Override',
+			'tgl_produksi' => 'Tanggal Produksi',
 		);
 	}
 

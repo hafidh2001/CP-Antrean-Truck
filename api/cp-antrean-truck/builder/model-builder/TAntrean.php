@@ -12,8 +12,8 @@ class TAntrean extends ActiveRecord
 	{
 		return array(
 			array('nopol, created_time, warehouse_id', 'required'),
-			array('warehouse_id, kerani_id, mc_id, admin_id, warehouse_override_id', 'numerical', 'integerOnly' => true),
-			array('status', 'length', 'max' => 256),
+			array('warehouse_id, kerani_id, mc_id, admin_id, warehouse_override_id', 'numerical', 'integerOnly'=>true),
+			array('status, qr_code', 'length', 'max'=>256),
 			array('assigned_kerani_time, verifying_time, verified_time, closed_time, pending_note', 'safe'),
 		);
 	}
@@ -50,7 +50,93 @@ class TAntrean extends ActiveRecord
 			'admin_id' => 'Admin',
 			'warehouse_override_id' => 'Warehouse Override',
 			'pending_note' => 'Pending Note',
+			'qr_code' => 'Qr Code',
 		);
+	}
+	
+		
+	public static function PrintSlip($id){
+	    // Query get data t_antrean_rekomendasi_lokasi for print
+	    $query = "
+            SELECT 
+                tar.id,
+                tar.antrean_id,
+                g.kode AS code,
+                COALESCE(l2.label, l1.label) AS lokasi,
+                COALESCE(tar.qty_override, tar.qty) AS jml,
+                TO_CHAR(tar.tgl_produksi, 'DD/MM') AS tgl,
+                ta.kerani_id,
+                pu.username AS kerani_username
+            FROM t_antrean_rekomendasi_lokasi tar
+            INNER JOIN m_goods g ON tar.goods_id = g.id
+            LEFT JOIN m_location l1 ON tar.location_id = l1.id
+            LEFT JOIN m_location l2 ON tar.location_override_id = l2.id
+            INNER JOIN t_antrean ta ON ta.id = tar.antrean_id
+            LEFT JOIN p_user pu ON ta.kerani_id = pu.id
+            WHERE tar.antrean_id = :antrean_id
+            ORDER BY tar.id ASC
+        ";
+        
+        $command = Yii::app()->db->createCommand($query);
+        $command->bindValue(':antrean_id', $id, PDO::PARAM_INT);
+        $rows = $command->queryAll();
+        
+        vdump($rows);
+        die();
+   
+        $mpdf = new \Mpdf\Mpdf([
+            'mode' => 'utf-8',
+            'format' => [55, 300], // lebar 80mm, tinggi contoh (bisa ditambah)
+            'margin_left' => 5, 'margin_right' => 5, 'margin_top' => 5, 'margin_bottom' => 5
+        ]);
+        
+        $html = '
+        <style>
+          body{font-family: Arial, sans-serif; color:#000;}
+          .item{margin-bottom:8mm;}
+          .kode{font-size:18pt; font-weight:700; margin-bottom:4px;}
+          .info-table{width:100%; border-collapse:collapse; font-size:9pt;}
+          .info-table td{padding:0; vertical-align:top;}
+          .label{font-size:9pt;}
+          .value{font-size:14pt; font-weight:600; padding-top:4px;}
+          .divider{border-top:1px dashed #000; margin-top:6px;}
+        </style>
+        ';
+        
+       if (empty($rows)) {
+            $html .= '<p style="text-align:center; font-size:12pt;">Data tidak tersedia</p>';
+        } else {
+            foreach ($rows as $it) {
+                $html .= '<div class="item">';
+                $html .= '<div class="kode">'.htmlspecialchars($it['code']).'</div>';
+                $html .= '<table class="info-table">';
+                $html .= '<tr>';
+                $html .= '<td style="width:40%; text-align:left;"><span class="label">Lokasi</span></td>';
+                $html .= '<td style="width:30%; text-align:center;"><span class="label">Jml</span></td>';
+                $html .= '<td style="width:30%; text-align:right;"><span class="label">Tgl Prod</span></td>';
+                $html .= '</tr>';
+                $html .= '<tr>';
+                $html .= '<td style="text-align:left;"><span class="value">'.htmlspecialchars($it['lokasi']).'</span></td>';
+                $html .= '<td style="text-align:center;"><span class="value">'.htmlspecialchars($it['jml']).'</span></td>';
+                $html .= '<td style="text-align:right;"><span class="value">'.htmlspecialchars($it['tgl']).'</span></td>';
+                $html .= '</tr>';
+                $html .= '</table>';
+                $html .= '<div class="divider"></div>';
+                $html .= '<br>';
+                $html .= '</div>';
+            }
+        }
+        
+        $html .= '<br>';
+        $html .= '<table class="info-table">';
+        $html .= '<tr>';
+        $html .= '<td style="text-align:right;"><span class="value">Kerani : '.htmlspecialchars($it['kerani_username']).'</span></td>';
+        $html .= '</tr>';
+        $html .= '</table>';
+        $html .= '</div>';
+        
+        $mpdf->WriteHTML($html);
+        $mpdf->Output();
 	}
 
 	public static function getAntreanTruck($params = [])
@@ -139,4 +225,5 @@ class TAntrean extends ActiveRecord
 
 		return $result;
 	}
+
 }
