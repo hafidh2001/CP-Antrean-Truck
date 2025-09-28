@@ -30,10 +30,15 @@ class XEndpointConfig extends ActiveRecord
 		);
 	}
 
+	/**
+	 * Recommendation getAntrean with priority logic
+	 * @param array $params
+	 * @return mixed
+	 */
 	public static function getAntrean($params = [])
 	{
-	    return ['status' => 'Success', 'warehouse' => 'GUDANG TIMUR', 'timestamp' => date('Y-m-d H:i:s')];
-	    
+		// return ['status' => 'Success', 'warehouse' => 'GUDANG TIMUR', 'timestamp' => date('Y-m-d H:i:s')];
+		
 		$transaction = Yii::app()->db->beginTransaction();
 		
 		try {
@@ -151,47 +156,40 @@ class XEndpointConfig extends ActiveRecord
 			$requiredGoods = array();
 			
 			foreach ($savedDeliveryOrders as $do) {
-				// Get DO lines
 				$doLines = TDeliveryOrderLine::model()->findAllByAttributes(array('do_id' => $do->id));
 				
 				foreach ($doLines as $line) {
-					// Cari goods berdasarkan kode
 					$goods = MGoods::model()->findByAttributes(array('kode' => $line->goods_code));
 					
 					if (!$goods) {
-						continue; // Skip jika barang tidak ditemukan di master
+						continue;
 					}
 					
-					// Cari UOM berdasarkan unit
 					$uom = MUom::model()->findByAttributes(array('unit' => $line->uoe));
-					
 					if (!$uom) {
-						// Gunakan smallest unit dari goods jika UOM tidak ditemukan
 						$uom = MUom::model()->findByPk($goods->smallest_unit);
 					}
-					
 					if (!$uom) {
-						continue; // Skip jika UOM tidak valid
+						continue;
 					}
 					
-					// Konversi qty ke smallest unit
-					$qtyInSmallestUnit = floatval($line->qty_in_do);
-					if ($uom->conversion > 1) {
-						$qtyInSmallestUnit = $qtyInSmallestUnit * $uom->conversion;
-					}
-					
-					// Aggregate by goods_id
 					$goodsId = $goods->id;
 					if (!isset($requiredGoods[$goodsId])) {
 						$requiredGoods[$goodsId] = array(
 							'goods_id' => $goodsId,
 							'goods_code' => $goods->kode,
-							'total_qty' => 0,
-							'uom_id' => $goods->smallest_unit
+							'details' => array()
 						);
 					}
 					
-					$requiredGoods[$goodsId]['total_qty'] += $qtyInSmallestUnit;
+					// Store requirement with its original UOM
+					$requiredGoods[$goodsId]['details'][] = array(
+						'qty' => floatval($line->qty_in_do),
+						'uom_id' => $uom->id,
+						'uom_unit' => $uom->unit,
+						'conversion' => $uom->conversion,
+						'convert_to' => $uom->convert_to
+					);
 				}
 			}
 			
@@ -200,74 +198,167 @@ class XEndpointConfig extends ActiveRecord
 			// ========================================
 			// 3. CARI WAREHOUSE TERBAIK BERDASARKAN PRIORITAS
 			// ========================================
-			// Get all active warehouses
 			$warehouses = MWarehouse::model()->findAllByAttributes(array('status' => 'OPEN'));
-			
 			$warehouseScores = array();
 			
 			foreach ($warehouses as $warehouse) {
-				// ========================================
-				// HITUNG SCORE UNTUK SETIAP WAREHOUSE
-				// ========================================
 				$canFulfillAll = true;
 				$totalStock = 0;
-				$oldestProductionDate = null;
+				$earliestProductionDate = null;
 				$locationDetails = array();
+				$totalLoadingTime = 0;
 				
 				foreach ($requiredGoods as $required) {
-					// Get stock for this goods in this warehouse
-					$stockQuery = TStock::model()
-						->with(array(
-							'location' => array(
-								'condition' => 'location.warehouse_id = :warehouse_id',
-								'params' => array(':warehouse_id' => $warehouse->id)
-							)
-						))
-						->findAll(array(
-							'condition' => 't.goods_id = :goods_id AND t.status = :status',
-							'params' => array(
-								':goods_id' => $required['goods_id'],
-								':status' => 'ACTIVE'
-							),
-							'order' => 't.production_date ASC, t.id ASC' // FIFO
-						));
+					$goodsId = $required['goods_id'];
 					
-					$totalAvailable = 0;
-					$allocatedQty = 0;
-					$stockLocations = array();
+					// Get goods info for loading time calculation
+					$goodsInfo = MGoods::model()->findByPk($goodsId);
 					
-					foreach ($stockQuery as $stock) {
-						if ($stock->location) {
-							$totalAvailable += $stock->qty;
+					// For each requirement detail
+					foreach ($required['details'] as $reqDetail) {
+						$remainingQty = $reqDetail['qty'];
+						$targetUom = MUom::model()->findByPk($reqDetail['uom_id']);
+						
+						// Check if this is smallest unit (convert_to = NULL)
+						$isSmallestUnit = is_null($targetUom->convert_to);
+						
+						// ========================================
+						// SMART UOM ALLOCATION STRATEGY
+						// ========================================
+						// 1. Try to fulfill from larger units first
+						// 2. Then use smaller units for remainder
+						
+						// Get all UOMs for this conversion chain
+						$uomChain = array();
+						if (!$isSmallestUnit) {
+							// Start from requested UOM and go up to larger units
+							$currentUom = $targetUom;
+							while ($currentUom) {
+								$uomChain[] = $currentUom;
+								// Find larger UOM that converts to this one
+								$largerUom = MUom::model()->find(array(
+									'condition' => 'convert_to = :convert_to',
+									'params' => array(':convert_to' => $currentUom->id)
+								));
+								$currentUom = $largerUom;
+							}
+							// Reverse to process from largest to smallest
+							$uomChain = array_reverse($uomChain);
 							
-							// Track oldest production date
-							if ($stock->production_date && (!$oldestProductionDate || $stock->production_date < $oldestProductionDate)) {
-								$oldestProductionDate = $stock->production_date;
+							// Add smallest unit at the end
+							if ($targetUom->convert_to) {
+								$smallestUom = MUom::model()->findByPk($targetUom->convert_to);
+								if ($smallestUom) {
+									$uomChain[] = $smallestUom;
+								}
+							}
+						} else {
+							// For smallest unit, just use it
+							$uomChain[] = $targetUom;
+						}
+						
+						// Process each UOM in the chain
+						foreach ($uomChain as $uom) {
+							if ($remainingQty <= 0) break;
+							
+							// Determine sort order based on UOM type
+							$sortOrder = 't.production_date ASC, t.id ASC'; // Default FIFO
+							
+							// For smallest units (convert_to = NULL), prioritize NULL production dates
+							if (is_null($uom->convert_to)) {
+								$sortOrder = 't.production_date IS NULL DESC, t.production_date ASC, t.id ASC';
 							}
 							
-							// Allocate stock (FIFO)
-							if ($allocatedQty < $required['total_qty']) {
-								$qtyToAllocate = min($stock->qty, $required['total_qty'] - $allocatedQty);
-								$allocatedQty += $qtyToAllocate;
+							// Get stock for this UOM
+							$stockQuery = TStock::model()
+								->with(array(
+									'location' => array(
+										'condition' => 'location.warehouse_id = :warehouse_id',
+										'params' => array(':warehouse_id' => $warehouse->id)
+									)
+								))
+								->findAll(array(
+									'condition' => 't.goods_id = :goods_id AND t.uom_id = :uom_id AND t.status = :status AND t.qty > 0',
+									'params' => array(
+										':goods_id' => $goodsId,
+										':uom_id' => $uom->id,
+										':status' => 'ACTIVE'
+									),
+									'order' => $sortOrder
+								));
+							
+							foreach ($stockQuery as $stock) {
+								if ($remainingQty <= 0 || !$stock->location) break;
 								
-								$stockLocations[] = array(
-									'goods_id' => $required['goods_id'],
+								// Convert stock qty to target UOM
+								$stockQtyInTargetUom = $stock->qty;
+								
+								// Convert if needed
+								if ($uom->id != $targetUom->id) {
+									if ($uom->conversion && $targetUom->conversion) {
+										// Both have conversions, calculate ratio
+										$stockQtyInTargetUom = $stock->qty * ($uom->conversion / $targetUom->conversion);
+									} else if ($uom->conversion && is_null($targetUom->convert_to)) {
+										// Stock is in larger unit, target is smallest
+										$stockQtyInTargetUom = $stock->qty * $uom->conversion;
+									} else if (is_null($uom->convert_to) && $targetUom->conversion) {
+										// Stock is in smallest unit, target is larger
+										$stockQtyInTargetUom = $stock->qty / $targetUom->conversion;
+									}
+								}
+								
+								// Calculate how much to allocate
+								$qtyToAllocate = min($stockQtyInTargetUom, $remainingQty);
+								$actualStockUsed = $qtyToAllocate;
+								
+								// Convert back to stock UOM for recording
+								if ($uom->id != $targetUom->id) {
+									if ($uom->conversion && $targetUom->conversion) {
+										$actualStockUsed = $qtyToAllocate * ($targetUom->conversion / $uom->conversion);
+									} else if ($uom->conversion && is_null($targetUom->convert_to)) {
+										$actualStockUsed = $qtyToAllocate / $uom->conversion;
+									} else if (is_null($uom->convert_to) && $targetUom->conversion) {
+										$actualStockUsed = $qtyToAllocate * $targetUom->conversion;
+									}
+								}
+								
+								$remainingQty -= $qtyToAllocate;
+								$totalStock += $qtyToAllocate;
+								
+								// Track production date
+								if ($stock->production_date) {
+									if (!$earliestProductionDate || $stock->production_date < $earliestProductionDate) {
+										$earliestProductionDate = $stock->production_date;
+									}
+								}
+								
+								// Add to location details
+								$locationDetails[] = array(
+									'goods_id' => $goodsId,
 									'location_id' => $stock->location_id,
-									'qty' => $qtyToAllocate,
-									'uom_id' => $required['uom_id']
+									'qty' => $actualStockUsed,
+									'uom_id' => $uom->id
 								);
+								
+								// Calculate loading time
+								if ($goodsInfo && $goodsInfo->loading_time) {
+									// Convert to tons for loading time calculation
+									$qtyInTons = $actualStockUsed;
+									if (strtolower($uom->unit) == 'kg') {
+										$qtyInTons = $actualStockUsed / 1000;
+									} else if ($uom->conversion) {
+										// Assume conversion to kg then to tons
+										$qtyInTons = ($actualStockUsed * $uom->conversion) / 1000;
+									}
+									$totalLoadingTime += $qtyInTons * $goodsInfo->loading_time;
+								}
 							}
 						}
-					}
-					
-					$totalStock += $totalAvailable;
-					
-					// Check if can fulfill this goods requirement
-					if ($totalAvailable < $required['total_qty']) {
-						$canFulfillAll = false;
-					} else {
-						// Add to location details
-						$locationDetails = array_merge($locationDetails, $stockLocations);
+						
+						// Check if we fulfilled this requirement
+						if ($remainingQty > 0) {
+							$canFulfillAll = false;
+						}
 					}
 				}
 				
@@ -277,18 +368,147 @@ class XEndpointConfig extends ActiveRecord
 				}
 				
 				// ========================================
-				// TENTUKAN PRIORITAS (1-4)
+				// CALCULATE GATE LOADING TIME FOR PRIORITY 4
 				// ========================================
-				$priority = 4; // Default: least busy gate
+				$gateLoadingTimes = array();
+				$gates = MGate::model()->findAllByAttributes(array(
+					'warehouse_id' => $warehouse->id,
+					'status' => 'OPEN'
+				));
+				
+				foreach ($gates as $gate) {
+					// Calculate total loading time for this gate
+					$gateLoadingTime = 0;
+					
+					// Get trucks currently at this gate
+					$antreanAtGate = TAntreanGate::model()
+						->with(array(
+							'antrean' => array(
+								'condition' => 'antrean.status IN (:loading, :verifying)',
+								'params' => array(':loading' => 'LOADING', ':verifying' => 'VERIFYING')
+							)
+						))
+						->findAll(array(
+							'condition' => 't.gate_id = :gate_id',
+							'params' => array(':gate_id' => $gate->id)
+						));
+					
+					foreach ($antreanAtGate as $ag) {
+						if (!$ag->antrean) continue;
+						
+						// Get goods for this truck to calculate loading time
+						$antreanGoods = TAntreanRekomendasiLokasi::model()
+							->with('goods')
+							->findAll(array(
+								'condition' => 't.antrean_id = :antrean_id',
+								'params' => array(':antrean_id' => $ag->antrean->id)
+							));
+						
+						foreach ($antreanGoods as $agItem) {
+							if ($agItem->goods && $agItem->goods->loading_time) {
+								// Convert qty to tons
+								$qtyInTons = $agItem->qty;
+								$uom = MUom::model()->findByPk($agItem->uom_id);
+								if ($uom) {
+									if (strtolower($uom->unit) == 'kg') {
+										$qtyInTons = $agItem->qty / 1000;
+									} else if ($uom->conversion) {
+										$qtyInTons = ($agItem->qty * $uom->conversion) / 1000;
+									}
+								}
+								$gateLoadingTime += $qtyInTons * $agItem->goods->loading_time;
+							}
+						}
+					}
+					
+					$gateLoadingTimes[$gate->id] = $gateLoadingTime;
+				}
+				
+				// Find gate with minimum loading time
+				$minLoadingTime = PHP_INT_MAX;
+				$bestGateId = null;
+				foreach ($gateLoadingTimes as $gateId => $loadingTime) {
+					if ($loadingTime < $minLoadingTime) {
+						$minLoadingTime = $loadingTime;
+						$bestGateId = $gateId;
+					}
+				}
+				
+				// ========================================
+				// DETERMINE PRIORITY (1-4)
+				// ========================================
+				$priority = 4; // Default: least busy gate (by loading time)
 				$score = 0;
 				
 				if ($canFulfillAll) {
 					// Priority 1: Can fulfill all
 					$priority = 1;
-					$score = 1000;
+					$score = 10000;
 				} else {
-					// Count how many different goods this warehouse has
-					$goodsCount = 0;
+					// Count fulfilled goods variety
+					$fulfilledCount = 0;
+					$partialFulfilledCount = 0;
+					
+					foreach ($requiredGoods as $req) {
+						$hasStock = false;
+						foreach ($locationDetails as $loc) {
+							if ($loc['goods_id'] == $req['goods_id']) {
+								$hasStock = true;
+								break;
+							}
+						}
+						if ($hasStock) {
+							$partialFulfilledCount++;
+						}
+					}
+					
+					if ($partialFulfilledCount == count($requiredGoods)) {
+						// Can fulfill all types but not all quantities
+						$priority = 2;
+						$score = 5000 + ($totalStock * 10);
+					} else if ($partialFulfilledCount > 0) {
+						// Can partially fulfill some types
+						$priority = 2;
+						$score = 3000 + ($partialFulfilledCount * 100);
+					}
+				}
+				
+				// Adjust score for Priority 3 (earliest production date)
+				if ($earliestProductionDate) {
+					$daysSinceProduction = (time() - strtotime($earliestProductionDate)) / (60 * 60 * 24);
+					if ($priority != 1) {
+						$priority = 3;
+						$score += $daysSinceProduction * 10; // Older stock gets higher score
+					}
+				}
+				
+				// Adjust score based on gate loading time (lower is better)
+				if ($minLoadingTime < PHP_INT_MAX) {
+					$score += (1000 - min(1000, $minLoadingTime)); // Inverse of loading time
+				}
+				
+				$warehouseScores[] = array(
+					'warehouse_id' => $warehouse->id,
+					'warehouse_name' => $warehouse->name,
+					'priority' => $priority,
+					'score' => $score,
+					'location_details' => $locationDetails,
+					'best_gate_id' => $bestGateId,
+					'min_loading_time' => $minLoadingTime,
+					'can_fulfill_all' => $canFulfillAll
+				);
+			}
+			
+			// ========================================
+			// HANDLE CASE WHERE NO WAREHOUSE CAN FULFILL
+			// ========================================
+			if (empty($warehouseScores)) {
+				// Return all warehouses even if they can't fulfill
+				// Just pick the one with most variety of goods
+				foreach ($warehouses as $warehouse) {
+					$locationDetails = array();
+					$goodsVariety = 0;
+					
 					foreach ($requiredGoods as $required) {
 						$hasStock = TStock::model()
 							->with(array(
@@ -298,7 +518,7 @@ class XEndpointConfig extends ActiveRecord
 								)
 							))
 							->exists(array(
-								'condition' => 't.goods_id = :goods_id AND t.qty > 0 AND t.status = :status',
+								'condition' => 't.goods_id = :goods_id AND t.status = :status AND t.qty > 0',
 								'params' => array(
 									':goods_id' => $required['goods_id'],
 									':status' => 'ACTIVE'
@@ -306,77 +526,54 @@ class XEndpointConfig extends ActiveRecord
 							));
 						
 						if ($hasStock) {
-							$goodsCount++;
+							$goodsVariety++;
 						}
 					}
 					
-					if ($goodsCount > 0) {
-						// Priority 2: Has most stock variety
-						$priority = 2;
-						$score = 500 + $goodsCount * 10;
+					if ($goodsVariety > 0) {
+						$warehouseScores[] = array(
+							'warehouse_id' => $warehouse->id,
+							'warehouse_name' => $warehouse->name,
+							'priority' => 4,
+							'score' => $goodsVariety,
+							'location_details' => array(), // Will be empty, no specific recommendations
+							'best_gate_id' => null,
+							'min_loading_time' => 0,
+							'can_fulfill_all' => false
+						);
 					}
 				}
-				
-				// Consider production date for priority 3 (FIFO)
-				if ($priority > 1 && $oldestProductionDate) {
-					$daysSinceProduction = (time() - strtotime($oldestProductionDate)) / (60 * 60 * 24);
-					if ($daysSinceProduction > 30) { // If older than 30 days
-						$priority = 3;
-						$score = 300 + $daysSinceProduction;
-					}
-				}
-				
-				// Calculate gate availability
-				$busyGates = TAntreanGate::model()
-					->with(array(
-						'antrean' => array(
-							'condition' => 'antrean.status NOT IN (:closed, :verified)',
-							'params' => array(':closed' => 'CLOSED', ':verified' => 'VERIFIED')
-						),
-						'gate' => array(
-							'condition' => 'gate.warehouse_id = :warehouse_id',
-							'params' => array(':warehouse_id' => $warehouse->id)
-						)
-					))
-					->count();
-				
-				$totalGates = MGate::model()->countByAttributes(array(
-					'warehouse_id' => $warehouse->id,
-					'status' => 'OPEN'
-				));
-				
-				$availableGates = $totalGates - $busyGates;
-				
-				// Adjust score based on gate availability
-				$score += $availableGates * 5;
-				
-				$warehouseScores[] = array(
-					'warehouse_id' => $warehouse->id,
-					'warehouse_name' => $warehouse->name,
-					'priority' => $priority,
-					'score' => $score,
-					'location_details' => $locationDetails
-				);
 			}
 			
+			// If still no warehouses, just return first warehouse
 			if (empty($warehouseScores)) {
-				throw new Exception('Tidak ada warehouse yang dapat memenuhi kebutuhan barang');
+				$firstWarehouse = MWarehouse::model()->find(array('condition' => 'status = :status', 'params' => array(':status' => 'OPEN')));
+				if ($firstWarehouse) {
+					$warehouseScores[] = array(
+						'warehouse_id' => $firstWarehouse->id,
+						'warehouse_name' => $firstWarehouse->name,
+						'priority' => 4,
+						'score' => 0,
+						'location_details' => array(),
+						'best_gate_id' => null,
+						'min_loading_time' => 0,
+						'can_fulfill_all' => false
+					);
+				}
 			}
 			
-			// Sort by priority (1 is highest)
+			// Sort by priority and score
 			usort($warehouseScores, function($a, $b) {
-				// First sort by priority
 				if ($a['priority'] != $b['priority']) {
 					return $a['priority'] - $b['priority'];
 				}
-				// If same priority, sort by score (higher is better)
 				return $b['score'] - $a['score'];
 			});
 			
 			$warehouseRecommendation = $warehouseScores[0];
 			
 			// ========================================
-			// 4. BUAT ANTREAN BARU
+			// 4. CREATE ANTREAN
 			// ========================================
 			$antrean = new TAntrean();
 			$antrean->nopol = $nopol;
@@ -389,58 +586,53 @@ class XEndpointConfig extends ActiveRecord
 			}
 			
 			// ========================================
-			// 5. SIMPAN REKOMENDASI LOKASI UNTUK SETIAP BARANG
+			// 5. SAVE LOCATION RECOMMENDATIONS
 			// ========================================
-			foreach ($warehouseRecommendation['location_details'] as $detail) {
-				$rekomendasi = new TAntreanRekomendasiLokasi();
-				$rekomendasi->antrean_id = $antrean->id;
-				$rekomendasi->goods_id = $detail['goods_id'];
-				$rekomendasi->location_id = $detail['location_id'];
-				$rekomendasi->qty = $detail['qty'];
-				$rekomendasi->uom_id = $detail['uom_id'];
-				
-				if (!$rekomendasi->save()) {
-					throw new Exception('Gagal menyimpan rekomendasi lokasi: ' . json_encode($rekomendasi->getErrors()));
+			// Only save if we have location details
+			if (!empty($warehouseRecommendation['location_details'])) {
+				foreach ($warehouseRecommendation['location_details'] as $detail) {
+					$rekomendasi = new TAntreanRekomendasiLokasi();
+					$rekomendasi->antrean_id = $antrean->id;
+					$rekomendasi->goods_id = $detail['goods_id'];
+					$rekomendasi->location_id = $detail['location_id'];
+					$rekomendasi->qty = $detail['qty'];
+					$rekomendasi->uom_id = $detail['uom_id'];
+					
+					if (!$rekomendasi->save()) {
+						throw new Exception('Gagal menyimpan rekomendasi lokasi: ' . json_encode($rekomendasi->getErrors()));
+					}
 				}
 			}
 			
 			// ========================================
-			// 6. ASSIGN GATE YANG TERSEDIA
+			// 6. ASSIGN BEST GATE
 			// ========================================
-			$gates = MGate::model()->findAllByAttributes(array(
-				'warehouse_id' => $warehouseRecommendation['warehouse_id'],
-				'status' => 'OPEN'
-			));
-			
-			foreach ($gates as $gate) {
-				// Check if gate is busy
-				$isBusy = TAntreanGate::model()
-					->with(array(
-						'antrean' => array(
-							'condition' => 'antrean.status NOT IN (:closed, :verified)',
-							'params' => array(':closed' => 'CLOSED', ':verified' => 'VERIFIED')
-						)
-					))
-					->exists(array(
-						'condition' => 't.gate_id = :gate_id',
-						'params' => array(':gate_id' => $gate->id)
-					));
+			if ($warehouseRecommendation['best_gate_id']) {
+				$antreanGate = new TAntreanGate();
+				$antreanGate->antrean_id = $antrean->id;
+				$antreanGate->gate_id = $warehouseRecommendation['best_gate_id'];
+				$antreanGate->save();
+			} else {
+				// Fallback: assign any available gate
+				$gates = MGate::model()->findAllByAttributes(array(
+					'warehouse_id' => $warehouseRecommendation['warehouse_id'],
+					'status' => 'OPEN'
+				));
 				
-				if (!$isBusy) {
-					// Assign this gate
+				foreach ($gates as $gate) {
 					$antreanGate = new TAntreanGate();
 					$antreanGate->antrean_id = $antrean->id;
 					$antreanGate->gate_id = $gate->id;
 					
-					$antreanGate->save();
+					if ($antreanGate->save()) {
+						break;
+					}
 				}
 			}
 			
 			$transaction->commit();
 			
-			// ========================================
-			// RETURN ONLY WAREHOUSE_ID
-			// ========================================
+			// Return warehouse_id
 			return $warehouseRecommendation['warehouse_id'];
 			
 		} catch (Exception $e) {
