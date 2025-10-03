@@ -38,6 +38,11 @@ class XEndpointConfig extends ActiveRecord
 	public static function getAntrean($params = [])
 	{
 		// return ['status' => 'Success', 'warehouse' => 'GUDANG TIMUR', 'timestamp' => date('Y-m-d H:i:s')];
+		$xlog = new XApiLog;
+		$xlog->created_time = date('Y-m-d H:i:s');
+		$xlog->api = 'getAntrean';
+		$xlog->payload = json_encode($params);
+		$xlog->save();
 		
 		$transaction = Yii::app()->db->beginTransaction();
 		
@@ -45,76 +50,42 @@ class XEndpointConfig extends ActiveRecord
 			// ========================================
 			// VALIDASI PARAMETER
 			// ========================================
-			if (!isset($params['nopol']) || empty($params['nopol'])) {
+			if (!isset($params['plat']) || empty($params['plat'])) {
 				throw new Exception('Parameter nopol wajib diisi');
 			}
-			
-			$nopol = $params['nopol'];
-			
-			// ========================================
-			// 1. FETCH DAN SIMPAN DELIVERY ORDER DARI API SAP
-			// ========================================
-			$url = "https://cpipga.com/API_DO/getDataDO";
-			$headers = array(
-				"Content-Type: application/json",
-				"Token: GlqVo45k2q3D8b26dLZRCp5vFjNxKUtw"
-			);
-			
-			$body = array(
-				"nopol" => $nopol
-			);
-			
-			$ch = curl_init($url);
-			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-			curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-			curl_setopt($ch, CURLOPT_POST, true);
-			curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($body));
-			
-			$response = curl_exec($ch);
-			$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-			curl_close($ch);
-			
-			if ($httpCode !== 200) {
-				throw new Exception('API SAP error: HTTP ' . $httpCode);
-			}
-			
-			$data = json_decode($response, true);
-			
-			if (!$data || !$data['status']) {
-				$message = isset($data['message']) && is_string($data['message']) ? $data['message'] : 'Data tidak ditemukan';
-				throw new Exception($message);
-			}
+		
+			$nopol = $params['plat'];
 			
 			$savedDeliveryOrders = array();
 			
+			$dos = $params['do'];
 			// Simpan DO dan DO Line
-			foreach ($data['message'] as $row) {
+			foreach ($dos as $row) {
 				// Cek apakah DO sudah ada
-				$existingDO = TDeliveryOrder::model()->findByAttributes(array('no_do' => $row['no_do']));
-				
+				$existingDO = TDeliveryOrder::model()->findByAttributes(array('no_do' => $row['delivery']));
 				if (!$existingDO) {
 					$do = new TDeliveryOrder();
 					$do->synced_time = date('Y-m-d H:i:s');
 					$do->status = 'OPEN';
-					$do->id_sap = $row['id_data_do_fl'];
-					$do->plant = $row['plant'];
-					$do->truck_no = $row['truck_no'];
-					$do->out_date = $row['out_date'];
-					$do->no_do = $row['no_do'];
-					$do->delivery_date = $row['delivery_date'];
+					$do->id_sap = $row['delivery'];
+					$do->plant = $row['plnt'];
+					$do->truck_no = $row['truck_numb'];
+					$do->out_date = DateTime::createFromFormat('d.m.Y', $row['out_date'])->format('Y-m-d');
+					$do->no_do = $row['delivery'];
+					$do->delivery_date = DateTime::createFromFormat('d.m.Y', $row['deliv_date'])->format('Y-m-d');
 					$do->sorg = $row['sorg'];
-					$do->customer_id = $row['customer_id'];
+					$do->customer_id = $row['customer'];
 					$do->sold_to_party = $row['sold_to_party'];
 					$do->created_by = $row['created_by'];
-					$do->created_date = $row['created_date'];
+					$do->created_date = DateTime::createFromFormat('Ymd', $row['created_date'])->format('Y-m-d');
 					$do->shiptotext = $row['shiptotext'];
 					$do->cust_name = $row['cust_name'];
 					$do->cust_city = $row['cust_city'];
 					$do->cust_street = $row['cust_street'];
 					$do->cust_strsuppl = $row['cust_strsuppl'];
 					$do->sap_client = $row['sap_client'];
-					$do->date_inserted = $row['date_inserted'];
-					$do->jenis_truck = isset($row['jenis_truck']) ? $row['jenis_truck'] : null;
+					$do->date_inserted = date('Y-m-d H:i:s');
+					$do->jenis_truck = $params['jenis_truck'];
 					
 					if (!$do->save()) {
 						throw new Exception('Gagal simpan DO: ' . json_encode($do->getErrors()));
@@ -137,7 +108,7 @@ class XEndpointConfig extends ActiveRecord
 				$doLine->su = isset($row['su']) ? $row['su'] : null;
 				$doLine->ref_doc = isset($row['ref_doc']) ? $row['ref_doc'] : null;
 				$doLine->ref_itm = isset($row['ref_itm']) ? $row['ref_itm'] : null;
-				$doLine->batch = $row['batch'];
+				$doLine->batch = '-';
 				
 				if (!$doLine->save()) {
 					throw new Exception('Gagal simpan DO Line: ' . json_encode($doLine->getErrors()));
@@ -145,6 +116,7 @@ class XEndpointConfig extends ActiveRecord
 				
 				$savedDeliveryOrders[$doId] = $do;
 			}
+			
 			
 			if (empty($savedDeliveryOrders)) {
 				throw new Exception('Tidak ada delivery order yang ditemukan untuk nopol: ' . $nopol);
