@@ -115,16 +115,6 @@ CREATE TABLE "public"."p_user" (
     CONSTRAINT "p_user_pkey" PRIMARY KEY ("id")
 ) WITH (oids = false);
 
-INSERT INTO "p_user" ("id", "email", "username", "password", "last_login", "is_deleted", "user_token") VALUES
-(3,	'mail@mail.com',	'kerani',	'$2y$10$mDhCyaiSIbq9EcKE8hgc8Ow3dNS1f.f4HKgIXqH9GDs9F150nhSbK',	'2025-07-29 11:47:06',	NULL,	'dNS1f.f4HKgIXqH9GDs9F150nhSbK'),
-(2,	'mail@mail.com',	'administrator',	'$2y$10$fwUMIl8gnzXVwQW6BLpC9euSso8D1cBny0y/lKuv56VpA2jcXxOM.',	'2025-08-20 10:42:46',	'f',	'6BLpC9euSso8D1cBny0'),
-(9,	'mail@mail.com',	'dummy4',	'$2y$10$2nwx/tQ2t/qbgtUPtGSWceVMLNlNh2S95ZZn/FQn.7mor4Et/LnKC',	NULL,	'f',	''),
-(10,	'mail@mail.com',	'dummy5',	'$2y$10$bSk7e5R58sIdMi.kUJvnuOE63zx4/Bai2NR01C1SwFm9o2.fKdeBO',	NULL,	'f',	''),
-(11,	'mail@mail.com',	'dummy7',	'$2y$10$GW4FdrarS3iph/6ofnhol.No.NrcBZqBIU/64ZvbiwGIkeUlRYtxe',	NULL,	'f',	''),
-(4,	'mail@mail.com',	'pengawas',	'$2y$10$7p0JxLndx/oC1K1XEKp6quTPkJKvnbSKzTS8ag1wWdKgxq1GBpckq',	'2025-08-17 20:29:35',	NULL,	'TS8ag1wWdKgxq1GBpckq'),
-(1,	'kamil@avolut.com',	'kamz',	'$2y$10$HOMaYfDtNCNtEDkaTTgyuuP9fT64PowUQL0ZvEu/J5udVJazu8e2O',	'2025-08-21 10:47:24',	'f',	''),
-(5,	'mail@mail.com',	'mcdev',	'$2y$10$iU431ykFCfThXOYxdliNmueAWeDKo1TTldJg0MtfzpdwBtIB.D8g6',	'2025-08-18 01:58:27',	NULL,	''),
-(12,	'main@gmail.com',	'admin',	'$2y$10$21CLTXe5/Koa6hLRC/ALAez0J.t7weamVlbLs1Qie23qMi/qT8s6a',	NULL,	NULL,	'ALAez0J.t7weamVlbLs1Qie23qMi');
 
 DROP TABLE IF EXISTS "p_user_role";
 DROP SEQUENCE IF EXISTS p_user_role_id_seq;
@@ -309,6 +299,20 @@ CREATE TABLE "public"."t_stock" (
 ) WITH (oids = false);
 
 
+DROP TABLE IF EXISTS "x_api_log";
+DROP SEQUENCE IF EXISTS x_api_log_id_seq;
+CREATE SEQUENCE x_api_log_id_seq INCREMENT 1 MINVALUE 1 MAXVALUE 32767 CACHE 1;
+
+CREATE TABLE "public"."x_api_log" (
+    "created_time" timestamp NOT NULL,
+    "api" text NOT NULL,
+    "payload" jsonb,
+    "response" jsonb,
+    "id" integer DEFAULT nextval('x_api_log_id_seq') NOT NULL,
+    CONSTRAINT "x_api_log_pkey" PRIMARY KEY ("id")
+) WITH (oids = false);
+
+
 DROP TABLE IF EXISTS "x_endpoint_config";
 DROP SEQUENCE IF EXISTS x_endpoint_config_id_seq;
 CREATE SEQUENCE x_endpoint_config_id_seq INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1;
@@ -364,4 +368,4 @@ ALTER TABLE ONLY "public"."t_stock" ADD CONSTRAINT "t_stock_location_id_fkey" FO
 ALTER TABLE ONLY "public"."t_stock" ADD CONSTRAINT "t_stock_opnam_id_fkey" FOREIGN KEY (opnam_id) REFERENCES t_opnam(id) ON UPDATE CASCADE ON DELETE CASCADE NOT DEFERRABLE;
 ALTER TABLE ONLY "public"."t_stock" ADD CONSTRAINT "t_stock_uom_id_fkey" FOREIGN KEY (uom_id) REFERENCES m_uom(id) NOT DEFERRABLE;
 
--- 2025-09-27 05:47:01.388056+02
+-- 2025-10-03 08:30:19.138314+02
