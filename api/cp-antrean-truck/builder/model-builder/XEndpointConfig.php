@@ -37,12 +37,13 @@ class XEndpointConfig extends ActiveRecord
 	 */
 	public static function getAntrean($params = [])
 	{
-		// return ['status' => 'Success', 'warehouse' => 'GUDANG TIMUR', 'timestamp' => date('Y-m-d H:i:s')];
 		$xlog = new XApiLog;
 		$xlog->created_time = date('Y-m-d H:i:s');
 		$xlog->api = 'getAntrean';
 		$xlog->payload = json_encode($params);
 		$xlog->save();
+		$logId = $xlog->id;
+		$response = array();
 		
 		$transaction = Yii::app()->db->beginTransaction();
 		
@@ -51,7 +52,7 @@ class XEndpointConfig extends ActiveRecord
 			// VALIDASI PARAMETER
 			// ========================================
 			if (!isset($params['plat']) || empty($params['plat'])) {
-				throw new Exception('Parameter nopol wajib diisi');
+				throw new Exception('Parameter plat wajib diisi');
 			}
 		
 			$nopol = $params['plat'];
@@ -635,12 +636,36 @@ class XEndpointConfig extends ActiveRecord
 			
 			$transaction->commit();
 			
-			// Return warehouse_id
-			return $warehouseRecommendation['warehouse_id'];
+			$response = array(
+				'status' => 'Success',
+				'warehouse' => $warehouseRecommendation['warehouse_name'],
+				'timestamp' => date('Y-m-d H:i:s')
+			);
+			
+			$xlog = XApiLog::model()->findByPk($logId);
+			if ($xlog) {
+				$xlog->response = json_encode($response);
+				$xlog->save();
+			}
+			
+			return $response;
 			
 		} catch (Exception $e) {
 			$transaction->rollback();
-			throw new Exception($e->getMessage());
+			
+			$response = array(
+				'status' => 'Failed',
+				'message' => $e->getMessage(),
+				'timestamp' => date('Y-m-d H:i:s')
+			);
+			
+			$xlog = XApiLog::model()->findByPk($logId);
+			if ($xlog) {
+				$xlog->response = json_encode($response);
+				$xlog->save();
+			}
+			
+			return $response;
 		}
 	}
 }
