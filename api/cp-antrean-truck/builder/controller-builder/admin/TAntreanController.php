@@ -25,12 +25,12 @@ class TAntreanController extends Controller {
         $this->renderForm('AdminTAntreanGate');
     }
     
-    public function actionFind($nopol) {
-        $nopol = trim($nopol);
+    public function actionFind($qr_code) {
+        $qr_code = trim($qr_code);
         
         $antrean = TAntrean::model()->find(
-            "nopol = :nopol AND status = 'LOADING' OR status = 'VERIFIYING' OR status = 'PENDING'",
-            [":nopol" => $nopol]
+            "qr_code = :qr_code AND status = 'LOADING' OR status = 'VERIFIYING' OR status = 'PENDING'",
+            [":qr_code" => $qr_code]
         );
     
         if ($antrean !== null) {
@@ -99,6 +99,12 @@ class TAntreanController extends Controller {
 
             $model->gate_i_id = isset($gates[0]) ? $gates[0]->gate_id : null;
             $model->gate_ii_id = isset($gates[1]) ? $gates[1]->gate_id : null;
+            
+            // cek role user
+            if (Yii::app()->user->role == 'admin') {
+                // isi field admin_id sesuai user yang login
+                $model->admin_id = Yii::app()->user->id;
+            }
         }
 
         if (isset($_POST["AdminTAntreanForm"])) {

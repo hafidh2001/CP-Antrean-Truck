@@ -25,12 +25,12 @@ class TAntreanController extends Controller {
         TAntrean::PrintSlip($id);
     }
     
-    public function actionFind($nopol) {
-        $nopol = trim($nopol);
+    public function actionFind($qr_code) {
+        $qr_code = trim($qr_code);
         
         $antrean = TAntrean::model()->find(
-            "nopol = :nopol AND status = 'OPEN' OR status = 'PENDING'",
-            [":nopol" => $nopol]
+            "qr_code = :qr_code AND status = 'OPEN' OR status = 'PENDING'",
+            [":qr_code" => $qr_code]
         );
     
         if ($antrean !== null) {
@@ -41,6 +41,37 @@ class TAntreanController extends Controller {
         }
     }
     
+    public function actionSaveKeraniId() {
+        $rest_json = file_get_contents("php://input");
+        $post = json_decode($rest_json, true);
+        
+        $id = isset($post['data']['id']) ? $post['data']['id'] : null;
+        $kerani_id = isset($post['data']['id']) ? $post['data']['kerani_id'] : null;
+        
+        if ($id) {
+            $model = TAntrean::model()->findByPk($id);
+
+            if ($model !== null) {
+                $model->kerani_id = $kerani_id;
+
+                if (is_null($model->kerani_id)) {
+                    $model->assigned_kerani_time = null;
+                } else {
+                    $model->assigned_kerani_time = date('Y-m-d H:i:s');;
+                }
+                
+                if ($model->save()) {
+                    echo json_encode(['status' => 1, 'msg' => 'Updated Success']);
+                } else {
+                    echo json_encode(['status' => 0, 'msg' => 'Failed to update']);
+                }
+            } else {
+                echo json_encode(['status' => 0, 'msg' => 'Data not found']);
+            }
+        }
+        
+       $this->renderForm("McTAntreanForm");
+    }
 
     public function actionSaveRec(){
         $rest_json = file_get_contents("php://input");
@@ -74,7 +105,7 @@ class TAntreanController extends Controller {
             $model = new McTAntreanForm;    
         } else {
             $model = $this->loadModel($id, "McTAntreanForm"); 
-            
+
             $gates = TAntreanGate::model()->findAll(
                 "antrean_id = :id",
                 [":id" => $id]
@@ -83,6 +114,11 @@ class TAntreanController extends Controller {
             $model->gate_i_id = isset($gates[0]) ? $gates[0]->gate_id : null;
             $model->gate_ii_id = isset($gates[1]) ? $gates[1]->gate_id : null;
             
+            // cek role user
+            if (Yii::app()->user->role == 'mc') {
+                // isi field mc_id sesuai user yang login
+                $model->mc_id = Yii::app()->user->id;
+            }
         }
 
         if (isset($_POST["McTAntreanForm"])) {
@@ -112,7 +148,7 @@ class TAntreanController extends Controller {
 
                         $antrean->save();
                     }
-    
+
                     // Update t_antrean_gate
                     $gatesInput = [
                         isset($_POST["McTAntreanForm"]["gate_i_id"]) ? $_POST["McTAntreanForm"]["gate_i_id"] : null,

@@ -251,7 +251,8 @@ class MWarehouse extends ActiveRecord
                       u.unit as stock_unit, 
                       s.production_date as opnam_date,
                       u.id as uom_id,
-                      s.from_last_opnam
+                      s.from_last_opnam,
+                      s.keterangan
                       
                     FROM 
                       t_stock s 
@@ -291,7 +292,8 @@ class MWarehouse extends ActiveRecord
                       u.unit as stock_unit, 
                       s.production_date as opnam_date,
                       u.id as uom_id,
-                      true as from_last_opnam
+                      true as from_last_opnam,
+                      s.keterangan
                     FROM 
                       t_stock s 
                       INNER JOIN m_location l on l.id = s.location_id 

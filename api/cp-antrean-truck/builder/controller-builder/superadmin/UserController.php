@@ -27,11 +27,14 @@ class UserController extends Controller {
             
             $oldPassword = $model->password;
             $model->password = '';
+            
+            if ($model->is_deleted === true) {
+                $model->is_deleted = 'Y';
+            } else {
+                $model->is_deleted = 'N';
+            }
+
         }
-        
-        
-        // var_dump($model);
-        
         
         if (isset($_POST["SuperadminUserForm"])) {
             $err = false;
@@ -56,11 +59,14 @@ class UserController extends Controller {
                     $model->password = $oldPassword;
                 }
             }
+            
+            if ($model->is_deleted === 'Y') {
+                $model->is_deleted = true;
+            } else {
+                $model->is_deleted = false;
+            }
 
             if (!$err) {
-                // vdump($model->attributes);
-                // die();
-                
                 if ($model->save()) {
                     $r = new UserRole;
                     $r->user_id = $model->id;

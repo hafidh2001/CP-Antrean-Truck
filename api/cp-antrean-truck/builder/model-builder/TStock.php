@@ -165,6 +165,12 @@ class TStock extends ActiveRecord
                 $md->goods_id = $stock['goods_id'];
                 $md->qty = $stock['stock_qty'];
                 $md->uom_id = $stock['uom_id'];
+                
+                //if(isset($md->keterangan)){
+                    $md->keterangan = $stock['keterangan'];
+               // }//
+                
+                
                 $md->status = 'Active';
                 if(isset($stock['created_by'])){
                     $md->created_by = $stock['created_by'];

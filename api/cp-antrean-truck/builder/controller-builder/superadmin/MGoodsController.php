@@ -71,6 +71,11 @@ class MGoodsController extends Controller {
         
         if (isset($_POST["SuperadminMGoodsForm"])) {
             $model->attributes = $_POST["SuperadminMGoodsForm"];
+            
+            if (trim($model->alias) === '') {
+                $model->alias = null;
+            }
+    
             if ($model->save()) {
                 $this->flash('Data Berhasil Disimpan');
                 $this->redirect(['index']);

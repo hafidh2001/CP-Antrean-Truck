@@ -80,10 +80,7 @@ class TAntrean extends ActiveRecord
         $command = Yii::app()->db->createCommand($query);
         $command->bindValue(':antrean_id', $id, PDO::PARAM_INT);
         $rows = $command->queryAll();
-        
-        vdump($rows);
-        die();
-   
+
         $mpdf = new \Mpdf\Mpdf([
             'mode' => 'utf-8',
             'format' => [55, 300], // lebar 80mm, tinggi contoh (bisa ditambah)
