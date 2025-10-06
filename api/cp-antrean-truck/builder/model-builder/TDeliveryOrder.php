@@ -11,9 +11,10 @@ class TDeliveryOrder extends ActiveRecord
 	public function rules()
 	{
 		return array(
-			array('id_sap, plant, truck_no, out_date, no_do, delivery_date, sorg, customer_id, sold_to_party, created_by, created_date, shiptotext, cust_name, cust_city, cust_street, cust_strsuppl, sap_client, date_inserted, synced_time', 'required'),
+			array('id_sap, plant, truck_no, out_date, no_do, delivery_date, sorg, created_by, created_date, sap_client, date_inserted, synced_time', 'required'),
 			array('id_sap', 'numerical', 'integerOnly'=>true),
-			array('status, plant, truck_no, no_do, sorg, customer_id, sold_to_party, created_by, shiptotext, cust_name, cust_city, cust_street, cust_strsuppl, sap_client', 'length', 'max'=>256),
+			array('status, plant, truck_no, no_do, sorg, customer_id, sold_to_party, created_by, shiptotext, cust_name, cust_city, cust_street, cust_strsuppl, sap_client, jenis_truck', 'length', 'max'=>256),
+			array('customer_id, sold_to_party, shiptotext, cust_name, cust_city, cust_street, cust_strsuppl', 'safe'),
 		);
 	}
 

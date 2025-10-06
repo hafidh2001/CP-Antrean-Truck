@@ -218,7 +218,7 @@ CREATE SEQUENCE t_delivery_order_id_seq INCREMENT 1 MINVALUE 1 MAXVALUE 21474836
 
 CREATE TABLE "public"."t_delivery_order" (
     "id" integer DEFAULT nextval('t_delivery_order_id_seq') NOT NULL,
-    "status" character varying(256) DEFAULT 'OPEN' NOT NULL,
+    "status" character varying(256) DEFAULT 'OPEN',
     "id_sap" integer NOT NULL,
     "plant" character varying(256) NOT NULL,
     "truck_no" character varying(256) NOT NULL,
@@ -226,15 +226,15 @@ CREATE TABLE "public"."t_delivery_order" (
     "no_do" character varying(256) NOT NULL,
     "delivery_date" date NOT NULL,
     "sorg" character varying(256) NOT NULL,
-    "customer_id" character varying(256) NOT NULL,
-    "sold_to_party" character varying(256) NOT NULL,
+    "customer_id" character varying(256),
+    "sold_to_party" character varying(256),
     "created_by" character varying(256) NOT NULL,
     "created_date" date NOT NULL,
-    "shiptotext" character varying(256) NOT NULL,
-    "cust_name" character varying(256) NOT NULL,
-    "cust_city" character varying(256) NOT NULL,
-    "cust_street" character varying(256) NOT NULL,
-    "cust_strsuppl" character varying(256) NOT NULL,
+    "shiptotext" character varying(256),
+    "cust_name" character varying(256),
+    "cust_city" character varying(256),
+    "cust_street" character varying(256),
+    "cust_strsuppl" character varying(256),
     "sap_client" character varying(256) NOT NULL,
     "date_inserted" timestamp NOT NULL,
     "synced_time" timestamp NOT NULL,
@@ -369,4 +369,4 @@ ALTER TABLE ONLY "public"."t_stock" ADD CONSTRAINT "t_stock_location_id_fkey" FO
 ALTER TABLE ONLY "public"."t_stock" ADD CONSTRAINT "t_stock_opnam_id_fkey" FOREIGN KEY (opnam_id) REFERENCES t_opnam(id) ON UPDATE CASCADE ON DELETE CASCADE NOT DEFERRABLE;
 ALTER TABLE ONLY "public"."t_stock" ADD CONSTRAINT "t_stock_uom_id_fkey" FOREIGN KEY (uom_id) REFERENCES m_uom(id) NOT DEFERRABLE;
 
--- 2025-10-06 06:23:45.971946+02
+-- 2025-10-06 07:34:46.036822+02
