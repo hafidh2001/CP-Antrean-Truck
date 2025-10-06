@@ -74,11 +74,12 @@ class MGate extends ActiveRecord
 						g.id, 
 						g.code, 
 						g.status,
+						g.warehouse_id,
 						w.name as warehouse_name
 					  FROM m_gate g
 					  INNER JOIN m_warehouse w ON g.warehouse_id = w.id
 					  WHERE g.status = 'OPEN'
-					  ORDER BY g.code ASC";
+					  ORDER BY g.warehouse_id ASC, g.code ASC";
 		
 		$gateCommand = Yii::app()->db->createCommand($gateQuery);
 		$gates = $gateCommand->queryAll();
