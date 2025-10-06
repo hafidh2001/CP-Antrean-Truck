@@ -63,8 +63,14 @@ class XEndpointConfig extends ActiveRecord
 			$dos = $params['do'];
 			// Simpan DO dan DO Line
 			foreach ($dos as $row) {
-				// Cek apakah DO sudah ada
-				$existingDO = TDeliveryOrder::model()->findByAttributes(array('no_do' => $row['delivery']));
+				// Cek apakah DO sudah ada dengan mempertimbangkan plat nomor dan tanggal
+				$existingDO = TDeliveryOrder::model()->find(array(
+					'condition' => 'no_do = :no_do AND truck_no = :truck_no',
+					'params' => array(
+						':no_do' => $row['delivery'],
+						':truck_no' => $row['truck_numb']
+					)
+				));
 				if (!$existingDO) {
 					$do = new TDeliveryOrder();
 					$do->synced_time = date('Y-m-d H:i:s');
@@ -577,6 +583,12 @@ class XEndpointConfig extends ActiveRecord
 			
 			$warehouseRecommendation = $warehouseScores[0];
 			
+			// Get first DO ID from saved delivery orders
+			$firstDoId = null;
+			if (!empty($savedDeliveryOrders)) {
+				$firstDoId = array_keys($savedDeliveryOrders)[0];
+			}
+			
 			// ========================================
 			// 4. CREATE ANTREAN
 			// ========================================
@@ -586,6 +598,7 @@ class XEndpointConfig extends ActiveRecord
 			$antrean->warehouse_id = $warehouseRecommendation['warehouse_id'];
 			$antrean->status = 'OPEN';
 			$antrean->qr_code = $barcode_fg;
+			$antrean->do_id = $firstDoId;
 			
 			if (!$antrean->save()) {
 				throw new Exception('Gagal menyimpan antrean: ' . json_encode($antrean->getErrors()));
