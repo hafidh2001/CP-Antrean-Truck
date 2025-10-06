@@ -209,61 +209,94 @@ class XEndpointConfig extends ActiveRecord
 					
 					// For each requirement detail
 					foreach ($required['details'] as $reqDetail) {
-						$remainingQty = $reqDetail['qty'];
+						$remainingQtyKg = $reqDetail['qty']; // Qty in KG from DO
 						$targetUom = MUom::model()->findByPk($reqDetail['uom_id']);
 						
-						// Check if this is smallest unit (convert_to = NULL)
-						$isSmallestUnit = is_null($targetUom->convert_to);
-						
 						// ========================================
-						// SMART UOM ALLOCATION STRATEGY
+						// NEW SMART ALLOCATION STRATEGY
 						// ========================================
-						// 1. Try to fulfill from larger units first
-						// 2. Then use smaller units for remainder
+						// 1. Determine if goods uses SACK or BOX from smallest_unit
+						// 2. Calculate pallet requirement first (PK/PB)
+						// 3. Allocate from pallet first, then remainder from smallest unit
 						
-						// Get all UOMs for this conversion chain
-						$uomChain = array();
-						if (!$isSmallestUnit) {
-							// Start from requested UOM and go up to larger units
-							$currentUom = $targetUom;
-							while ($currentUom) {
-								$uomChain[] = $currentUom;
-								// Find larger UOM that converts to this one
-								$largerUom = MUom::model()->find(array(
-									'condition' => 'convert_to = :convert_to',
-									'params' => array(':convert_to' => $currentUom->id)
-								));
-								$currentUom = $largerUom;
-							}
-							// Reverse to process from largest to smallest
-							$uomChain = array_reverse($uomChain);
+						// Conversion: 1 SACK or 1 BOX = 50 KG
+						$KG_PER_UNIT = 50;
+						
+						// Get smallest unit for this goods (1=SACK, 2=BOX)
+						$smallestUnitId = $goodsInfo->smallest_unit;
+						$isSack = ($smallestUnitId == 1);
+						
+						// Convert KG to base units (SACK or BOX)
+						$totalUnitsNeeded = ceil($remainingQtyKg / $KG_PER_UNIT);
+						
+						// Calculate pallet requirements
+						$palletAllocation = array();
+						
+						if ($isSack) {
+							// For SACK: check PK-SACK (48 units) and PB-SACK (56 units)
+							$pkSackUom = MUom::model()->find("unit = 'PK-SACK'");
+							$pbSackUom = MUom::model()->find("unit = 'PB-SACK'");
+							$sackUom = MUom::model()->find("unit = 'SACK'");
 							
-							// Add smallest unit at the end
-							if ($targetUom->convert_to) {
-								$smallestUom = MUom::model()->findByPk($targetUom->convert_to);
-								if ($smallestUom) {
-									$uomChain[] = $smallestUom;
+							if ($pkSackUom) {
+								$pkUnitsNeeded = floor($totalUnitsNeeded / 48);
+								if ($pkUnitsNeeded > 0) {
+									$palletAllocation[] = array(
+										'uom' => $pkSackUom,
+										'qty_needed' => $pkUnitsNeeded,
+										'units_per_pallet' => 48
+									);
+								}
+							}
+							
+							if ($pbSackUom) {
+								$pbUnitsNeeded = floor($totalUnitsNeeded / 56);
+								if ($pbUnitsNeeded > 0) {
+									$palletAllocation[] = array(
+										'uom' => $pbSackUom,
+										'qty_needed' => $pbUnitsNeeded,
+										'units_per_pallet' => 56
+									);
 								}
 							}
 						} else {
-							// For smallest unit, just use it
-							$uomChain[] = $targetUom;
-						}
-						
-						// Process each UOM in the chain
-						foreach ($uomChain as $uom) {
-							if ($remainingQty <= 0) break;
+							// For BOX: check PK-BOX (24 units) and PB-BOX (56 units)
+							$pkBoxUom = MUom::model()->find("unit = 'PK-BOX'");
+							$pbBoxUom = MUom::model()->find("unit = 'PB-BOX'");
+							$boxUom = MUom::model()->find("unit = 'BOX'");
 							
-							// Determine sort order based on UOM type
-							$sortOrder = 't.production_date ASC, t.id ASC'; // Default FIFO
-							
-							// For smallest units (convert_to = NULL), prioritize NULL production dates
-							if (is_null($uom->convert_to)) {
-								$sortOrder = 't.production_date IS NULL DESC, t.production_date ASC, t.id ASC';
+							if ($pkBoxUom) {
+								$pkUnitsNeeded = floor($totalUnitsNeeded / 24);
+								if ($pkUnitsNeeded > 0) {
+									$palletAllocation[] = array(
+										'uom' => $pkBoxUom,
+										'qty_needed' => $pkUnitsNeeded,
+										'units_per_pallet' => 24
+									);
+								}
 							}
 							
-							// Get stock for this UOM from last opname
-							$stockQuery = TStock::model()
+							if ($pbBoxUom) {
+								$pbUnitsNeeded = floor($totalUnitsNeeded / 56);
+								if ($pbUnitsNeeded > 0) {
+									$palletAllocation[] = array(
+										'uom' => $pbBoxUom,
+										'qty_needed' => $pbUnitsNeeded,
+										'units_per_pallet' => 56
+									);
+								}
+							}
+						}
+						
+						// Try to allocate pallets first
+						$allocatedUnits = 0;
+						$palletAllocated = false;
+						
+						foreach ($palletAllocation as $pallet) {
+							if ($allocatedUnits >= $totalUnitsNeeded) break;
+							
+							// Find available pallet stock with oldest production date
+							$palletStock = TStock::model()
 								->with(array(
 									'location' => array(
 										'condition' => 'location.warehouse_id = :warehouse_id',
@@ -271,86 +304,119 @@ class XEndpointConfig extends ActiveRecord
 									)
 								))
 								->findAll(array(
-									'condition' => 't.goods_id = :goods_id AND t.uom_id = :uom_id AND t.opnam_id = :opnam_id AND t.qty > 0',
+									'condition' => 't.goods_id = :goods_id AND t.uom_id = :uom_id AND t.opnam_id = :opnam_id AND t.qty >= :qty_needed',
 									'params' => array(
 										':goods_id' => $goodsId,
-										':uom_id' => $uom->id,
-										':opnam_id' => $lastOpname->id
+										':uom_id' => $pallet['uom']->id,
+										':opnam_id' => $lastOpname->id,
+										':qty_needed' => $pallet['qty_needed']
 									),
-									'order' => $sortOrder
+									'order' => 't.production_date ASC, location.label ASC'
 								));
 							
-							foreach ($stockQuery as $stock) {
-								if ($remainingQty <= 0 || !$stock->location) break;
-								
-								// Convert stock qty to target UOM
-								$stockQtyInTargetUom = $stock->qty;
-								
-								// Convert if needed
-								if ($uom->id != $targetUom->id) {
-									if ($uom->conversion && $targetUom->conversion) {
-										// Both have conversions, calculate ratio
-										$stockQtyInTargetUom = $stock->qty * ($uom->conversion / $targetUom->conversion);
-									} else if ($uom->conversion && is_null($targetUom->convert_to)) {
-										// Stock is in larger unit, target is smallest
-										$stockQtyInTargetUom = $stock->qty * $uom->conversion;
-									} else if (is_null($uom->convert_to) && $targetUom->conversion) {
-										// Stock is in smallest unit, target is larger
-										$stockQtyInTargetUom = $stock->qty / $targetUom->conversion;
+							if (!empty($palletStock)) {
+								$stock = $palletStock[0];
+								if ($stock->location) {
+									// Allocate this pallet
+									$qtyToUse = min($pallet['qty_needed'], floor(($totalUnitsNeeded - $allocatedUnits) / $pallet['units_per_pallet']));
+									
+									$locationDetails[] = array(
+										'goods_id' => $goodsId,
+										'location_id' => $stock->location_id,
+										'qty' => $qtyToUse,
+										'uom_id' => $pallet['uom']->id
+									);
+									
+									$allocatedUnits += $qtyToUse * $pallet['units_per_pallet'];
+									$palletAllocated = true;
+									$totalStock += $qtyToUse * $pallet['units_per_pallet'] * $KG_PER_UNIT;
+									
+									// Track production date
+									if ($stock->production_date) {
+										if (!$earliestProductionDate || $stock->production_date < $earliestProductionDate) {
+											$earliestProductionDate = $stock->production_date;
+										}
 									}
-								}
-								
-								// Calculate how much to allocate
-								$qtyToAllocate = min($stockQtyInTargetUom, $remainingQty);
-								$actualStockUsed = $qtyToAllocate;
-								
-								// Convert back to stock UOM for recording
-								if ($uom->id != $targetUom->id) {
-									if ($uom->conversion && $targetUom->conversion) {
-										$actualStockUsed = $qtyToAllocate * ($targetUom->conversion / $uom->conversion);
-									} else if ($uom->conversion && is_null($targetUom->convert_to)) {
-										$actualStockUsed = $qtyToAllocate / $uom->conversion;
-									} else if (is_null($uom->convert_to) && $targetUom->conversion) {
-										$actualStockUsed = $qtyToAllocate * $targetUom->conversion;
-									}
-								}
-								
-								$remainingQty -= $qtyToAllocate;
-								$totalStock += $qtyToAllocate;
-								
-								// Track production date
-								if ($stock->production_date) {
-									if (!$earliestProductionDate || $stock->production_date < $earliestProductionDate) {
-										$earliestProductionDate = $stock->production_date;
-									}
-								}
-								
-								// Add to location details
-								$locationDetails[] = array(
-									'goods_id' => $goodsId,
-									'location_id' => $stock->location_id,
-									'qty' => $actualStockUsed,
-									'uom_id' => $uom->id
-								);
-								
-								// Calculate loading time
-								if ($goodsInfo && $goodsInfo->loading_time) {
-									// Convert to tons for loading time calculation
-									$qtyInTons = $actualStockUsed;
-									if (strtolower($uom->unit) == 'kg') {
-										$qtyInTons = $actualStockUsed / 1000;
-									} else if ($uom->conversion) {
-										// Assume conversion to kg then to tons
-										$qtyInTons = ($actualStockUsed * $uom->conversion) / 1000;
-									}
-									$totalLoadingTime += $qtyInTons * $goodsInfo->loading_time;
 								}
 							}
 						}
 						
-						// Check if we fulfilled this requirement
-						if ($remainingQty > 0) {
-							$canFulfillAll = false;
+						// Calculate remaining units needed after pallet allocation
+						$remainingUnits = $totalUnitsNeeded - $allocatedUnits;
+						
+						// Allocate remaining from smallest unit (SACK or BOX)
+						if ($remainingUnits > 0) {
+							$smallestUom = $isSack ? $sackUom : $boxUom;
+							
+							if ($smallestUom) {
+								// Prefer location that already has pallet if possible
+								$preferredLocationId = null;
+								if (!empty($locationDetails)) {
+									$preferredLocationId = $locationDetails[count($locationDetails)-1]['location_id'];
+								}
+								
+								// Find stock with priority: same location > oldest production > least busy line
+								$stockQuery = TStock::model()
+									->with(array(
+										'location' => array(
+											'condition' => 'location.warehouse_id = :warehouse_id',
+											'params' => array(':warehouse_id' => $warehouse->id)
+										)
+									))
+									->findAll(array(
+										'condition' => 't.goods_id = :goods_id AND t.uom_id = :uom_id AND t.opnam_id = :opnam_id AND t.qty >= :qty_needed',
+										'params' => array(
+											':goods_id' => $goodsId,
+											':uom_id' => $smallestUom->id,
+											':opnam_id' => $lastOpname->id,
+											':qty_needed' => $remainingUnits
+										),
+										'order' => 't.production_date IS NULL DESC, t.production_date ASC, location.label ASC'
+									));
+								
+								// Try to find stock in same location first
+								$selectedStock = null;
+								if ($preferredLocationId) {
+									foreach ($stockQuery as $stock) {
+										if ($stock->location_id == $preferredLocationId) {
+											$selectedStock = $stock;
+											break;
+										}
+									}
+								}
+								
+								// If not found in same location, use first available
+								if (!$selectedStock && !empty($stockQuery)) {
+									$selectedStock = $stockQuery[0];
+								}
+								
+								if ($selectedStock && $selectedStock->location) {
+									$locationDetails[] = array(
+										'goods_id' => $goodsId,
+										'location_id' => $selectedStock->location_id,
+										'qty' => $remainingUnits,
+										'uom_id' => $smallestUom->id
+									);
+									
+									$totalStock += $remainingUnits * $KG_PER_UNIT;
+									
+									// Track production date
+									if ($selectedStock->production_date) {
+										if (!$earliestProductionDate || $selectedStock->production_date < $earliestProductionDate) {
+											$earliestProductionDate = $selectedStock->production_date;
+										}
+									}
+								} else {
+									// Could not fulfill remaining units
+									$canFulfillAll = false;
+								}
+							}
+						}
+						
+						// Calculate loading time if goods info available
+						if ($goodsInfo && $goodsInfo->loading_time) {
+							$qtyInTons = $totalStock / 1000; // Convert KG to tons
+							$totalLoadingTime += $qtyInTons * $goodsInfo->loading_time;
 						}
 					}
 				}
