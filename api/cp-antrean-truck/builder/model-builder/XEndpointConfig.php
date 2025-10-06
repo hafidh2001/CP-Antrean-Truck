@@ -295,9 +295,13 @@ class XEndpointConfig extends ActiveRecord
 						// Try to allocate pallets first
 						$allocatedUnits = 0;
 						$palletAllocated = false;
+						$recommendedAllocation = array(); // Track what should be allocated even if no stock
 						
 						foreach ($palletAllocation as $pallet) {
 							if ($allocatedUnits >= $totalUnitsNeeded) break;
+							
+							$qtyToUse = min($pallet['qty_needed'], floor(($totalUnitsNeeded - $allocatedUnits) / $pallet['units_per_pallet']));
+							if ($qtyToUse <= 0) continue;
 							
 							// Find available pallet stock with oldest production date
 							$palletStock = TStock::model()
@@ -313,7 +317,7 @@ class XEndpointConfig extends ActiveRecord
 										':goods_id' => $goodsId,
 										':uom_id' => $pallet['uom']->id,
 										':opnam_id' => $lastOpname->id,
-										':qty_needed' => $pallet['qty_needed']
+										':qty_needed' => $qtyToUse
 									),
 									'order' => 't.production_date ASC, location.label ASC'
 								));
@@ -321,14 +325,13 @@ class XEndpointConfig extends ActiveRecord
 							if (!empty($palletStock)) {
 								$stock = $palletStock[0];
 								if ($stock->location) {
-									// Allocate this pallet
-									$qtyToUse = min($pallet['qty_needed'], floor(($totalUnitsNeeded - $allocatedUnits) / $pallet['units_per_pallet']));
-									
+									// Allocate this pallet WITH location
 									$locationDetails[] = array(
 										'goods_id' => $goodsId,
 										'location_id' => $stock->location_id,
 										'qty' => $qtyToUse,
-										'uom_id' => $pallet['uom']->id
+										'uom_id' => $pallet['uom']->id,
+										'production_date' => $stock->production_date
 									);
 									
 									$allocatedUnits += $qtyToUse * $pallet['units_per_pallet'];
@@ -342,6 +345,16 @@ class XEndpointConfig extends ActiveRecord
 										}
 									}
 								}
+							} else {
+								// No stock available but track the recommendation WITHOUT location
+								$recommendedAllocation[] = array(
+									'goods_id' => $goodsId,
+									'location_id' => null,
+									'qty' => $qtyToUse,
+									'uom_id' => $pallet['uom']->id,
+									'production_date' => null
+								);
+								$allocatedUnits += $qtyToUse * $pallet['units_per_pallet'];
 							}
 						}
 						
@@ -399,7 +412,8 @@ class XEndpointConfig extends ActiveRecord
 										'goods_id' => $goodsId,
 										'location_id' => $selectedStock->location_id,
 										'qty' => $remainingUnits,
-										'uom_id' => $smallestUom->id
+										'uom_id' => $smallestUom->id,
+										'production_date' => $selectedStock->production_date
 									);
 									
 									$totalStock += $remainingUnits * $KG_PER_UNIT;
@@ -411,9 +425,23 @@ class XEndpointConfig extends ActiveRecord
 										}
 									}
 								} else {
-									// Could not fulfill remaining units
+									// No stock available but track the recommendation WITHOUT location
+									$recommendedAllocation[] = array(
+										'goods_id' => $goodsId,
+										'location_id' => null,
+										'qty' => $remainingUnits,
+										'uom_id' => $smallestUom->id,
+										'production_date' => null
+									);
 									$canFulfillAll = false;
 								}
+							}
+						}
+						
+						// Merge recommended allocation (without location) with location details
+						if (!empty($recommendedAllocation)) {
+							foreach ($recommendedAllocation as $rec) {
+								$locationDetails[] = $rec;
 							}
 						}
 						
@@ -425,10 +453,10 @@ class XEndpointConfig extends ActiveRecord
 					}
 				}
 				
-				// Skip warehouse if it has no stock at all
-				if ($totalStock == 0) {
-					continue;
-				}
+				// Don't skip warehouse even if no stock - we still want to save the allocation calculation
+				// if ($totalStock == 0) {
+				//	continue;
+				// }
 				
 				// ========================================
 				// CALCULATE GATE LOADING TIME FOR PRIORITY 4
@@ -566,82 +594,121 @@ class XEndpointConfig extends ActiveRecord
 			// HANDLE CASE WHERE NO WAREHOUSE CAN FULFILL
 			// ========================================
 			if (empty($warehouseScores)) {
-				// Return all warehouses even if they can't fulfill
-				// Just pick the one with most variety of goods
-				foreach ($warehouses as $warehouse) {
-					// Get last completed opname
-					$lastOpname = TOpnam::model()->find(array(
-						'condition' => 'warehouse_id = :warehouse_id AND finished_time IS NOT NULL',
-						'params' => array(':warehouse_id' => $warehouse->id),
-						'order' => 'finished_time DESC'
-					));
+				// Calculate allocation requirements even without stock
+				$locationDetails = array();
+				
+				foreach ($requiredGoods as $required) {
+					$goodsId = $required['goods_id'];
+					$goodsInfo = MGoods::model()->findByPk($goodsId);
 					
-					if (!$lastOpname) {
-						continue;
-					}
-					
-					$locationDetails = array();
-					$goodsVariety = 0;
-					
-					foreach ($requiredGoods as $required) {
-						$hasStock = TStock::model()
-							->with(array(
-								'location' => array(
-									'condition' => 'location.warehouse_id = :warehouse_id',
-									'params' => array(':warehouse_id' => $warehouse->id)
-								)
-							))
-							->exists(array(
-								'condition' => 't.goods_id = :goods_id AND t.opnam_id = :opnam_id AND t.qty > 0',
-								'params' => array(
-									':goods_id' => $required['goods_id'],
-									':opnam_id' => $lastOpname->id
-								)
-							));
+					foreach ($required['details'] as $reqDetail) {
+						$remainingQtyKg = $reqDetail['qty'];
 						
-						if ($hasStock) {
-							$goodsVariety++;
+						// Get weight per unit from goods
+						$KG_PER_UNIT = $goodsInfo->weight;
+						
+						// Get smallest unit for this goods (1=SACK, 2=BOX)
+						$smallestUnitId = $goodsInfo->smallest_unit;
+						$isSack = ($smallestUnitId == 1);
+						
+						// Convert KG to base units (SACK or BOX)
+						$totalUnitsNeeded = ceil($remainingQtyKg / $KG_PER_UNIT);
+						
+						if ($isSack) {
+							$pkSackUom = MUom::model()->find("unit = 'PK-SACK'");
+							$sackUom = MUom::model()->find("unit = 'SACK'");
+							
+							if ($pkSackUom && $pkSackUom->conversion) {
+								$pkUnitsPerPallet = $pkSackUom->conversion;
+								$pkUnitsNeeded = floor($totalUnitsNeeded / $pkUnitsPerPallet);
+								if ($pkUnitsNeeded > 0) {
+									$locationDetails[] = array(
+										'goods_id' => $goodsId,
+										'location_id' => null,
+										'qty' => $pkUnitsNeeded,
+										'uom_id' => $pkSackUom->id,
+										'production_date' => null
+									);
+									$totalUnitsNeeded -= $pkUnitsNeeded * $pkUnitsPerPallet;
+								}
+							}
+							
+							// Remainder in SACK
+							if ($totalUnitsNeeded > 0 && $sackUom) {
+								$locationDetails[] = array(
+									'goods_id' => $goodsId,
+									'location_id' => null,
+									'qty' => $totalUnitsNeeded,
+									'uom_id' => $sackUom->id,
+									'production_date' => null
+								);
+							}
+						} else {
+							$pkBoxUom = MUom::model()->find("unit = 'PK-BOX'");
+							$boxUom = MUom::model()->find("unit = 'BOX'");
+							
+							if ($pkBoxUom && $pkBoxUom->conversion) {
+								$pkUnitsPerPallet = $pkBoxUom->conversion;
+								$pkUnitsNeeded = floor($totalUnitsNeeded / $pkUnitsPerPallet);
+								if ($pkUnitsNeeded > 0) {
+									$locationDetails[] = array(
+										'goods_id' => $goodsId,
+										'location_id' => null,
+										'qty' => $pkUnitsNeeded,
+										'uom_id' => $pkBoxUom->id,
+										'production_date' => null
+									);
+									$totalUnitsNeeded -= $pkUnitsNeeded * $pkUnitsPerPallet;
+								}
+							}
+							
+							// Remainder in BOX
+							if ($totalUnitsNeeded > 0 && $boxUom) {
+								$locationDetails[] = array(
+									'goods_id' => $goodsId,
+									'location_id' => null,
+									'qty' => $totalUnitsNeeded,
+									'uom_id' => $boxUom->id,
+									'production_date' => null
+								);
+							}
 						}
 					}
-					
-					if ($goodsVariety > 0) {
-						$warehouseScores[] = array(
-							'warehouse_id' => $warehouse->id,
-							'warehouse_name' => $warehouse->name,
-							'priority' => 4,
-							'score' => $goodsVariety,
-							'location_details' => array(), // Will be empty, no specific recommendations
-							'best_gate_id' => null,
-							'min_loading_time' => 0,
-							'can_fulfill_all' => false
-						);
-					}
 				}
-			}
-			
-			// If still no warehouses, just return first warehouse with completed opname
-			if (empty($warehouseScores)) {
+				
+				// Get first available warehouse
 				$firstWarehouse = MWarehouse::model()->find(array(
-					'condition' => 'status = :status AND EXISTS (
-						SELECT 1 FROM t_opnam 
-						WHERE t_opnam.warehouse_id = t.id 
-						AND t_opnam.finished_time IS NOT NULL
-					)',
-					'params' => array(':status' => 'OPEN')
+					'condition' => 'status = :status',
+					'params' => array(':status' => 'OPEN'),
+					'order' => 'id ASC'
 				));
+				
 				if ($firstWarehouse) {
 					$warehouseScores[] = array(
 						'warehouse_id' => $firstWarehouse->id,
-						'warehouse_name' => $firstWarehouse->name,
-						'priority' => 4,
+						'warehouse_name' => '', // Empty when no stock available
+						'priority' => 5,
 						'score' => 0,
-						'location_details' => array(),
+						'location_details' => $locationDetails,
+						'best_gate_id' => null,
+						'min_loading_time' => 0,
+						'can_fulfill_all' => false
+					);
+				} else {
+					// No warehouse at all, still save with null values
+					$warehouseScores[] = array(
+						'warehouse_id' => null,
+						'warehouse_name' => '',
+						'priority' => 5,
+						'score' => 0,
+						'location_details' => $locationDetails,
 						'best_gate_id' => null,
 						'min_loading_time' => 0,
 						'can_fulfill_all' => false
 					);
 				}
 			}
+			
 			
 			// Sort by priority and score
 			usort($warehouseScores, function($a, $b) {
@@ -662,6 +729,18 @@ class XEndpointConfig extends ActiveRecord
 			// ========================================
 			// 4. CREATE ANTREAN
 			// ========================================
+			// If warehouse_id is null, get first available warehouse for antrean
+			if (empty($warehouseRecommendation['warehouse_id'])) {
+				$defaultWarehouse = MWarehouse::model()->find(array(
+					'condition' => 'status = :status',
+					'params' => array(':status' => 'OPEN'),
+					'order' => 'id ASC'
+				));
+				if ($defaultWarehouse) {
+					$warehouseRecommendation['warehouse_id'] = $defaultWarehouse->id;
+				}
+			}
+			
 			$antrean = new TAntrean();
 			$antrean->nopol = $nopol;
 			$antrean->created_time = date('Y-m-d H:i:s');
@@ -677,19 +756,24 @@ class XEndpointConfig extends ActiveRecord
 			// ========================================
 			// 5. SAVE LOCATION RECOMMENDATIONS
 			// ========================================
-			// Only save if we have location details
+			// Save all recommendations (with or without location_id)
+			$savedRecommendations = array();
 			if (!empty($warehouseRecommendation['location_details'])) {
 				foreach ($warehouseRecommendation['location_details'] as $detail) {
 					$rekomendasi = new TAntreanRekomendasiLokasi();
 					$rekomendasi->antrean_id = $antrean->id;
 					$rekomendasi->goods_id = $detail['goods_id'];
-					$rekomendasi->location_id = $detail['location_id'];
+					$rekomendasi->location_id = isset($detail['location_id']) ? $detail['location_id'] : null;
 					$rekomendasi->qty = $detail['qty'];
 					$rekomendasi->uom_id = $detail['uom_id'];
+					if (isset($detail['production_date']) && $detail['production_date']) {
+						$rekomendasi->tgl_produksi = $detail['production_date'];
+					}
 					
 					if (!$rekomendasi->save()) {
 						throw new Exception('Gagal menyimpan rekomendasi lokasi: ' . json_encode($rekomendasi->getErrors()));
 					}
+					$savedRecommendations[] = $rekomendasi;
 				}
 			}
 			
@@ -721,11 +805,24 @@ class XEndpointConfig extends ActiveRecord
 			
 			$transaction->commit();
 			
-			$response = array(
-				'status' => 'Success',
-				'warehouse' => $warehouseRecommendation['warehouse_name'],
-				'timestamp' => date('Y-m-d H:i:s')
-			);
+			// Build response array based on saved recommendations
+			$response = array();
+			if (!empty($savedRecommendations)) {
+				foreach ($savedRecommendations as $rec) {
+					$response[] = array(
+						'status' => 'Success',
+						'warehouse' => !empty($warehouseRecommendation['warehouse_name']) ? $warehouseRecommendation['warehouse_name'] : '',
+						'timestamp' => date('Y-m-d H:i:s')
+					);
+				}
+			} else {
+				// If no recommendations saved, return single success
+				$response = array(
+					'status' => 'Success',
+					'warehouse' => !empty($warehouseRecommendation['warehouse_name']) ? $warehouseRecommendation['warehouse_name'] : '',
+					'timestamp' => date('Y-m-d H:i:s')
+				);
+			}
 			
 			$xlog = XApiLog::model()->findByPk($logId);
 			if ($xlog) {
