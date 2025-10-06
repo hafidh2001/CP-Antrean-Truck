@@ -324,8 +324,7 @@ class XEndpointConfig extends ActiveRecord
 										'goods_id' => $goodsId,
 										'location_id' => $stock->location_id,
 										'qty' => $qtyToUse,
-										'uom_id' => $pallet['uom']->id,
-										'production_date' => $stock->production_date
+										'uom_id' => $pallet['uom']->id
 									);
 									
 									$allocatedUnits += $qtyToUse * $pallet['units_per_pallet'];
@@ -396,8 +395,7 @@ class XEndpointConfig extends ActiveRecord
 										'goods_id' => $goodsId,
 										'location_id' => $selectedStock->location_id,
 										'qty' => $remainingUnits,
-										'uom_id' => $smallestUom->id,
-										'production_date' => $selectedStock->production_date
+										'uom_id' => $smallestUom->id
 									);
 									
 									$totalStock += $remainingUnits * $KG_PER_UNIT;
@@ -675,9 +673,8 @@ class XEndpointConfig extends ActiveRecord
 			// ========================================
 			// 5. SAVE LOCATION RECOMMENDATIONS
 			// ========================================
-			// Save recommendations with or without location_id
+			// Only save if we have location details
 			if (!empty($warehouseRecommendation['location_details'])) {
-				// Save recommendations WITH location_id
 				foreach ($warehouseRecommendation['location_details'] as $detail) {
 					$rekomendasi = new TAntreanRekomendasiLokasi();
 					$rekomendasi->antrean_id = $antrean->id;
@@ -685,28 +682,9 @@ class XEndpointConfig extends ActiveRecord
 					$rekomendasi->location_id = $detail['location_id'];
 					$rekomendasi->qty = $detail['qty'];
 					$rekomendasi->uom_id = $detail['uom_id'];
-					if (isset($detail['production_date'])) {
-						$rekomendasi->tgl_produksi = $detail['production_date'];
-					}
 					
 					if (!$rekomendasi->save()) {
 						throw new Exception('Gagal menyimpan rekomendasi lokasi: ' . json_encode($rekomendasi->getErrors()));
-					}
-				}
-			} else {
-				// Save recommendations WITHOUT location_id (just the goods requirements)
-				foreach ($requiredGoods as $required) {
-					foreach ($required['details'] as $detail) {
-						$rekomendasi = new TAntreanRekomendasiLokasi();
-						$rekomendasi->antrean_id = $antrean->id;
-						$rekomendasi->goods_id = $required['goods_id'];
-						$rekomendasi->location_id = null; // No location available
-						$rekomendasi->qty = $detail['qty'];
-						$rekomendasi->uom_id = $detail['uom_id'];
-						
-						if (!$rekomendasi->save()) {
-							throw new Exception('Gagal menyimpan rekomendasi lokasi: ' . json_encode($rekomendasi->getErrors()));
-						}
 					}
 				}
 			}
