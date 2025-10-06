@@ -206,211 +206,212 @@ class XEndpointConfig extends ActiveRecord
 					// Get goods info for loading time calculation
 					$goodsInfo = MGoods::model()->findByPk($goodsId);
 
-					// For each requirement detail
+					// AGGREGATE total qty dari semua DO lines untuk goods ini
+					$totalQtyKg = 0;
 					foreach ($required['details'] as $reqDetail) {
-						$remainingQtyKg = $reqDetail['qty']; // Qty in KG from DO
+						$totalQtyKg += $reqDetail['qty'];
+					}
 
-						// Convert KG to base units (SACK or BOX)
-						$totalUnitsNeeded = ceil($remainingQtyKg / $weight);
+					// Convert KG to base units (SACK or BOX) - SEKALI saja untuk semua DO lines
+					$totalUnitsNeeded = ceil($totalQtyKg / $weight);
 
-						// Determine if goods uses SACK or BOX
-						$isSack = ($smallestUnitId == 1);
+					// Determine if goods uses SACK or BOX
+					$isSack = ($smallestUnitId == 1);
 
-						// ========================================
-						// STEP 1: HITUNG KEDUA OPSI (PK dan PB)
-						// ========================================
-						$palletOptions = array();
+					// ========================================
+					// STEP 1: HITUNG KEDUA OPSI (PK dan PB)
+					// ========================================
+					$palletOptions = array();
 
-						if ($isSack) {
-							$pkSackUom = MUom::model()->find("unit = 'PK-SACK'");
-							$pbSackUom = MUom::model()->find("unit = 'PB-SACK'");
-							$sackUom = MUom::model()->find("unit = 'SACK'");
+					if ($isSack) {
+						$pkSackUom = MUom::model()->find("unit = 'PK-SACK'");
+						$pbSackUom = MUom::model()->find("unit = 'PB-SACK'");
+						$sackUom = MUom::model()->find("unit = 'SACK'");
 
-							// Opsi 1: PK-SACK
-							if ($pkSackUom && $pkSackUom->conversion > 0) {
-								$pkPallets = floor($totalUnitsNeeded / $pkSackUom->conversion);
-								$pkRemainder = $totalUnitsNeeded - ($pkPallets * $pkSackUom->conversion);
+						// Opsi 1: PK-SACK
+						if ($pkSackUom && $pkSackUom->conversion > 0) {
+							$pkPallets = floor($totalUnitsNeeded / $pkSackUom->conversion);
+							$pkRemainder = $totalUnitsNeeded - ($pkPallets * $pkSackUom->conversion);
 
-								$palletOptions['PK'] = array(
-									'pallet_uom' => $pkSackUom,
-									'pallet_qty' => $pkPallets,
-									'remainder' => $pkRemainder,
-									'smallest_uom' => $sackUom
-								);
-							}
-
-							// Opsi 2: PB-SACK
-							if ($pbSackUom && $pbSackUom->conversion > 0) {
-								$pbPallets = floor($totalUnitsNeeded / $pbSackUom->conversion);
-								$pbRemainder = $totalUnitsNeeded - ($pbPallets * $pbSackUom->conversion);
-
-								$palletOptions['PB'] = array(
-									'pallet_uom' => $pbSackUom,
-									'pallet_qty' => $pbPallets,
-									'remainder' => $pbRemainder,
-									'smallest_uom' => $sackUom
-								);
-							}
-						} else {
-							$pkBoxUom = MUom::model()->find("unit = 'PK-BOX'");
-							$pbBoxUom = MUom::model()->find("unit = 'PB-BOX'");
-							$boxUom = MUom::model()->find("unit = 'BOX'");
-
-							// Opsi 1: PK-BOX
-							if ($pkBoxUom && $pkBoxUom->conversion > 0) {
-								$pkPallets = floor($totalUnitsNeeded / $pkBoxUom->conversion);
-								$pkRemainder = $totalUnitsNeeded - ($pkPallets * $pkBoxUom->conversion);
-
-								$palletOptions['PK'] = array(
-									'pallet_uom' => $pkBoxUom,
-									'pallet_qty' => $pkPallets,
-									'remainder' => $pkRemainder,
-									'smallest_uom' => $boxUom
-								);
-							}
-
-							// Opsi 2: PB-BOX
-							if ($pbBoxUom && $pbBoxUom->conversion > 0) {
-								$pbPallets = floor($totalUnitsNeeded / $pbBoxUom->conversion);
-								$pbRemainder = $totalUnitsNeeded - ($pbPallets * $pbBoxUom->conversion);
-
-								$palletOptions['PB'] = array(
-									'pallet_uom' => $pbBoxUom,
-									'pallet_qty' => $pbPallets,
-									'remainder' => $pbRemainder,
-									'smallest_uom' => $boxUom
-								);
-							}
+							$palletOptions['PK'] = array(
+								'pallet_uom' => $pkSackUom,
+								'pallet_qty' => $pkPallets,
+								'remainder' => $pkRemainder,
+								'smallest_uom' => $sackUom
+							);
 						}
 
-						// ========================================
-						// STEP 2: PILIH SALAH SATU OPSI TERBAIK
-						// ========================================
-						$selectedOption = null;
+						// Opsi 2: PB-SACK
+						if ($pbSackUom && $pbSackUom->conversion > 0) {
+							$pbPallets = floor($totalUnitsNeeded / $pbSackUom->conversion);
+							$pbRemainder = $totalUnitsNeeded - ($pbPallets * $pbSackUom->conversion);
 
-						// Prioritas: PK jika remainder lebih kecil atau sama
-						if (isset($palletOptions['PK']) && isset($palletOptions['PB'])) {
-							if ($palletOptions['PK']['remainder'] <= $palletOptions['PB']['remainder']) {
-								$selectedOption = $palletOptions['PK'];
-							} else {
-								$selectedOption = $palletOptions['PB'];
-							}
-						} else if (isset($palletOptions['PK'])) {
+							$palletOptions['PB'] = array(
+								'pallet_uom' => $pbSackUom,
+								'pallet_qty' => $pbPallets,
+								'remainder' => $pbRemainder,
+								'smallest_uom' => $sackUom
+							);
+						}
+					} else {
+						$pkBoxUom = MUom::model()->find("unit = 'PK-BOX'");
+						$pbBoxUom = MUom::model()->find("unit = 'PB-BOX'");
+						$boxUom = MUom::model()->find("unit = 'BOX'");
+
+						// Opsi 1: PK-BOX
+						if ($pkBoxUom && $pkBoxUom->conversion > 0) {
+							$pkPallets = floor($totalUnitsNeeded / $pkBoxUom->conversion);
+							$pkRemainder = $totalUnitsNeeded - ($pkPallets * $pkBoxUom->conversion);
+
+							$palletOptions['PK'] = array(
+								'pallet_uom' => $pkBoxUom,
+								'pallet_qty' => $pkPallets,
+								'remainder' => $pkRemainder,
+								'smallest_uom' => $boxUom
+							);
+						}
+
+						// Opsi 2: PB-BOX
+						if ($pbBoxUom && $pbBoxUom->conversion > 0) {
+							$pbPallets = floor($totalUnitsNeeded / $pbBoxUom->conversion);
+							$pbRemainder = $totalUnitsNeeded - ($pbPallets * $pbBoxUom->conversion);
+
+							$palletOptions['PB'] = array(
+								'pallet_uom' => $pbBoxUom,
+								'pallet_qty' => $pbPallets,
+								'remainder' => $pbRemainder,
+								'smallest_uom' => $boxUom
+							);
+						}
+					}
+
+					// ========================================
+					// STEP 2: PILIH SALAH SATU OPSI TERBAIK
+					// ========================================
+					$selectedOption = null;
+
+					// Prioritas: PK jika remainder lebih kecil atau sama
+					if (isset($palletOptions['PK']) && isset($palletOptions['PB'])) {
+						if ($palletOptions['PK']['remainder'] <= $palletOptions['PB']['remainder']) {
 							$selectedOption = $palletOptions['PK'];
-						} else if (isset($palletOptions['PB'])) {
+						} else {
 							$selectedOption = $palletOptions['PB'];
 						}
+					} else if (isset($palletOptions['PK'])) {
+						$selectedOption = $palletOptions['PK'];
+					} else if (isset($palletOptions['PB'])) {
+						$selectedOption = $palletOptions['PB'];
+					}
 
-						// ========================================
-						// STEP 3: CEK STOCK DAN SAVE
-						// ========================================
-						if ($selectedOption) {
-							// Cek stock untuk pallet
-							if ($selectedOption['pallet_qty'] > 0) {
-								$palletStock = TStock::model()
-									->with(array(
-										'location' => array(
-											'condition' => 'location.warehouse_id = :warehouse_id',
-											'params' => array(':warehouse_id' => $warehouse->id)
-										)
-									))
-									->find(array(
-										'condition' => 't.goods_id = :goods_id AND t.uom_id = :uom_id AND t.opnam_id = :opnam_id AND t.qty >= :qty_needed',
-										'params' => array(
-											':goods_id' => $goodsId,
-											':uom_id' => $selectedOption['pallet_uom']->id,
-											':opnam_id' => $lastOpname->id,
-											':qty_needed' => $selectedOption['pallet_qty']
-										),
-										'order' => 't.production_date ASC, location.label ASC'
-									));
+					// ========================================
+					// STEP 3: CEK STOCK DAN SAVE
+					// ========================================
+					if ($selectedOption) {
+						// Cek stock untuk pallet
+						if ($selectedOption['pallet_qty'] > 0) {
+							$palletStock = TStock::model()
+								->with(array(
+									'location' => array(
+										'condition' => 'location.warehouse_id = :warehouse_id',
+										'params' => array(':warehouse_id' => $warehouse->id)
+									)
+								))
+								->find(array(
+									'condition' => 't.goods_id = :goods_id AND t.uom_id = :uom_id AND t.opnam_id = :opnam_id AND t.qty >= :qty_needed',
+									'params' => array(
+										':goods_id' => $goodsId,
+										':uom_id' => $selectedOption['pallet_uom']->id,
+										':opnam_id' => $lastOpname->id,
+										':qty_needed' => $selectedOption['pallet_qty']
+									),
+									'order' => 't.production_date ASC, location.label ASC'
+								));
 
-								if ($palletStock && $palletStock->location) {
-									// Ada stock - save dengan location_id
-									$locationDetails[] = array(
-										'goods_id' => $goodsId,
-										'location_id' => $palletStock->location_id,
-										'qty' => $selectedOption['pallet_qty'],
-										'uom_id' => $selectedOption['pallet_uom']->id,
-										'production_date' => $palletStock->production_date
-									);
+							if ($palletStock && $palletStock->location) {
+								// Ada stock - save dengan location_id
+								$locationDetails[] = array(
+									'goods_id' => $goodsId,
+									'location_id' => $palletStock->location_id,
+									'qty' => $selectedOption['pallet_qty'],
+									'uom_id' => $selectedOption['pallet_uom']->id,
+									'production_date' => $palletStock->production_date
+								);
 
-									$totalStock += $selectedOption['pallet_qty'] * $selectedOption['pallet_uom']->conversion * $weight;
+								$totalStock += $selectedOption['pallet_qty'] * $selectedOption['pallet_uom']->conversion * $weight;
 
-									if ($palletStock->production_date) {
-										if (!$earliestProductionDate || $palletStock->production_date < $earliestProductionDate) {
-											$earliestProductionDate = $palletStock->production_date;
-										}
+								if ($palletStock->production_date) {
+									if (!$earliestProductionDate || $palletStock->production_date < $earliestProductionDate) {
+										$earliestProductionDate = $palletStock->production_date;
 									}
-								} else {
-									// Tidak ada stock - save tanpa location_id
-									$locationDetails[] = array(
-										'goods_id' => $goodsId,
-										'location_id' => null,
-										'qty' => $selectedOption['pallet_qty'],
-										'uom_id' => $selectedOption['pallet_uom']->id,
-										'production_date' => null
-									);
-									$canFulfillAll = false;
 								}
-							}
-
-							// Cek stock untuk remainder (SACK/BOX)
-							if ($selectedOption['remainder'] > 0 && $selectedOption['smallest_uom']) {
-								$smallestStock = TStock::model()
-									->with(array(
-										'location' => array(
-											'condition' => 'location.warehouse_id = :warehouse_id',
-											'params' => array(':warehouse_id' => $warehouse->id)
-										)
-									))
-									->find(array(
-										'condition' => 't.goods_id = :goods_id AND t.uom_id = :uom_id AND t.opnam_id = :opnam_id AND t.qty >= :qty_needed',
-										'params' => array(
-											':goods_id' => $goodsId,
-											':uom_id' => $selectedOption['smallest_uom']->id,
-											':opnam_id' => $lastOpname->id,
-											':qty_needed' => $selectedOption['remainder']
-										),
-										'order' => 't.production_date ASC, location.label ASC'
-									));
-
-								if ($smallestStock && $smallestStock->location) {
-									// Ada stock - save dengan location_id
-									$locationDetails[] = array(
-										'goods_id' => $goodsId,
-										'location_id' => $smallestStock->location_id,
-										'qty' => $selectedOption['remainder'],
-										'uom_id' => $selectedOption['smallest_uom']->id,
-										'production_date' => $smallestStock->production_date
-									);
-
-									$totalStock += $selectedOption['remainder'] * $weight;
-
-									if ($smallestStock->production_date) {
-										if (!$earliestProductionDate || $smallestStock->production_date < $earliestProductionDate) {
-											$earliestProductionDate = $smallestStock->production_date;
-										}
-									}
-								} else {
-									// Tidak ada stock - save tanpa location_id
-									$locationDetails[] = array(
-										'goods_id' => $goodsId,
-										'location_id' => null,
-										'qty' => $selectedOption['remainder'],
-										'uom_id' => $selectedOption['smallest_uom']->id,
-										'production_date' => null
-									);
-									$canFulfillAll = false;
-								}
+							} else {
+								// Tidak ada stock - save tanpa location_id
+								$locationDetails[] = array(
+									'goods_id' => $goodsId,
+									'location_id' => null,
+									'qty' => $selectedOption['pallet_qty'],
+									'uom_id' => $selectedOption['pallet_uom']->id,
+									'production_date' => null
+								);
+								$canFulfillAll = false;
 							}
 						}
 
-						// Calculate loading time if goods info available
-						if ($goodsInfo && $goodsInfo->loading_time && $totalStock > 0) {
-							$qtyInTons = $totalStock / 1000;
-							$totalLoadingTime += $qtyInTons * $goodsInfo->loading_time;
+						// Cek stock untuk remainder (SACK/BOX)
+						if ($selectedOption['remainder'] > 0 && $selectedOption['smallest_uom']) {
+							$smallestStock = TStock::model()
+								->with(array(
+									'location' => array(
+										'condition' => 'location.warehouse_id = :warehouse_id',
+										'params' => array(':warehouse_id' => $warehouse->id)
+									)
+								))
+								->find(array(
+									'condition' => 't.goods_id = :goods_id AND t.uom_id = :uom_id AND t.opnam_id = :opnam_id AND t.qty >= :qty_needed',
+									'params' => array(
+										':goods_id' => $goodsId,
+										':uom_id' => $selectedOption['smallest_uom']->id,
+										':opnam_id' => $lastOpname->id,
+										':qty_needed' => $selectedOption['remainder']
+									),
+									'order' => 't.production_date ASC, location.label ASC'
+								));
+
+							if ($smallestStock && $smallestStock->location) {
+								// Ada stock - save dengan location_id
+								$locationDetails[] = array(
+									'goods_id' => $goodsId,
+									'location_id' => $smallestStock->location_id,
+									'qty' => $selectedOption['remainder'],
+									'uom_id' => $selectedOption['smallest_uom']->id,
+									'production_date' => $smallestStock->production_date
+								);
+
+								$totalStock += $selectedOption['remainder'] * $weight;
+
+								if ($smallestStock->production_date) {
+									if (!$earliestProductionDate || $smallestStock->production_date < $earliestProductionDate) {
+										$earliestProductionDate = $smallestStock->production_date;
+									}
+								}
+							} else {
+								// Tidak ada stock - save tanpa location_id
+								$locationDetails[] = array(
+									'goods_id' => $goodsId,
+									'location_id' => null,
+									'qty' => $selectedOption['remainder'],
+									'uom_id' => $selectedOption['smallest_uom']->id,
+									'production_date' => null
+								);
+								$canFulfillAll = false;
+							}
 						}
+					}
+
+					// Calculate loading time if goods info available
+					if ($goodsInfo && $goodsInfo->loading_time && $totalStock > 0) {
+						$qtyInTons = $totalStock / 1000;
+						$totalLoadingTime += $qtyInTons * $goodsInfo->loading_time;
 					}
 				}
 
