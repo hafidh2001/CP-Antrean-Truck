@@ -37,15 +37,43 @@ class XEndpointConfig extends ActiveRecord
 	 */
 	public static function getAntrean($params = [])
 	{
-		$xlog = new XApiLog;
-		$xlog->created_time = date('Y-m-d H:i:s');
-		$xlog->api = 'getAntrean';
-		$xlog->payload = json_encode($params);
-		$xlog->save();
-		$logId = $xlog->id;
+		// Debug 1: Check if function is reached
+		echo "<pre>";
+		echo "=== FUNCTION getAntrean REACHED ===\n";
+		echo "Time: " . date('Y-m-d H:i:s') . "\n";
+		echo "Params:\n";
+		print_r($params);
+		echo "</pre>";
+		
+		// Early exit for debugging
+		if (isset($params['debug_exit']) && $params['debug_exit'] == true) {
+			die("Early exit after param check");
+		}
+		
+		// Debug 2: Try to save XApiLog
+		try {
+			$xlog = new XApiLog;
+			$xlog->created_time = date('Y-m-d H:i:s');
+			$xlog->api = 'getAntrean';
+			$xlog->payload = json_encode($params);
+			$xlog->save();
+			$logId = $xlog->id;
+			var_dump("XApiLog saved with ID:", $logId);
+		} catch (Exception $e) {
+			var_dump("Error saving XApiLog:", $e->getMessage());
+			die();
+		}
+		
 		$response = array();
 		
-		$transaction = Yii::app()->db->beginTransaction();
+		// Debug 3: Start transaction
+		try {
+			$transaction = Yii::app()->db->beginTransaction();
+			var_dump("Transaction started successfully");
+		} catch (Exception $e) {
+			var_dump("Error starting transaction:", $e->getMessage());
+			die();
+		}
 		
 		try {
 			// ========================================
@@ -58,11 +86,18 @@ class XEndpointConfig extends ActiveRecord
 			$nopol = $params['plat'];
 			$barcode_fg = isset($params['barcode_fg']) ? $params['barcode_fg'] : null;
 			
+			var_dump("Nopol:", $nopol);
+			var_dump("Barcode FG:", $barcode_fg);
+			
 			$savedDeliveryOrders = array();
 			
 			$dos = $params['do'];
+			var_dump("Number of DOs:", count($dos));
+			
 			// Simpan DO dan DO Line
-			foreach ($dos as $row) {
+			foreach ($dos as $idx => $row) {
+				var_dump("Processing DO index:", $idx);
+				var_dump("DO data:", $row);
 				// Cek apakah DO sudah ada dengan mempertimbangkan plat nomor dan tanggal
 				$existingDO = TDeliveryOrder::model()->find(array(
 					'condition' => 'no_do = :no_do AND truck_no = :truck_no',
@@ -72,10 +107,16 @@ class XEndpointConfig extends ActiveRecord
 					)
 				));
 				if (!$existingDO) {
+					var_dump("Creating new DO for delivery:", $row['delivery']);
+					
 					$do = new TDeliveryOrder();
 					$do->synced_time = date('Y-m-d H:i:s');
 					$do->status = 'OPEN';
 					$do->id_sap = $row['delivery'];
+					
+					var_dump("id_sap type:", gettype($do->id_sap));
+					var_dump("id_sap value:", $do->id_sap);
+					
 					$do->plant = $row['plnt'];
 					$do->truck_no = $row['truck_numb'];
 					$do->out_date = DateTime::createFromFormat('d.m.Y', $row['out_date'])->format('Y-m-d');
@@ -95,12 +136,18 @@ class XEndpointConfig extends ActiveRecord
 					$do->date_inserted = date('Y-m-d H:i:s');
 					$do->jenis_truck = $params['jenis_truck'];
 					
+					var_dump("DO attributes before save:", $do->attributes);
+					
 					if (!$do->save()) {
-						throw new Exception('Gagal simpan DO: ' . json_encode($do->getErrors()));
+						var_dump("Failed to save DO!");
+						var_dump("DO errors:", $do->getErrors());
+						die();
 					}
 					
+					var_dump("DO saved successfully with ID:", $do->id);
 					$doId = $do->id;
 				} else {
+					var_dump("Using existing DO with ID:", $existingDO->id);
 					$doId = $existingDO->id;
 					$do = $existingDO;
 				}
