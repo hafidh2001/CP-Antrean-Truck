@@ -578,9 +578,21 @@ class XEndpointConfig extends ActiveRecord
 					$score += (1000 - min(1000, $minLoadingTime)); // Inverse of loading time
 				}
 				
+				// Check if any location has actual stock (location_id not null)
+				$hasActualStock = false;
+				foreach ($locationDetails as $detail) {
+					if (isset($detail['location_id']) && $detail['location_id'] !== null) {
+						$hasActualStock = true;
+						break;
+					}
+				}
+				
+				// If no actual stock locations, set warehouse_name as empty
+				$warehouseName = $hasActualStock ? $warehouse->name : '';
+				
 				$warehouseScores[] = array(
 					'warehouse_id' => $warehouse->id,
-					'warehouse_name' => $warehouse->name,
+					'warehouse_name' => $warehouseName,
 					'priority' => $priority,
 					'score' => $score,
 					'location_details' => $locationDetails,
