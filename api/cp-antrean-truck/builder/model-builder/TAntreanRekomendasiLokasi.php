@@ -11,8 +11,9 @@ class TAntreanRekomendasiLokasi extends ActiveRecord
 	public function rules()
 	{
 		return array(
-			array('antrean_id, goods_id, location_id, qty, uom_id', 'required'),
+			array('antrean_id, goods_id, qty, uom_id', 'required'),
 			array('antrean_id, goods_id, location_id, qty, uom_id, location_override_id, qty_override', 'numerical', 'integerOnly'=>true),
+			array('tgl_produksi', 'safe'),
 		);
 	}
 
