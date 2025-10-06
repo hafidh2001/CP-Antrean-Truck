@@ -219,8 +219,8 @@ class XEndpointConfig extends ActiveRecord
 						// 2. Calculate pallet requirement first (PK/PB)
 						// 3. Allocate from pallet first, then remainder from smallest unit
 						
-						// Conversion: 1 SACK or 1 BOX = 50 KG
-						$KG_PER_UNIT = 50;
+						// Get weight per unit from goods
+						$KG_PER_UNIT = $goodsInfo->weight;
 						
 						// Get smallest unit for this goods (1=SACK, 2=BOX)
 						$smallestUnitId = $goodsInfo->smallest_unit;
@@ -233,56 +233,60 @@ class XEndpointConfig extends ActiveRecord
 						$palletAllocation = array();
 						
 						if ($isSack) {
-							// For SACK: check PK-SACK (48 units) and PB-SACK (56 units)
+							// For SACK: check PK-SACK and PB-SACK
 							$pkSackUom = MUom::model()->find("unit = 'PK-SACK'");
 							$pbSackUom = MUom::model()->find("unit = 'PB-SACK'");
 							$sackUom = MUom::model()->find("unit = 'SACK'");
 							
-							if ($pkSackUom) {
-								$pkUnitsNeeded = floor($totalUnitsNeeded / 48);
+							if ($pkSackUom && $pkSackUom->conversion) {
+								$pkUnitsPerPallet = $pkSackUom->conversion;
+								$pkUnitsNeeded = floor($totalUnitsNeeded / $pkUnitsPerPallet);
 								if ($pkUnitsNeeded > 0) {
 									$palletAllocation[] = array(
 										'uom' => $pkSackUom,
 										'qty_needed' => $pkUnitsNeeded,
-										'units_per_pallet' => 48
+										'units_per_pallet' => $pkUnitsPerPallet
 									);
 								}
 							}
 							
-							if ($pbSackUom) {
-								$pbUnitsNeeded = floor($totalUnitsNeeded / 56);
+							if ($pbSackUom && $pbSackUom->conversion) {
+								$pbUnitsPerPallet = $pbSackUom->conversion;
+								$pbUnitsNeeded = floor($totalUnitsNeeded / $pbUnitsPerPallet);
 								if ($pbUnitsNeeded > 0) {
 									$palletAllocation[] = array(
 										'uom' => $pbSackUom,
 										'qty_needed' => $pbUnitsNeeded,
-										'units_per_pallet' => 56
+										'units_per_pallet' => $pbUnitsPerPallet
 									);
 								}
 							}
 						} else {
-							// For BOX: check PK-BOX (24 units) and PB-BOX (56 units)
+							// For BOX: check PK-BOX and PB-BOX
 							$pkBoxUom = MUom::model()->find("unit = 'PK-BOX'");
 							$pbBoxUom = MUom::model()->find("unit = 'PB-BOX'");
 							$boxUom = MUom::model()->find("unit = 'BOX'");
 							
-							if ($pkBoxUom) {
-								$pkUnitsNeeded = floor($totalUnitsNeeded / 24);
+							if ($pkBoxUom && $pkBoxUom->conversion) {
+								$pkUnitsPerPallet = $pkBoxUom->conversion;
+								$pkUnitsNeeded = floor($totalUnitsNeeded / $pkUnitsPerPallet);
 								if ($pkUnitsNeeded > 0) {
 									$palletAllocation[] = array(
 										'uom' => $pkBoxUom,
 										'qty_needed' => $pkUnitsNeeded,
-										'units_per_pallet' => 24
+										'units_per_pallet' => $pkUnitsPerPallet
 									);
 								}
 							}
 							
-							if ($pbBoxUom) {
-								$pbUnitsNeeded = floor($totalUnitsNeeded / 56);
+							if ($pbBoxUom && $pbBoxUom->conversion) {
+								$pbUnitsPerPallet = $pbBoxUom->conversion;
+								$pbUnitsNeeded = floor($totalUnitsNeeded / $pbUnitsPerPallet);
 								if ($pbUnitsNeeded > 0) {
 									$palletAllocation[] = array(
 										'uom' => $pbBoxUom,
 										'qty_needed' => $pbUnitsNeeded,
-										'units_per_pallet' => 56
+										'units_per_pallet' => $pbUnitsPerPallet
 									);
 								}
 							}
