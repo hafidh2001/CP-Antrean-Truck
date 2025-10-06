@@ -805,24 +805,12 @@ class XEndpointConfig extends ActiveRecord
 			
 			$transaction->commit();
 			
-			// Build response array based on saved recommendations
-			$response = array();
-			if (!empty($savedRecommendations)) {
-				foreach ($savedRecommendations as $rec) {
-					$response[] = array(
-						'status' => 'Success',
-						'warehouse' => !empty($warehouseRecommendation['warehouse_name']) ? $warehouseRecommendation['warehouse_name'] : '',
-						'timestamp' => date('Y-m-d H:i:s')
-					);
-				}
-			} else {
-				// If no recommendations saved, return single success
-				$response = array(
-					'status' => 'Success',
-					'warehouse' => !empty($warehouseRecommendation['warehouse_name']) ? $warehouseRecommendation['warehouse_name'] : '',
-					'timestamp' => date('Y-m-d H:i:s')
-				);
-			}
+			// Return single response object
+			$response = array(
+				'status' => 'Success',
+				'warehouse' => !empty($warehouseRecommendation['warehouse_name']) ? $warehouseRecommendation['warehouse_name'] : '',
+				'timestamp' => date('Y-m-d H:i:s')
+			);
 			
 			$xlog = XApiLog::model()->findByPk($logId);
 			if ($xlog) {
