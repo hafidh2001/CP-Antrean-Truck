@@ -56,6 +56,7 @@ class XEndpointConfig extends ActiveRecord
 			}
 		
 			$nopol = $params['plat'];
+			$barcode_fg = isset($params['barcode_fg']) ? $params['barcode_fg'] : null;
 			
 			$savedDeliveryOrders = array();
 			
@@ -584,6 +585,7 @@ class XEndpointConfig extends ActiveRecord
 			$antrean->created_time = date('Y-m-d H:i:s');
 			$antrean->warehouse_id = $warehouseRecommendation['warehouse_id'];
 			$antrean->status = 'OPEN';
+			$antrean->qr_code = $barcode_fg;
 			
 			if (!$antrean->save()) {
 				throw new Exception('Gagal menyimpan antrean: ' . json_encode($antrean->getErrors()));
