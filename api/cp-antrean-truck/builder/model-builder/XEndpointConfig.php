@@ -199,12 +199,12 @@ class XEndpointConfig extends ActiveRecord
 				$totalLoadingTime = 0;
 
 				foreach ($requiredGoods as $required) {
-					$goodsId = $required['goods_id'];
+					$goodsCode = $required['goods_code'];
 					$weight = $required['weight'];
 					$smallestUnitId = $required['smallest_unit'];
 
-					// Get goods info for loading time calculation
-					$goodsInfo = MGoods::model()->findByPk($goodsId);
+					// Get goods info for loading time calculation (ambil salah satu saja untuk loading_time)
+					$goodsInfo = MGoods::model()->findByAttributes(array('kode' => $goodsCode));
 
 					// AGGREGATE total qty dari semua DO lines untuk goods ini
 					$totalQtyKg = 0;
@@ -286,68 +286,127 @@ class XEndpointConfig extends ActiveRecord
 					}
 
 					// ========================================
-					// STEP 2: PILIH SALAH SATU OPSI TERBAIK
+					// STEP 2: CEK STOCK UNTUK PK DAN PB (menggunakan raw SQL seperti getTracking)
 					// ========================================
-					$selectedOption = null;
+					$pkStockAvailable = false;
+					$pbStockAvailable = false;
+					$pkStockData = null;
+					$pbStockData = null;
 
-					// Prioritas: PK jika remainder lebih kecil atau sama
-					if (isset($palletOptions['PK']) && isset($palletOptions['PB'])) {
-						if ($palletOptions['PK']['remainder'] <= $palletOptions['PB']['remainder']) {
-							$selectedOption = $palletOptions['PK'];
-						} else {
-							$selectedOption = $palletOptions['PB'];
+					// Cek stock PK
+					if (isset($palletOptions['PK']) && $palletOptions['PK']['pallet_qty'] > 0) {
+						$pkUomUnit = $palletOptions['PK']['pallet_uom']->unit;
+						$pkQtyNeeded = $palletOptions['PK']['pallet_qty'];
+
+						$sql = "SELECT s.id, s.goods_id, s.location_id, s.qty, s.production_date, s.uom_id,
+						               l.label as location_label, l.warehouse_id
+						        FROM m_goods g
+						        INNER JOIN t_stock s ON s.goods_id = g.id
+						        INNER JOIN m_location l ON l.id = s.location_id
+						        INNER JOIN m_uom u ON u.id = s.uom_id
+						        WHERE g.kode = :kode
+						          AND u.unit = :unit
+						          AND s.opnam_id = :opnam_id
+						          AND s.qty >= :qty_needed
+						          AND l.warehouse_id = :warehouse_id
+						        ORDER BY s.production_date ASC NULLS FIRST, l.label ASC
+						        LIMIT 1";
+
+						$pkStockData = Yii::app()->db->createCommand($sql)->queryRow(true, array(
+							':kode' => $goodsCode,
+							':unit' => $pkUomUnit,
+							':opnam_id' => $lastOpname->id,
+							':qty_needed' => $pkQtyNeeded,
+							':warehouse_id' => $warehouse->id
+						));
+
+						if ($pkStockData) {
+							$pkStockAvailable = true;
+							$palletOptions['PK']['stock_data'] = $pkStockData;
 						}
-					} else if (isset($palletOptions['PK'])) {
-						$selectedOption = $palletOptions['PK'];
-					} else if (isset($palletOptions['PB'])) {
-						$selectedOption = $palletOptions['PB'];
+					}
+
+					// Cek stock PB
+					if (isset($palletOptions['PB']) && $palletOptions['PB']['pallet_qty'] > 0) {
+						$pbUomUnit = $palletOptions['PB']['pallet_uom']->unit;
+						$pbQtyNeeded = $palletOptions['PB']['pallet_qty'];
+
+						$sql = "SELECT s.id, s.goods_id, s.location_id, s.qty, s.production_date, s.uom_id,
+						               l.label as location_label, l.warehouse_id
+						        FROM m_goods g
+						        INNER JOIN t_stock s ON s.goods_id = g.id
+						        INNER JOIN m_location l ON l.id = s.location_id
+						        INNER JOIN m_uom u ON u.id = s.uom_id
+						        WHERE g.kode = :kode
+						          AND u.unit = :unit
+						          AND s.opnam_id = :opnam_id
+						          AND s.qty >= :qty_needed
+						          AND l.warehouse_id = :warehouse_id
+						        ORDER BY s.production_date ASC NULLS FIRST, l.label ASC
+						        LIMIT 1";
+
+						$pbStockData = Yii::app()->db->createCommand($sql)->queryRow(true, array(
+							':kode' => $goodsCode,
+							':unit' => $pbUomUnit,
+							':opnam_id' => $lastOpname->id,
+							':qty_needed' => $pbQtyNeeded,
+							':warehouse_id' => $warehouse->id
+						));
+
+						if ($pbStockData) {
+							$pbStockAvailable = true;
+							$palletOptions['PB']['stock_data'] = $pbStockData;
+						}
 					}
 
 					// ========================================
-					// STEP 3: CEK STOCK DAN SAVE
+					// STEP 3: PILIH OPSI TERBAIK
+					// ========================================
+					$selectedOption = null;
+
+					// PRIORITAS UTAMA: SELALU PK jika ada stock
+					// PB hanya digunakan jika PK tidak ada stock sama sekali
+					if ($pkStockAvailable) {
+						$selectedOption = $palletOptions['PK'];
+					} else if ($pbStockAvailable) {
+						$selectedOption = $palletOptions['PB'];
+					} else {
+						// TIDAK ada stock: SELALU gunakan PK sebagai default
+						if (isset($palletOptions['PK'])) {
+							$selectedOption = $palletOptions['PK'];
+						} else if (isset($palletOptions['PB'])) {
+							$selectedOption = $palletOptions['PB'];
+						}
+					}
+
+					// ========================================
+					// STEP 4: SAVE LOCATION DETAILS
 					// ========================================
 					if ($selectedOption) {
-						// Cek stock untuk pallet
+						// Save pallet
 						if ($selectedOption['pallet_qty'] > 0) {
-							$palletStock = TStock::model()
-								->with(array(
-									'location' => array(
-										'condition' => 'location.warehouse_id = :warehouse_id',
-										'params' => array(':warehouse_id' => $warehouse->id)
-									)
-								))
-								->find(array(
-									'condition' => 't.goods_id = :goods_id AND t.uom_id = :uom_id AND t.opnam_id = :opnam_id AND t.qty >= :qty_needed',
-									'params' => array(
-										':goods_id' => $goodsId,
-										':uom_id' => $selectedOption['pallet_uom']->id,
-										':opnam_id' => $lastOpname->id,
-										':qty_needed' => $selectedOption['pallet_qty']
-									),
-									'order' => 't.production_date ASC, location.label ASC'
-								));
-
-							if ($palletStock && $palletStock->location) {
+							if (isset($selectedOption['stock_data'])) {
 								// Ada stock - save dengan location_id
 								$locationDetails[] = array(
-									'goods_id' => $goodsId,
-									'location_id' => $palletStock->location_id,
+									'goods_id' => $selectedOption['stock_data']['goods_id'],
+									'location_id' => $selectedOption['stock_data']['location_id'],
 									'qty' => $selectedOption['pallet_qty'],
 									'uom_id' => $selectedOption['pallet_uom']->id,
-									'production_date' => $palletStock->production_date
+									'production_date' => $selectedOption['stock_data']['production_date']
 								);
 
 								$totalStock += $selectedOption['pallet_qty'] * $selectedOption['pallet_uom']->conversion * $weight;
 
-								if ($palletStock->production_date) {
-									if (!$earliestProductionDate || $palletStock->production_date < $earliestProductionDate) {
-										$earliestProductionDate = $palletStock->production_date;
+								if ($selectedOption['stock_data']['production_date']) {
+									if (!$earliestProductionDate || $selectedOption['stock_data']['production_date'] < $earliestProductionDate) {
+										$earliestProductionDate = $selectedOption['stock_data']['production_date'];
 									}
 								}
 							} else {
-								// Tidak ada stock - save tanpa location_id
+								// Tidak ada stock - save tanpa location_id, ambil goods_id pertama
+								$firstGoods = MGoods::model()->findByAttributes(array('kode' => $goodsCode));
 								$locationDetails[] = array(
-									'goods_id' => $goodsId,
+									'goods_id' => $firstGoods ? $firstGoods->id : null,
 									'location_id' => null,
 									'qty' => $selectedOption['pallet_qty'],
 									'uom_id' => $selectedOption['pallet_uom']->id,
@@ -357,47 +416,55 @@ class XEndpointConfig extends ActiveRecord
 							}
 						}
 
-						// Cek stock untuk remainder (SACK/BOX)
+						// Save remainder (SACK/BOX)
 						if ($selectedOption['remainder'] > 0 && $selectedOption['smallest_uom']) {
-							$smallestStock = TStock::model()
-								->with(array(
-									'location' => array(
-										'condition' => 'location.warehouse_id = :warehouse_id',
-										'params' => array(':warehouse_id' => $warehouse->id)
-									)
-								))
-								->find(array(
-									'condition' => 't.goods_id = :goods_id AND t.uom_id = :uom_id AND t.opnam_id = :opnam_id AND t.qty >= :qty_needed',
-									'params' => array(
-										':goods_id' => $goodsId,
-										':uom_id' => $selectedOption['smallest_uom']->id,
-										':opnam_id' => $lastOpname->id,
-										':qty_needed' => $selectedOption['remainder']
-									),
-									'order' => 't.production_date ASC, location.label ASC'
-								));
+							$smallestUomUnit = $selectedOption['smallest_uom']->unit;
+							$remainderQtyNeeded = $selectedOption['remainder'];
 
-							if ($smallestStock && $smallestStock->location) {
+							$sql = "SELECT s.id, s.goods_id, s.location_id, s.qty, s.production_date, s.uom_id,
+							               l.label as location_label, l.warehouse_id
+							        FROM m_goods g
+							        INNER JOIN t_stock s ON s.goods_id = g.id
+							        INNER JOIN m_location l ON l.id = s.location_id
+							        INNER JOIN m_uom u ON u.id = s.uom_id
+							        WHERE g.kode = :kode
+							          AND u.unit = :unit
+							          AND s.opnam_id = :opnam_id
+							          AND s.qty >= :qty_needed
+							          AND l.warehouse_id = :warehouse_id
+							        ORDER BY s.production_date ASC NULLS FIRST, l.label ASC
+							        LIMIT 1";
+
+							$smallestStockData = Yii::app()->db->createCommand($sql)->queryRow(true, array(
+								':kode' => $goodsCode,
+								':unit' => $smallestUomUnit,
+								':opnam_id' => $lastOpname->id,
+								':qty_needed' => $remainderQtyNeeded,
+								':warehouse_id' => $warehouse->id
+							));
+
+							if ($smallestStockData) {
 								// Ada stock - save dengan location_id
 								$locationDetails[] = array(
-									'goods_id' => $goodsId,
-									'location_id' => $smallestStock->location_id,
+									'goods_id' => $smallestStockData['goods_id'],
+									'location_id' => $smallestStockData['location_id'],
 									'qty' => $selectedOption['remainder'],
 									'uom_id' => $selectedOption['smallest_uom']->id,
-									'production_date' => $smallestStock->production_date
+									'production_date' => $smallestStockData['production_date']
 								);
 
 								$totalStock += $selectedOption['remainder'] * $weight;
 
-								if ($smallestStock->production_date) {
-									if (!$earliestProductionDate || $smallestStock->production_date < $earliestProductionDate) {
-										$earliestProductionDate = $smallestStock->production_date;
+								if ($smallestStockData['production_date']) {
+									if (!$earliestProductionDate || $smallestStockData['production_date'] < $earliestProductionDate) {
+										$earliestProductionDate = $smallestStockData['production_date'];
 									}
 								}
 							} else {
 								// Tidak ada stock - save tanpa location_id
+								$firstGoods = MGoods::model()->findByAttributes(array('kode' => $goodsCode));
 								$locationDetails[] = array(
-									'goods_id' => $goodsId,
+									'goods_id' => $firstGoods ? $firstGoods->id : null,
 									'location_id' => null,
 									'qty' => $selectedOption['remainder'],
 									'uom_id' => $selectedOption['smallest_uom']->id,
