@@ -213,11 +213,12 @@ class XEndpointConfig extends ActiveRecord
 						$targetUom = MUom::model()->findByPk($reqDetail['uom_id']);
 						
 						// ========================================
-						// NEW SMART ALLOCATION STRATEGY
+						// SMART PALLET ALLOCATION STRATEGY
 						// ========================================
-						// 1. Determine if goods uses SACK or BOX from smallest_unit
-						// 2. Calculate pallet requirement first (PK/PB)
-						// 3. Allocate from pallet first, then remainder from smallest unit
+						// 1. Convert qty_in_do (KG) to base units (SACK/BOX)
+						// 2. Calculate optimal pallet allocation (PK then PB)
+						// 3. Find stock with oldest production date and least busy line
+						// 4. Always save recommendations even without stock
 						
 						// Get weight per unit from goods
 						$KG_PER_UNIT = $goodsInfo->weight;
@@ -228,86 +229,116 @@ class XEndpointConfig extends ActiveRecord
 						
 						// Convert KG to base units (SACK or BOX)
 						$totalUnitsNeeded = ceil($remainingQtyKg / $KG_PER_UNIT);
+						$remainingUnits = $totalUnitsNeeded;
 						
-						// Calculate pallet requirements
-						$palletAllocation = array();
+						// Prepare allocation plan (will be saved regardless of stock availability)
+						$allocationPlan = array();
 						
 						if ($isSack) {
-							// For SACK: check PK-SACK and PB-SACK
+							// For SACK goods: prioritize PK-SACK, then PB-SACK, then SACK
 							$pkSackUom = MUom::model()->find("unit = 'PK-SACK'");
 							$pbSackUom = MUom::model()->find("unit = 'PB-SACK'");
 							$sackUom = MUom::model()->find("unit = 'SACK'");
 							
+							// Calculate PK-SACK requirement
 							if ($pkSackUom && $pkSackUom->conversion) {
 								$pkUnitsPerPallet = $pkSackUom->conversion;
-								$pkUnitsNeeded = floor($totalUnitsNeeded / $pkUnitsPerPallet);
-								if ($pkUnitsNeeded > 0) {
-									$palletAllocation[] = array(
-										'uom' => $pkSackUom,
-										'qty_needed' => $pkUnitsNeeded,
-										'units_per_pallet' => $pkUnitsPerPallet
+								$pkPalletsNeeded = floor($remainingUnits / $pkUnitsPerPallet);
+								if ($pkPalletsNeeded > 0) {
+									$allocationPlan[] = array(
+										'uom_id' => $pkSackUom->id,
+										'uom_unit' => $pkSackUom->unit,
+										'qty_needed' => $pkPalletsNeeded,
+										'units_contained' => $pkPalletsNeeded * $pkUnitsPerPallet
 									);
+									$remainingUnits -= $pkPalletsNeeded * $pkUnitsPerPallet;
 								}
 							}
 							
-							if ($pbSackUom && $pbSackUom->conversion) {
+							// If still need more, calculate PB-SACK requirement
+							if ($remainingUnits > 0 && $pbSackUom && $pbSackUom->conversion) {
 								$pbUnitsPerPallet = $pbSackUom->conversion;
-								$pbUnitsNeeded = floor($totalUnitsNeeded / $pbUnitsPerPallet);
-								if ($pbUnitsNeeded > 0) {
-									$palletAllocation[] = array(
-										'uom' => $pbSackUom,
-										'qty_needed' => $pbUnitsNeeded,
-										'units_per_pallet' => $pbUnitsPerPallet
+								$pbPalletsNeeded = floor($remainingUnits / $pbUnitsPerPallet);
+								if ($pbPalletsNeeded > 0) {
+									$allocationPlan[] = array(
+										'uom_id' => $pbSackUom->id,
+										'uom_unit' => $pbSackUom->unit,
+										'qty_needed' => $pbPalletsNeeded,
+										'units_contained' => $pbPalletsNeeded * $pbUnitsPerPallet
 									);
+									$remainingUnits -= $pbPalletsNeeded * $pbUnitsPerPallet;
 								}
 							}
+							
+							// Remainder as SACK
+							if ($remainingUnits > 0 && $sackUom) {
+								$allocationPlan[] = array(
+									'uom_id' => $sackUom->id,
+									'uom_unit' => $sackUom->unit,
+									'qty_needed' => $remainingUnits,
+									'units_contained' => $remainingUnits
+								);
+							}
 						} else {
-							// For BOX: check PK-BOX and PB-BOX
+							// For BOX goods: prioritize PK-BOX, then PB-BOX, then BOX
 							$pkBoxUom = MUom::model()->find("unit = 'PK-BOX'");
 							$pbBoxUom = MUom::model()->find("unit = 'PB-BOX'");
 							$boxUom = MUom::model()->find("unit = 'BOX'");
 							
+							// Calculate PK-BOX requirement
 							if ($pkBoxUom && $pkBoxUom->conversion) {
 								$pkUnitsPerPallet = $pkBoxUom->conversion;
-								$pkUnitsNeeded = floor($totalUnitsNeeded / $pkUnitsPerPallet);
-								if ($pkUnitsNeeded > 0) {
-									$palletAllocation[] = array(
-										'uom' => $pkBoxUom,
-										'qty_needed' => $pkUnitsNeeded,
-										'units_per_pallet' => $pkUnitsPerPallet
+								$pkPalletsNeeded = floor($remainingUnits / $pkUnitsPerPallet);
+								if ($pkPalletsNeeded > 0) {
+									$allocationPlan[] = array(
+										'uom_id' => $pkBoxUom->id,
+										'uom_unit' => $pkBoxUom->unit,
+										'qty_needed' => $pkPalletsNeeded,
+										'units_contained' => $pkPalletsNeeded * $pkUnitsPerPallet
 									);
+									$remainingUnits -= $pkPalletsNeeded * $pkUnitsPerPallet;
 								}
 							}
 							
-							if ($pbBoxUom && $pbBoxUom->conversion) {
+							// If still need more, calculate PB-BOX requirement
+							if ($remainingUnits > 0 && $pbBoxUom && $pbBoxUom->conversion) {
 								$pbUnitsPerPallet = $pbBoxUom->conversion;
-								$pbUnitsNeeded = floor($totalUnitsNeeded / $pbUnitsPerPallet);
-								if ($pbUnitsNeeded > 0) {
-									$palletAllocation[] = array(
-										'uom' => $pbBoxUom,
-										'qty_needed' => $pbUnitsNeeded,
-										'units_per_pallet' => $pbUnitsPerPallet
+								$pbPalletsNeeded = floor($remainingUnits / $pbUnitsPerPallet);
+								if ($pbPalletsNeeded > 0) {
+									$allocationPlan[] = array(
+										'uom_id' => $pbBoxUom->id,
+										'uom_unit' => $pbBoxUom->unit,
+										'qty_needed' => $pbPalletsNeeded,
+										'units_contained' => $pbPalletsNeeded * $pbUnitsPerPallet
 									);
+									$remainingUnits -= $pbPalletsNeeded * $pbUnitsPerPallet;
 								}
+							}
+							
+							// Remainder as BOX
+							if ($remainingUnits > 0 && $boxUom) {
+								$allocationPlan[] = array(
+									'uom_id' => $boxUom->id,
+									'uom_unit' => $boxUom->unit,
+									'qty_needed' => $remainingUnits,
+									'units_contained' => $remainingUnits
+								);
 							}
 						}
 						
-						// Try to allocate pallets first
-						$allocatedUnits = 0;
-						$palletAllocated = false;
-						$recommendedAllocation = array(); // Track what should be allocated even if no stock
-						
-						foreach ($palletAllocation as $pallet) {
-							if ($allocatedUnits >= $totalUnitsNeeded) break;
+						// Now try to find stock for each allocation plan item
+						// Always save recommendations regardless of stock availability
+						foreach ($allocationPlan as $allocation) {
+							// Find stock with oldest production date and least busy line
+							$stockFound = false;
+							$locationId = null;
+							$productionDate = null;
 							
-							$qtyToUse = min($pallet['qty_needed'], floor(($totalUnitsNeeded - $allocatedUnits) / $pallet['units_per_pallet']));
-							if ($qtyToUse <= 0) continue;
-							
-							// Find available pallet stock with oldest production date
-							$palletStock = TStock::model()
+							// Query stock ordered by production date (oldest first) and line (alphabetically)
+							$stockQuery = TStock::model()
 								->with(array(
 									'location' => array(
-										'condition' => 'location.warehouse_id = :warehouse_id',
+										'condition' => 'location.warehouse_id = :warehouse_id AND location.is_deleted = false',
 										'params' => array(':warehouse_id' => $warehouse->id)
 									)
 								))
@@ -315,133 +346,46 @@ class XEndpointConfig extends ActiveRecord
 									'condition' => 't.goods_id = :goods_id AND t.uom_id = :uom_id AND t.opnam_id = :opnam_id AND t.qty >= :qty_needed',
 									'params' => array(
 										':goods_id' => $goodsId,
-										':uom_id' => $pallet['uom']->id,
+										':uom_id' => $allocation['uom_id'],
 										':opnam_id' => $lastOpname->id,
-										':qty_needed' => $qtyToUse
+										':qty_needed' => $allocation['qty_needed']
 									),
-									'order' => 't.production_date ASC, location.label ASC'
+									'order' => 't.production_date ASC NULLS LAST, location.label ASC'
 								));
 							
-							if (!empty($palletStock)) {
-								$stock = $palletStock[0];
-								if ($stock->location) {
-									// Allocate this pallet WITH location
-									$locationDetails[] = array(
-										'goods_id' => $goodsId,
-										'location_id' => $stock->location_id,
-										'qty' => $qtyToUse,
-										'uom_id' => $pallet['uom']->id,
-										'production_date' => $stock->production_date
-									);
+							if (!empty($stockQuery)) {
+								$selectedStock = $stockQuery[0]; // Get oldest and least busy
+								if ($selectedStock->location) {
+									$stockFound = true;
+									$locationId = $selectedStock->location_id;
+									$productionDate = $selectedStock->production_date;
 									
-									$allocatedUnits += $qtyToUse * $pallet['units_per_pallet'];
-									$palletAllocated = true;
-									$totalStock += $qtyToUse * $pallet['units_per_pallet'] * $KG_PER_UNIT;
+									// Update totals for warehouse scoring
+									$totalStock += $allocation['units_contained'] * $KG_PER_UNIT;
 									
-									// Track production date
-									if ($stock->production_date) {
-										if (!$earliestProductionDate || $stock->production_date < $earliestProductionDate) {
-											$earliestProductionDate = $stock->production_date;
-										}
+									// Track earliest production date
+									if ($productionDate && (!$earliestProductionDate || $productionDate < $earliestProductionDate)) {
+										$earliestProductionDate = $productionDate;
 									}
 								}
-							} else {
-								// No stock available but track the recommendation WITHOUT location
-								$recommendedAllocation[] = array(
-									'goods_id' => $goodsId,
-									'location_id' => null,
-									'qty' => $qtyToUse,
-									'uom_id' => $pallet['uom']->id,
-									'production_date' => null
-								);
-								$allocatedUnits += $qtyToUse * $pallet['units_per_pallet'];
 							}
-						}
-						
-						// Calculate remaining units needed after pallet allocation
-						$remainingUnits = $totalUnitsNeeded - $allocatedUnits;
-						
-						// Allocate remaining from smallest unit (SACK or BOX)
-						if ($remainingUnits > 0) {
-							$smallestUom = $isSack ? $sackUom : $boxUom;
 							
-							if ($smallestUom) {
-								// Prefer location that already has pallet if possible
-								$preferredLocationId = null;
-								if (!empty($locationDetails)) {
-									$preferredLocationId = $locationDetails[count($locationDetails)-1]['location_id'];
-								}
-								
-								// Find stock with priority: same location > oldest production > least busy line
-								$stockQuery = TStock::model()
-									->with(array(
-										'location' => array(
-											'condition' => 'location.warehouse_id = :warehouse_id',
-											'params' => array(':warehouse_id' => $warehouse->id)
-										)
-									))
-									->findAll(array(
-										'condition' => 't.goods_id = :goods_id AND t.uom_id = :uom_id AND t.opnam_id = :opnam_id AND t.qty >= :qty_needed',
-										'params' => array(
-											':goods_id' => $goodsId,
-											':uom_id' => $smallestUom->id,
-											':opnam_id' => $lastOpname->id,
-											':qty_needed' => $remainingUnits
-										),
-										'order' => 't.production_date IS NULL DESC, t.production_date ASC, location.label ASC'
-									));
-								
-								// Try to find stock in same location first
-								$selectedStock = null;
-								if ($preferredLocationId) {
-									foreach ($stockQuery as $stock) {
-										if ($stock->location_id == $preferredLocationId) {
-											$selectedStock = $stock;
-											break;
-										}
-									}
-								}
-								
-								// If not found in same location, use first available
-								if (!$selectedStock && !empty($stockQuery)) {
-									$selectedStock = $stockQuery[0];
-								}
-								
-								if ($selectedStock && $selectedStock->location) {
-									$locationDetails[] = array(
-										'goods_id' => $goodsId,
-										'location_id' => $selectedStock->location_id,
-										'qty' => $remainingUnits,
-										'uom_id' => $smallestUom->id,
-										'production_date' => $selectedStock->production_date
-									);
-									
-									$totalStock += $remainingUnits * $KG_PER_UNIT;
-									
-									// Track production date
-									if ($selectedStock->production_date) {
-										if (!$earliestProductionDate || $selectedStock->production_date < $earliestProductionDate) {
-											$earliestProductionDate = $selectedStock->production_date;
-										}
-									}
-								} else {
-									// No stock available but track the recommendation WITHOUT location
-									$recommendedAllocation[] = array(
-										'goods_id' => $goodsId,
-										'location_id' => null,
-										'qty' => $remainingUnits,
-										'uom_id' => $smallestUom->id,
-										'production_date' => null
-									);
-									$canFulfillAll = false;
-								}
-							}
-						}
-						
-						// Merge recommended allocation (without location) with location details
-						if (!empty($recommendedAllocation)) {
-							foreach ($recommendedAllocation as $rec) {
-								$locationDetails[] = $rec;
+							// Always add to location details (with or without location_id)
+							$locationDetails[] = array(
+								'goods_id' => $goodsId,
+								'goods_code' => $required['goods_code'],
+								'location_id' => $locationId,
+								'location_label' => $locationId ? ($selectedStock->location->label ?? '') : '',
+								'qty' => $allocation['qty_needed'],
+								'uom_id' => $allocation['uom_id'],
+								'uom_unit' => $allocation['uom_unit'],
+								'production_date' => $productionDate,
+								'days_old' => $productionDate ? floor((time() - strtotime($productionDate)) / (60 * 60 * 24)) : 0
+							);
+							
+							// Update fulfillment status
+							if (!$stockFound) {
+								$canFulfillAll = false;
 							}
 						}
 						
@@ -707,9 +651,9 @@ class XEndpointConfig extends ActiveRecord
 						'can_fulfill_all' => false
 					);
 				} else {
-					// No warehouse at all, still save with null values
+					// No warehouse at all, use fallback warehouse ID 1
 					$warehouseScores[] = array(
-						'warehouse_id' => null,
+						'warehouse_id' => 1, // Fallback to ID 1 to satisfy NOT NULL constraint
 						'warehouse_name' => '',
 						'priority' => 5,
 						'score' => 0,
@@ -741,7 +685,7 @@ class XEndpointConfig extends ActiveRecord
 			// ========================================
 			// 4. CREATE ANTREAN
 			// ========================================
-			// If warehouse_id is null, get first available warehouse for antrean
+			// Ensure warehouse_id is never null (required by database constraint)
 			if (empty($warehouseRecommendation['warehouse_id'])) {
 				$defaultWarehouse = MWarehouse::model()->find(array(
 					'condition' => 'status = :status',
@@ -750,6 +694,9 @@ class XEndpointConfig extends ActiveRecord
 				));
 				if ($defaultWarehouse) {
 					$warehouseRecommendation['warehouse_id'] = $defaultWarehouse->id;
+				} else {
+					// Ultimate fallback to warehouse ID 1 if no warehouse exists
+					$warehouseRecommendation['warehouse_id'] = 1;
 				}
 			}
 			
