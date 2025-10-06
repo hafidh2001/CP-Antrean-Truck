@@ -37,43 +37,23 @@ class XEndpointConfig extends ActiveRecord
 	 */
 	public static function getAntrean($params = [])
 	{
-		// Debug 1: Check if function is reached
-		echo "<pre>";
-		echo "=== FUNCTION getAntrean REACHED ===\n";
-		echo "Time: " . date('Y-m-d H:i:s') . "\n";
-		echo "Params:\n";
-		print_r($params);
-		echo "</pre>";
+		// CHECKPOINT 1: Function entry
+		var_dump("CHECKPOINT 1: Function entered");
+		// die(); // Uncomment jika ingin test di sini
 		
-		// Early exit for debugging
-		if (isset($params['debug_exit']) && $params['debug_exit'] == true) {
-			die("Early exit after param check");
-		}
-		
-		// Debug 2: Try to save XApiLog
-		try {
-			$xlog = new XApiLog;
-			$xlog->created_time = date('Y-m-d H:i:s');
-			$xlog->api = 'getAntrean';
-			$xlog->payload = json_encode($params);
-			$xlog->save();
-			$logId = $xlog->id;
-			var_dump("XApiLog saved with ID:", $logId);
-		} catch (Exception $e) {
-			var_dump("Error saving XApiLog:", $e->getMessage());
-			die();
-		}
-		
+		$xlog = new XApiLog;
+		$xlog->created_time = date('Y-m-d H:i:s');
+		$xlog->api = 'getAntrean';
+		$xlog->payload = json_encode($params);
+		$xlog->save();
+		$logId = $xlog->id;
 		$response = array();
 		
-		// Debug 3: Start transaction
-		try {
-			$transaction = Yii::app()->db->beginTransaction();
-			var_dump("Transaction started successfully");
-		} catch (Exception $e) {
-			var_dump("Error starting transaction:", $e->getMessage());
-			die();
-		}
+		// CHECKPOINT 2: After XApiLog
+		var_dump("CHECKPOINT 2: XApiLog saved, ID: " . $logId);
+		// die(); // Uncomment jika ingin test di sini
+		
+		$transaction = Yii::app()->db->beginTransaction();
 		
 		try {
 			// ========================================
@@ -86,13 +66,17 @@ class XEndpointConfig extends ActiveRecord
 			$nopol = $params['plat'];
 			$barcode_fg = isset($params['barcode_fg']) ? $params['barcode_fg'] : null;
 			
-			var_dump("Nopol:", $nopol);
-			var_dump("Barcode FG:", $barcode_fg);
+			// CHECKPOINT 3: After parameter extraction
+			var_dump("CHECKPOINT 3: Parameters extracted, nopol: " . $nopol);
+			// die(); // Uncomment jika ingin test di sini
 			
 			$savedDeliveryOrders = array();
 			
 			$dos = $params['do'];
-			var_dump("Number of DOs:", count($dos));
+			
+			// CHECKPOINT 4: Before DO processing
+			var_dump("CHECKPOINT 4: Starting DO processing, count: " . count($dos));
+			// die(); // Uncomment jika ingin test di sini
 			
 			// Simpan DO dan DO Line
 			foreach ($dos as $idx => $row) {
@@ -173,6 +157,10 @@ class XEndpointConfig extends ActiveRecord
 			}
 			
 			
+			// CHECKPOINT 5: After all DOs saved
+			var_dump("CHECKPOINT 5: DOs saved, count: " . count($savedDeliveryOrders));
+			// die(); // Uncomment jika ingin test di sini
+			
 			if (empty($savedDeliveryOrders)) {
 				throw new Exception('Tidak ada delivery order yang ditemukan untuk nopol: ' . $nopol);
 			}
@@ -180,6 +168,10 @@ class XEndpointConfig extends ActiveRecord
 			// ========================================
 			// 2. ANALISIS BARANG YANG DIBUTUHKAN DARI SEMUA DO
 			// ========================================
+			// CHECKPOINT 6: Starting goods analysis
+			var_dump("CHECKPOINT 6: Starting goods analysis");
+			// die(); // Uncomment jika ingin test di sini
+			
 			$requiredGoods = array();
 			
 			foreach ($savedDeliveryOrders as $do) {
@@ -221,6 +213,10 @@ class XEndpointConfig extends ActiveRecord
 			}
 			
 			$requiredGoods = array_values($requiredGoods);
+			
+			// CHECKPOINT 7: After goods analysis
+			var_dump("CHECKPOINT 7: Required goods count: " . count($requiredGoods));
+			die(); // STOP HERE untuk test - Comment untuk lanjut
 			
 			// ========================================
 			// 3. CARI WAREHOUSE TERBAIK BERDASARKAN PRIORITAS
