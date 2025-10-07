@@ -172,7 +172,7 @@ export const productionCodeEntryApi = {
       const requestBody = createApiRequest(
         'createKodeProduksi',
         'TAntreanKodeProduksi',
-        { 
+        {
           user_token: userToken,
           antrean_id: parseInt(antreanId),
           goods_id: parseInt(goodsId),
@@ -182,7 +182,13 @@ export const productionCodeEntryApi = {
       );
 
       const response = await apiClient.post('', requestBody);
-      return response.data;
+      const data: SaveResponse = response.data;
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      return data;
     } catch (error) {
       throw error;
     }

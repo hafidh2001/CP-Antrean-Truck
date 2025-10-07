@@ -248,14 +248,10 @@ export function ProductionCodeEntryPage() {
       
       // Reload only kode produksi data
       await reloadKodeProduksi();
-      
+
       showToast('Kode produksi berhasil ditambahkan', 'success');
     } catch (error) {
-      if (error instanceof Error && error.message === 'Kode produksi already exists') {
-        showToast('Kode produksi sudah ada', 'error');
-      } else {
-        showToast('Gagal menambah kode produksi', 'error');
-      }
+      showToast('Gagal menambah kode produksi', 'error');
     } finally {
       setIsSubmitting(false);
     }

@@ -115,22 +115,8 @@ class TAntreanKodeProduksi extends ActiveRecord
 		if (!$antrean_id || !$goods_id || !$kode_produksi) {
 			return ['error' => 'antrean_id, goods_id and kode_produksi are required'];
 		}
-		
-		// Check if kode_produksi already exists
-		$checkQuery = "SELECT id FROM t_antrean_kode_produksi 
-			WHERE antrean_id = :antrean_id AND goods_id = :goods_id AND kode_produksi = :kode_produksi";
-		
-		$checkCommand = Yii::app()->db->createCommand($checkQuery);
-		$checkCommand->bindValue(':antrean_id', $antrean_id, PDO::PARAM_INT);
-		$checkCommand->bindValue(':goods_id', $goods_id, PDO::PARAM_INT);
-		$checkCommand->bindValue(':kode_produksi', $kode_produksi, PDO::PARAM_STR);
-		$existing = $checkCommand->queryRow();
-		
-		if ($existing) {
-			return ['error' => 'Kode produksi already exists'];
-		}
-		
-		// Create new
+
+		// Create new (duplicates allowed)
 		$model = new TAntreanKodeProduksi();
 		$model->antrean_id = $antrean_id;
 		$model->goods_id = $goods_id;
