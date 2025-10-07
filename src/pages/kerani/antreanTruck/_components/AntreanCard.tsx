@@ -46,7 +46,7 @@ export function AntreanCard({ antrean, onClick }: AntreanCardProps) {
                 </div>
               </div>
             </div>
-            {antrean.status === AntreanStatusEnum.VERIFYING && (
+            {(antrean.status === AntreanStatusEnum.VERIFYING || antrean.status === AntreanStatusEnum.PENDING) && (
               <div className="text-sm text-gray-600">{antrean.status}</div>
             )}
           </div>

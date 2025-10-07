@@ -16,5 +16,6 @@ export enum AntreanStatusEnum {
   LOADING = 'LOADING',
   VERIFYING = 'VERIFYING',
   VERIFIED = 'VERIFIED',
-  CLOSED = 'CLOSED'
+  CLOSED = 'CLOSED',
+  PENDING = 'PENDING'
 }
