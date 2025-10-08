@@ -564,17 +564,94 @@ class XEndpointConfig extends ActiveRecord
 			}
 
 			// ========================================
-			// 6. ASSIGN GATE
+			// 6. ASSIGN GATE WITH PRIORITY LOGIC
 			// ========================================
-			$gates = MGate::model()->findAllByAttributes(array(
-				'warehouse_id' => $warehouseRecommendation['warehouse_id'],
-				'status' => 'OPEN'
+			// Get all gates from selected warehouse
+			$gateQuery = "SELECT
+			                g.id,
+			                g.code,
+			                g.status,
+			                g.warehouse_id,
+			                w.name as warehouse_name
+			              FROM m_gate g
+			              INNER JOIN m_warehouse w ON g.warehouse_id = w.id
+			              WHERE g.status = 'OPEN' AND g.warehouse_id = :warehouse_id
+			              ORDER BY g.code ASC";
+
+			$gates = Yii::app()->db->createCommand($gateQuery)->queryAll(true, array(
+				':warehouse_id' => $warehouseRecommendation['warehouse_id']
 			));
 
+			$recommendedGateId = null;
+
 			if (!empty($gates)) {
+				$gateAnalysis = array();
+
+				foreach ($gates as $gate) {
+					// Get antrean count and status breakdown for this gate
+					// Status ada di t_antrean, bukan di t_antrean_gate
+					$antreanQuery = "SELECT
+					                    COUNT(*) as total_antrean,
+					                    SUM(CASE WHEN ta.status = 'OPEN' THEN 1 ELSE 0 END) as open_count,
+					                    SUM(CASE WHEN ta.status = 'LOADING' THEN 1 ELSE 0 END) as loading_count,
+					                    SUM(CASE WHEN ta.status = 'VERIFYING' THEN 1 ELSE 0 END) as verifying_count
+					                 FROM t_antrean_gate tag
+					                 INNER JOIN t_antrean ta ON tag.antrean_id = ta.id
+					                 WHERE tag.gate_id = :gate_id
+					                   AND ta.status IN ('OPEN', 'LOADING', 'VERIFYING')";
+
+					$antreanStats = Yii::app()->db->createCommand($antreanQuery)->queryRow(true, array(
+						':gate_id' => $gate['id']
+					));
+
+					$totalAntrean = intval($antreanStats['total_antrean']);
+					$openCount = intval($antreanStats['open_count']);
+					$loadingCount = intval($antreanStats['loading_count']);
+					$verifyingCount = intval($antreanStats['verifying_count']);
+
+					// Calculate priority score
+					// Lower score = higher priority
+					// Priority 1: Empty gates (total_antrean = 0) get score 0
+					// Priority 2: Gates with queue - score based on total and status composition
+					//   - VERIFYING status weighted lowest (will finish soon)
+					//   - LOADING status weighted medium
+					//   - OPEN status weighted highest (will take longest)
+					$priorityScore = 0;
+
+					if ($totalAntrean == 0) {
+						// Empty gate - highest priority
+						$priorityScore = 0;
+					} else {
+						// Gate with queue - calculate weighted score
+						// OPEN = 3 points, LOADING = 2 points, VERIFYING = 1 point
+						$weightedScore = ($openCount * 3) + ($loadingCount * 2) + ($verifyingCount * 1);
+						// Add total count as base score (multiplied by 10 to maintain hierarchy)
+						$priorityScore = ($totalAntrean * 10) + $weightedScore;
+					}
+
+					$gateAnalysis[] = array(
+						'gate_id' => $gate['id'],
+						'gate_code' => $gate['code'],
+						'total_antrean' => $totalAntrean,
+						'open_count' => $openCount,
+						'loading_count' => $loadingCount,
+						'verifying_count' => $verifyingCount,
+						'priority_score' => $priorityScore
+					);
+				}
+
+				// Sort by priority_score ascending (lower score = higher priority)
+				usort($gateAnalysis, function($a, $b) {
+					return $a['priority_score'] - $b['priority_score'];
+				});
+
+				// Select the gate with highest priority (lowest score)
+				$recommendedGateId = $gateAnalysis[0]['gate_id'];
+
+				// Save to t_antrean_gate
 				$antreanGate = new TAntreanGate();
 				$antreanGate->antrean_id = $antrean->id;
-				$antreanGate->gate_id = $gates[0]->id;
+				$antreanGate->gate_id = $recommendedGateId;
 				$antreanGate->save();
 			}
 
