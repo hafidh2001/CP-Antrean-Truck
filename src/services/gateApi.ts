@@ -39,8 +39,9 @@ export interface IAntreanItem {
   nopol: string;
   status: string;
   assigned_kerani_time: string;
-  loading_time_minutes: number;
-  remaining_minutes: number;
+  assigned_kerani_timestamp: number | null; // Unix timestamp for count up calculation
+  loading_time_minutes?: number;
+  elapsed_minutes: number;
   remaining_time_formatted: {
     hours: number;
     minutes: number;

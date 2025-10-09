@@ -43,7 +43,7 @@ export default function GateMonitorPage() {
         }
 
         setUserToken(decrypted.user_token);
-        startPolling(1000); // Update countdown every second
+        startPolling(1000); // Update count up every second
       } catch (error) {
         console.error("Failed to initialize gate monitor:", error);
         navigate(ROUTES.base);
@@ -84,13 +84,15 @@ export default function GateMonitorPage() {
     );
   }
 
-  const getCardColor = (hours: number, minutes: number, seconds: number) => {
-    // If all time is 0, show gray (completed)
-    if (hours === 0 && minutes === 0 && seconds === 0)
-      return "bg-gray-400 border-gray-500";
-    if (hours > 0) return "bg-blue-500 border-blue-600"; // Still have hours
-    if (minutes > 0) return "bg-yellow-500 border-yellow-600"; // Only minutes left
-    return "bg-red-500 border-red-600"; // Only seconds left
+  const getCardColor = (status: string) => {
+    switch (status) {
+      case AntreanStatusEnum.VERIFYING:
+        return "bg-yellow-500 border-yellow-600"; // Verifying - yellow
+      case AntreanStatusEnum.LOADING:
+        return "bg-blue-500 border-blue-600"; // Loading - blue
+      default:
+        return "bg-gray-400 border-gray-500"; // Default - gray
+    }
   };
 
   return (
@@ -105,75 +107,113 @@ export default function GateMonitorPage() {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Antrean Truck
               </th>
+              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                Waiting (OPEN)
+              </th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {gates.length === 0 ? (
               <tr>
-                <td colSpan={2} className="px-6 py-8 text-center text-gray-500">
+                <td colSpan={3} className="px-6 py-8 text-center text-gray-500">
                   Tidak ada antrean truck saat ini
                 </td>
               </tr>
             ) : (
-              gates.map((gate) => (
-                <tr key={gate.gate_id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">
-                        {gate.gate_code}
+              gates.map((gate) => {
+                // Filter antrean by status
+                const loadingVerifyingAntrean = gate.antrean_list.filter(
+                  (antrean) =>
+                    antrean.status === AntreanStatusEnum.LOADING ||
+                    antrean.status === AntreanStatusEnum.VERIFYING
+                );
+                const openAntrean = gate.antrean_list.filter(
+                  (antrean) => antrean.status === AntreanStatusEnum.OPEN
+                );
+                const openCount = openAntrean.length;
+
+                // Show first 3 OPEN trucks in center column
+                const displayedOpenAntrean = openAntrean.slice(0, 3);
+
+                // Combine: LOADING/VERIFYING + first 3 OPEN
+                const activeAntrean = [...loadingVerifyingAntrean, ...displayedOpenAntrean];
+
+                return (
+                  <tr key={gate.gate_id} className="hover:bg-gray-50">
+                    {/* Gate Column */}
+                    <td className="px-6 py-4 whitespace-nowrap align-top">
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {gate.gate_code}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {gate.warehouse_name}
+                        </div>
                       </div>
-                      <div className="text-xs text-gray-500">
-                        {gate.warehouse_name}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    {gate.antrean_list.length === 0 ? (
-                      <span className="text-gray-400 text-sm italic">
-                        Tidak ada antrean
-                      </span>
-                    ) : (
-                      <div className="flex flex-wrap gap-3">
-                        {gate.antrean_list.map((antrean) => (
-                          <div
-                            key={antrean.antrean_id}
-                            className={cn(
-                              "relative p-3 rounded-lg border-2 text-white w-[250px]",
-                              getCardColor(
-                                antrean.remaining_time_formatted.hours,
-                                antrean.remaining_time_formatted.minutes,
-                                antrean.remaining_time_formatted.seconds
-                              )
-                            )}
-                          >
-                            {/* Status badge only for VERIFYING */}
-                            {antrean.status === AntreanStatusEnum.VERIFYING && (
+                    </td>
+
+                    {/* Count Up Cards Column (LOADING & VERIFYING) */}
+                    <td className="px-6 py-4">
+                      {activeAntrean.length === 0 ? (
+                        <span className="text-gray-400 text-sm italic">
+                          Tidak ada proses loading
+                        </span>
+                      ) : (
+                        <div className="flex flex-wrap gap-3">
+                          {activeAntrean.map((antrean) => (
+                            <div
+                              key={antrean.antrean_id}
+                              className={cn(
+                                "relative p-3 rounded-lg border-2 text-white w-[250px]",
+                                getCardColor(antrean.status)
+                              )}
+                            >
+                              {/* Status badge */}
                               <div className="absolute top-2 right-2">
                                 <span className="px-2 py-1 text-xs bg-white/20 backdrop-blur rounded">
-                                  VERIFYING
+                                  {antrean.status}
                                 </span>
                               </div>
-                            )}
 
-                            {/* License plate number */}
-                            <div className="font-bold text-lg mb-2">
-                              {antrean.nopol}
-                            </div>
-
-                            {/* Bottom row */}
-                            <div className="flex justify-between items-end">
-                              {/* Countdown timer */}
-                              <div className="text-sm font-medium">
-                                {antrean.remaining_time_formatted.display}
+                              {/* License plate number */}
+                              <div className="font-bold text-lg mb-2">
+                                {antrean.nopol}
                               </div>
+
+                              {/* Bottom row */}
+                              {antrean.status === AntreanStatusEnum.OPEN ? (
+                                // For OPEN status, show "Waiting" label
+                                <div className="text-sm font-medium italic opacity-80">
+                                  Menunggu giliran...
+                                </div>
+                              ) : (
+                                // For LOADING/VERIFYING, show count up timer
+                                <div className="flex justify-between items-end">
+                                  <div className="text-sm font-medium">
+                                    {antrean.remaining_time_formatted.display}
+                                  </div>
+                                </div>
+                              )}
                             </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
+                      )}
+                    </td>
+
+                    {/* Counter Column (OPEN status) */}
+                    <td className="px-6 py-4 align-top">
+                      <div className="flex flex-col items-center justify-center">
+                        <div className="text-3xl font-bold text-gray-700">
+                          {openCount}
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          {openCount === 1 ? "truck" : "trucks"}
+                        </div>
                       </div>
-                    )}
-                  </td>
-                </tr>
-              ))
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>

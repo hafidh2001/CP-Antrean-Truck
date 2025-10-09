@@ -107,26 +107,30 @@ export const useGateMonitorStore = create<GateMonitorStore>((set, get) => ({
         ...gate,
         antrean_list: gate.antrean_list
           .map(antrean => {
-            // Only decrease time if it's still > 0
-            const newRemainingMinutes = antrean.remaining_minutes > 0 
-              ? Math.max(0, antrean.remaining_minutes - (1 / 60))
-              : 0;
-            
-            // Calculate new formatted time
-            const hours = Math.floor(newRemainingMinutes / 60);
-            const minutes = Math.floor(newRemainingMinutes % 60);
-            const seconds = Math.floor((newRemainingMinutes * 60) % 60);
-            
-            // Keep showing 0 DETIK when time reaches 0
+            // Count up logic: calculate elapsed time from assigned_kerani_timestamp
+            let elapsedSeconds = 0;
+
+            if (antrean.assigned_kerani_timestamp) {
+              // Calculate elapsed time in seconds
+              const currentTimeSeconds = Math.floor(Date.now() / 1000);
+              elapsedSeconds = currentTimeSeconds - antrean.assigned_kerani_timestamp;
+            }
+            // Else: status OPEN or no timestamp, keep at 0
+
+            // Convert to hours, minutes, seconds
+            const hours = Math.floor(elapsedSeconds / 3600);
+            const minutes = Math.floor((elapsedSeconds % 3600) / 60);
+            const seconds = elapsedSeconds % 60;
+
+            // Format display
             const display = hours > 0
               ? `${hours} JAM ${minutes} MENIT ${seconds} DETIK`
               : minutes > 0
                 ? `${minutes} MENIT ${seconds} DETIK`
                 : `${seconds} DETIK`;
-            
+
             return {
               ...antrean,
-              remaining_minutes: newRemainingMinutes,
               remaining_time_formatted: {
                 hours,
                 minutes,
@@ -135,8 +139,6 @@ export const useGateMonitorStore = create<GateMonitorStore>((set, get) => ({
               }
             };
           })
-          // Keep all items, don't filter by time
-          // Server will handle removing items when status changes from LOADING/VERIFYING
       }));
 
       return { gates: updatedGates };

@@ -35,8 +35,10 @@ class MGate extends ActiveRecord
 	}
 
 	/**
-	 * Get gate antrean list with countdown time
+	 * Get gate antrean list with count up time
 	 * For MC and Admin roles to monitor all gates
+	 * Shows trucks with status: OPEN, LOADING, VERIFYING (ordered by priority)
+	 * Count up starts from assigned_kerani_time (when status becomes LOADING)
 	 * @param array $params
 	 * @return array
 	 */
@@ -94,117 +96,71 @@ class MGate extends ActiveRecord
 				'antrean_list' => array()
 			);
 			
-			// Get antrean for this gate with status LOADING
-			$antreanQuery = "SELECT 
+			// Get antrean for this gate with status OPEN, LOADING, VERIFYING
+			// Ordered by FIFO (t_antrean.id) as the system follows First In First Out
+			$antreanQuery = "SELECT
 								ta.id,
 								ta.nopol,
 								ta.assigned_kerani_time,
 								ta.status
 							FROM t_antrean ta
 							INNER JOIN t_antrean_gate tag ON ta.id = tag.antrean_id
-							WHERE tag.gate_id = :gate_id 
-								AND ta.status IN ('LOADING', 'VERIFYING')
-							ORDER BY ta.assigned_kerani_time ASC";
+							WHERE tag.gate_id = :gate_id
+								AND ta.status IN ('OPEN', 'LOADING', 'VERIFYING')
+							ORDER BY
+								CASE ta.status
+									WHEN 'VERIFYING' THEN 1
+									WHEN 'LOADING' THEN 2
+									WHEN 'OPEN' THEN 3
+									ELSE 4
+								END ASC,
+								ta.id ASC";
 			
 			$antreanCommand = Yii::app()->db->createCommand($antreanQuery);
 			$antreanCommand->bindValue(':gate_id', $gate['id'], PDO::PARAM_INT);
 			$antreanList = $antreanCommand->queryAll();
-			
-			$cumulativeMinutes = 0; // Track cumulative loading time
-			
+
 			foreach ($antreanList as $antrean) {
-				// Skip if no assigned_kerani_time (not yet assigned to kerani)
-				if (!$antrean['assigned_kerani_time']) {
-					continue;
+				// Calculate elapsed time (count up) from assigned_kerani_time
+				$elapsedMinutes = 0;
+				$hours = 0;
+				$minutes = 0;
+				$seconds = 0;
+
+				// If assigned_kerani_time exists, calculate elapsed time
+				if ($antrean['assigned_kerani_time']) {
+					$assignedTime = strtotime($antrean['assigned_kerani_time']);
+					$currentTime = time();
+					$elapsedMinutes = ($currentTime - $assignedTime) / 60;
+
+					// Format time for display (count up)
+					$hours = floor($elapsedMinutes / 60);
+					$minutes = floor($elapsedMinutes % 60);
+					$seconds = floor(($elapsedMinutes * 60) % 60);
 				}
-				
-				// Get goods and calculate total loading time for this truck
-				$goodsQuery = "SELECT 
-								tarl.goods_id,
-								tarl.qty,
-								tarl.uom_id,
-								mg.kode as goods_code,
-								mg.loading_time,
-								mu.unit as uom_unit,
-								mu.conversion,
-								mu_base.unit as base_unit
-							FROM t_antrean_rekomendasi_lokasi tarl
-							INNER JOIN m_goods mg ON tarl.goods_id = mg.id
-							LEFT JOIN m_uom mu ON tarl.uom_id = mu.id
-							LEFT JOIN m_uom mu_base ON mu.convert_to = mu_base.id
-							WHERE tarl.antrean_id = :antrean_id";
-				
-				$goodsCommand = Yii::app()->db->createCommand($goodsQuery);
-				$goodsCommand->bindValue(':antrean_id', $antrean['id'], PDO::PARAM_INT);
-				$goodsList = $goodsCommand->queryAll();
-				
-				$truckLoadingMinutes = 0;
-				
-				foreach ($goodsList as $goods) {
-					// Calculate quantity in tons
-					// If has conversion (e.g., from kg to ton), apply it
-					// Assume: conversion field contains multiplier to base unit
-					// Example: 1 ton = 1000 kg, so conversion = 1000
-					$qtyInTons = $goods['qty'];
-					
-					// If unit has conversion (means it's not the base unit)
-					if ($goods['conversion'] && $goods['conversion'] > 0) {
-						// If base unit is kg and current is ton: qty * 1 (already in tons)
-						// If base unit is ton and current is kg: qty / 1000
-						if (strtolower($goods['uom_unit']) == 'kg') {
-							$qtyInTons = $goods['qty'] / 1000; // Convert kg to tons
-						} else if (strtolower($goods['uom_unit']) == 'ton') {
-							$qtyInTons = $goods['qty']; // Already in tons
-						} else {
-							// For other units, use conversion factor
-							$qtyInTons = $goods['qty'] * $goods['conversion'] / 1000;
-						}
-					}
-					
-					// Calculate loading time: qty_in_tons * loading_time_per_ton
-					$loadingMinutes = $qtyInTons * ($goods['loading_time'] ?: 10); // Default 10 minutes per ton
-					$truckLoadingMinutes += $loadingMinutes;
-				}
-				
-				// Calculate remaining time
-				$assignedTime = strtotime($antrean['assigned_kerani_time']);
-				$currentTime = time();
-				$elapsedMinutes = ($currentTime - $assignedTime) / 60;
-				
-				// For first truck in queue, calculate from its own loading time
-				// For subsequent trucks, add cumulative time from trucks ahead
-				$totalLoadingMinutes = $truckLoadingMinutes + $cumulativeMinutes;
-				$remainingMinutes = max(0, $totalLoadingMinutes - $elapsedMinutes);
-				
-				// Add this truck's loading time to cumulative for next truck
-				$cumulativeMinutes += $truckLoadingMinutes;
-				
-				// Format time for display
-				$hours = floor($remainingMinutes / 60);
-				$minutes = floor($remainingMinutes % 60);
-				$seconds = floor(($remainingMinutes * 60) % 60);
+				// Else: status OPEN, display 0:00:00 (default values already set)
 				
 				$antreanData = array(
 					'antrean_id' => (int)$antrean['id'],
 					'nopol' => $antrean['nopol'],
 					'status' => $antrean['status'],
 					'assigned_kerani_time' => $antrean['assigned_kerani_time'],
-					'loading_time_minutes' => round($truckLoadingMinutes, 2),
-					'remaining_minutes' => round($remainingMinutes, 2),
+				'assigned_kerani_timestamp' => $antrean['assigned_kerani_time'] ? strtotime($antrean['assigned_kerani_time']) : null,
+					'elapsed_minutes' => round($elapsedMinutes, 2),
 					'remaining_time_formatted' => array(
 						'hours' => $hours,
 						'minutes' => $minutes,
 						'seconds' => $seconds,
-						'display' => $hours > 0 
+						'display' => $hours > 0
 							? sprintf('%d JAM %d MENIT %d DETIK', $hours, $minutes, $seconds)
-							: ($minutes > 0 
+							: ($minutes > 0
 								? sprintf('%d MENIT %d DETIK', $minutes, $seconds)
 								: sprintf('%d DETIK', $seconds))
 					)
 				);
 				
-				// Always include trucks with LOADING/VERIFYING status
-				// The frontend will handle display based on remaining time
+				// Include trucks with OPEN, LOADING, VERIFYING status
+				// Count up time starts from assigned_kerani_time (LOADING status)
 				$gateData['antrean_list'][] = $antreanData;
 			}
 			
